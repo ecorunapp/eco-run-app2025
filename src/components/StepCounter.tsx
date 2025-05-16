@@ -62,14 +62,14 @@ const StepCounter: React.FC<StepCounterProps> = ({ currentSteps, goalSteps }) =>
             dataKey="value"
             angleAxisId={0}
             cornerRadius={10}
-            minAngle={15} // Ensures a small bar is visible even for small values
+            // minAngle={15} // Removed this problematic prop
             // fill prop is set in data array
             animationDuration={1500}
           />
         </RadialBarChart>
       </ResponsiveContainer>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-        <Zap size={32} className="text-eco-accent mb-1" /> 
+        <Zap size={32} className="text-eco-accent mb-1" />
         <div className="text-4xl sm:text-5xl font-extrabold text-eco-light">
           {currentSteps.toLocaleString()}
         </div>
@@ -80,3 +80,4 @@ const StepCounter: React.FC<StepCounterProps> = ({ currentSteps, goalSteps }) =>
 };
 
 export default StepCounter;
+
