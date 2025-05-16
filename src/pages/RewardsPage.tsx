@@ -7,6 +7,7 @@ import { Settings, Zap, CreditCard, Gift } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const RewardsPage: React.FC = () => {
+  console.log('RewardsPage: component mounted');
   const userEcoPoints = 7580; // Example data
 
   return (
@@ -106,3 +107,4 @@ const RewardsPage: React.FC = () => {
 };
 
 export default RewardsPage;
+

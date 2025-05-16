@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Settings } from '@/components/icons';
 
 const ActivitiesPage: React.FC = () => {
+  console.log('ActivitiesPage: component mounted');
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
       <header className="p-4 flex justify-between items-center sticky top-0 bg-eco-dark z-40 shadow-sm">
@@ -36,3 +37,4 @@ const ActivitiesPage: React.FC = () => {
 };
 
 export default ActivitiesPage;
+
