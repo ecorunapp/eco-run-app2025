@@ -33,5 +33,7 @@ export {
   Info,
   PlusCircle,
   MinusCircle,
-  Edit3
+  Edit3,
+  CreditCard // Added CreditCard icon
 } from 'lucide-react';
+
