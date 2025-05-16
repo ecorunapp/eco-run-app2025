@@ -23,8 +23,12 @@ const BottomNav: React.FC = () => {
                ${isActive ? 'text-eco-accent' : 'text-eco-gray hover:text-eco-light'}`
             }
           >
-            <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-            <span className={`mt-1 font-medium ${isActive ? 'font-semibold' : ''}`}>{item.label}</span>
+            {({ isActive }) => (
+              <>
+                <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                <span className={`mt-1 font-medium ${isActive ? 'font-semibold' : ''}`}>{item.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </div>
@@ -33,3 +37,4 @@ const BottomNav: React.FC = () => {
 };
 
 export default BottomNav;
+
