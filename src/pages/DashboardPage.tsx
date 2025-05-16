@@ -11,6 +11,8 @@ const DashboardPage: React.FC = () => {
   const userEcoPoints = 12580; // Example data
   const currentSteps = 6789; // Example current steps
   const goalSteps = 10000; // Example goal steps
+  const co2SavedToday = 150; // Example CO2 saved in grams
+  const coinsEarnedToday = 25; // Example coins earned
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
@@ -25,7 +27,12 @@ const DashboardPage: React.FC = () => {
         
         {/* Step Counter Section */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-          <StepCounter currentSteps={currentSteps} goalSteps={goalSteps} />
+          <StepCounter 
+            currentSteps={currentSteps} 
+            goalSteps={goalSteps}
+            co2Saved={co2SavedToday}
+            coinsEarned={coinsEarnedToday}
+          />
         </section>
 
         {/* EcoPoints Display */}

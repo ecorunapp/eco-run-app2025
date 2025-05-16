@@ -34,6 +34,8 @@ export {
   PlusCircle,
   MinusCircle,
   Edit3,
-  CreditCard // Added CreditCard icon
+  CreditCard, // Added CreditCard icon
+  Leaf,       // Added Leaf icon for CO2
+  Coins       // Added Coins icon
 } from 'lucide-react';
 
