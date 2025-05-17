@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
@@ -136,34 +137,35 @@ const RewardsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Ecotab Card Section - Redesigned */}
-        <Card 
-          className="bg-zinc-900 text-white shadow-2xl rounded-xl animate-fade-in-up border-transparent" 
-          style={{ animationDelay: '0.4s' }}
-        >
-          <CardHeader className="flex flex-row justify-between items-start p-6">
-            <Star size={28} className="text-eco-accent" /> {/* Increased size slightly */}
-            <Wifi size={24} className="text-gray-400" />
-          </CardHeader>
-          <CardContent className="p-6 pt-0">
-            <div className="mb-8"> {/* Increased margin bottom */}
-              <p className="text-xs text-gray-400 tracking-wider uppercase">Member Since</p>
-              <p className="text-lg font-medium mt-1">05/24</p>
-            </div>
-            <div className="mb-4"> {/* Increased margin bottom */}
-              <p className="text-2xl font-semibold tracking-wide">Valued EcoRunner</p> {/* Adjusted tracking */}
-            </div>
-            <div className="flex justify-between items-end">
-              <p className="text-sm text-gray-400">EcoTab Debit</p>
-              <div className="flex items-center">
-                <div className="w-7 h-7 bg-red-500 rounded-full z-10 border-2 border-zinc-900"></div> {/* Slightly larger */}
-                <div className="w-7 h-7 bg-yellow-500 rounded-full -ml-3 border-2 border-zinc-900"></div> {/* Slightly larger */}
+        {/* Ecotab Card Section - Now a Link */}
+        <Link to="/ecotab-details" className="block animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+          <Card 
+            className="bg-zinc-900 text-white shadow-2xl rounded-xl border-transparent hover:shadow-eco-accent/30 transition-all duration-300 cursor-pointer group"
+          >
+            <CardHeader className="flex flex-row justify-between items-start p-6">
+              <Star size={28} className="text-eco-accent group-hover:animate-pulse" />
+              <Wifi size={24} className="text-gray-400" />
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <div className="mb-8">
+                <p className="text-xs text-gray-400 tracking-wider uppercase">Member Since</p>
+                <p className="text-lg font-medium mt-1">05/24</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="mb-4">
+                <p className="text-2xl font-semibold tracking-wide">Valued EcoRunner</p>
+              </div>
+              <div className="flex justify-between items-end">
+                <p className="text-sm text-gray-400">EcoTab Debit</p>
+                <div className="flex items-center">
+                  <div className="w-7 h-7 bg-red-500 rounded-full z-10 border-2 border-zinc-900"></div>
+                  <div className="w-7 h-7 bg-yellow-500 rounded-full -ml-3 border-2 border-zinc-900"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
         
-        {/* Transaction History Section - New */}
+        {/* Transaction History Section */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-eco-light">Transaction History</h2>

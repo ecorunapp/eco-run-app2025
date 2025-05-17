@@ -1,4 +1,3 @@
-
 export {
   Settings,
   ChevronDown,
@@ -40,5 +39,9 @@ export {
   Star,       // Added Star icon
   Wifi,       // Added Wifi icon
   ArrowUpRight, // Added ArrowUpRight icon
-  ArrowDownLeft // Added ArrowDownLeft icon
+  ArrowDownLeft, // Added ArrowDownLeft icon
+  Nfc, // Added NFC icon
+  Mail, // Added Mail icon for Profile page
+  ShieldCheck, // Added ShieldCheck icon for Profile page
+  Palette // Added Palette icon for Profile page
 } from 'lucide-react';
