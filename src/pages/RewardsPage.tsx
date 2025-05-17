@@ -1,10 +1,55 @@
-
 import React from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
 import { Settings, Zap, CreditCard, Gift } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import RewardOfferCard from '@/components/RewardOfferCard';
+
+// Sample data for featured offers
+const featuredOffers = [
+  {
+    id: '1',
+    title: '10% Off PC, Xbox & PS5 Games',
+    category: 'Digital',
+    imageUrl: '/placeholder.svg', // Replace with actual image path
+    points: 1500,
+    description: 'Enjoy instant delivery on a wide range of games. Perfect for gamers!',
+    claimedBy: '9.6K people claimed this',
+    isNew: true,
+  },
+  {
+    id: '2',
+    title: 'Surfshark VPN: Secure Your Connection',
+    category: 'Digital',
+    imageUrl: '/placeholder.svg', // Replace with actual image path
+    points: 500,
+    description: 'Get Surfshark VPN from $1.49/month. Stay safe online.',
+    claimedBy: '12K people claimed this',
+    isNew: false,
+  },
+  {
+    id: '3',
+    title: 'ES11 Smart Band Discount',
+    category: 'Gadgets',
+    imageUrl: '/placeholder.svg', // Replace with actual image path
+    points: 2500,
+    description: '65% off + free shipping on the ES11 Smart Band. Track your fitness in style.',
+    claimedBy: '17K people claimed this',
+    isNew: true,
+  },
+  {
+    id: '4',
+    title: 'ClassPass: 1 Month Free Trial',
+    category: 'Fitness',
+    imageUrl: '/placeholder.svg', // Replace with actual image path
+    points: 1000,
+    description: 'Try ClassPass for 1 month free. Access thousands of fitness studios and classes.',
+    claimedBy: '220 people claimed this',
+    isNew: false,
+  },
+];
+
 
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
@@ -20,7 +65,7 @@ const RewardsPage: React.FC = () => {
         </Button>
       </header>
 
-      <main className="flex-grow p-4 space-y-6 overflow-y-auto pb-24"> {/* pb-24 for bottom nav space */}
+      <main className="flex-grow p-4 space-y-8 overflow-y-auto pb-24"> {/* Increased space-y */}
         {/* Balance Section */}
         <Card className="bg-eco-dark-secondary border-eco-accent shadow-xl animate-fade-in-up">
           <CardHeader>
@@ -35,8 +80,28 @@ const RewardsPage: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Featured Offers Section */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <h2 className="text-2xl font-semibold text-eco-light mb-4">Featured Offers</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {featuredOffers.map((offer) => (
+              <RewardOfferCard
+                key={offer.id}
+                id={offer.id}
+                title={offer.title}
+                category={offer.category}
+                imageUrl={offer.imageUrl}
+                points={offer.points}
+                description={offer.description}
+                claimedBy={offer.claimedBy}
+                isNew={offer.isNew}
+              />
+            ))}
+          </div>
+        </section>
+
         {/* Ecotab Card Section */}
-        <Card className="bg-gradient-to-br from-eco-purple via-eco-accent-secondary to-eco-pink text-white shadow-2xl animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+        <Card className="bg-gradient-to-br from-eco-purple via-eco-accent-secondary to-eco-pink text-white shadow-2xl animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>EcoTab Card</CardTitle>
@@ -66,8 +131,8 @@ const RewardsPage: React.FC = () => {
         </Card>
 
         {/* Available Rewards Section */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-          <h2 className="text-2xl font-semibold text-eco-light mb-4">Available Rewards</h2>
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+          <h2 className="text-2xl font-semibold text-eco-light mb-4">Other Rewards</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card className="bg-eco-dark-secondary hover:shadow-eco-accent/20 hover:shadow-lg transition-shadow">
               <CardHeader>
@@ -107,4 +172,3 @@ const RewardsPage: React.FC = () => {
 };
 
 export default RewardsPage;
-
