@@ -2,9 +2,10 @@ import React from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, CreditCard, Gift } from '@/components/icons';
+import { Settings, Zap, Gift, Star, Wifi, CreditCard, Coins } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import RewardOfferCard from '@/components/RewardOfferCard';
+import TransactionHistoryItem from '@/components/TransactionHistoryItem';
 
 // Sample data for featured offers
 const featuredOffers = [
@@ -50,6 +51,41 @@ const featuredOffers = [
   },
 ];
 
+// Sample data for transaction history
+const sampleTransactions = [
+  {
+    id: 't1',
+    icon: Gift,
+    title: 'Redeemed Spotify Voucher',
+    description: 'Digital Reward',
+    amount: -500, // Assuming points used
+    date: 'May 15, 2025',
+  },
+  {
+    id: 't2',
+    icon: Coins,
+    title: 'Weekly Bonus Points',
+    description: 'Activity Completion',
+    amount: 250,
+    date: 'May 12, 2025',
+  },
+  {
+    id: 't3',
+    icon: Gift,
+    title: 'Claimed Coffee Coupon',
+    description: 'Partner Offer',
+    amount: -150,
+    date: 'May 10, 2025',
+  },
+  {
+    id: 't4',
+    icon: Zap, // Using Zap for points earned from an activity
+    title: 'EcoChallenge Points',
+    description: 'Milestone Reached',
+    amount: 1000,
+    date: 'May 5, 2025',
+  },
+];
 
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
@@ -65,7 +101,7 @@ const RewardsPage: React.FC = () => {
         </Button>
       </header>
 
-      <main className="flex-grow p-4 space-y-8 overflow-y-auto pb-24"> {/* Increased space-y */}
+      <main className="flex-grow p-4 space-y-8 overflow-y-auto pb-24">
         {/* Balance Section */}
         <Card className="bg-eco-dark-secondary border-eco-accent shadow-xl animate-fade-in-up">
           <CardHeader>
@@ -100,38 +136,55 @@ const RewardsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Ecotab Card Section */}
-        <Card className="bg-gradient-to-br from-eco-purple via-eco-accent-secondary to-eco-pink text-white shadow-2xl animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>EcoTab Card</CardTitle>
-              <CreditCard size={32} />
-            </div>
-            <CardDescription className="text-gray-200 opacity-90">Your Digital Rewards & Payment Card</CardDescription>
+        {/* Ecotab Card Section - Redesigned */}
+        <Card 
+          className="bg-zinc-900 text-white shadow-2xl rounded-xl animate-fade-in-up border-transparent" 
+          style={{ animationDelay: '0.4s' }}
+        >
+          <CardHeader className="flex flex-row justify-between items-start p-6">
+            <Star size={28} className="text-eco-accent" /> {/* Increased size slightly */}
+            <Wifi size={24} className="text-gray-400" />
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-center bg-black/20 p-4 rounded-lg">
-              <p className="text-xs opacity-70 tracking-wider">CARD NUMBER</p>
-              <p className="text-2xl font-mono tracking-widest my-1">**** **** **** 3852</p>
+          <CardContent className="p-6 pt-0">
+            <div className="mb-8"> {/* Increased margin bottom */}
+              <p className="text-xs text-gray-400 tracking-wider uppercase">Member Since</p>
+              <p className="text-lg font-medium mt-1">05/24</p>
             </div>
-            <div className="flex justify-between items-end pt-2">
-              <div>
-                <p className="text-xs opacity-70">CARD HOLDER</p>
-                <p className="font-semibold text-lg">Valued EcoRunner</p>
-              </div>
-              <div>
-                <p className="text-xs opacity-70">VALID THRU</p>
-                <p className="font-semibold text-lg">12/28</p>
+            <div className="mb-4"> {/* Increased margin bottom */}
+              <p className="text-2xl font-semibold tracking-wide">Valued EcoRunner</p> {/* Adjusted tracking */}
+            </div>
+            <div className="flex justify-between items-end">
+              <p className="text-sm text-gray-400">EcoTab Debit</p>
+              <div className="flex items-center">
+                <div className="w-7 h-7 bg-red-500 rounded-full z-10 border-2 border-zinc-900"></div> {/* Slightly larger */}
+                <div className="w-7 h-7 bg-yellow-500 rounded-full -ml-3 border-2 border-zinc-900"></div> {/* Slightly larger */}
               </div>
             </div>
-            <Button className="w-full bg-eco-light text-eco-dark hover:bg-opacity-90 mt-6 font-semibold py-3">
-              <Zap size={20} className="mr-2" /> Use Points to Pay
-            </Button>
           </CardContent>
         </Card>
+        
+        {/* Transaction History Section - New */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-eco-light">Transaction History</h2>
+            <Button variant="link" className="text-eco-accent hover:text-eco-accent-secondary">View All</Button>
+          </div>
+          <div className="space-y-3">
+            {sampleTransactions.map((transaction) => (
+              <TransactionHistoryItem
+                key={transaction.id}
+                icon={transaction.icon}
+                title={transaction.title}
+                description={transaction.description}
+                amount={transaction.amount}
+                date={transaction.date}
+              />
+            ))}
+          </div>
+        </section>
 
         {/* Available Rewards Section */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.8s' }}> {/* Adjusted animation delay */}
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Other Rewards</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card className="bg-eco-dark-secondary hover:shadow-eco-accent/20 hover:shadow-lg transition-shadow">

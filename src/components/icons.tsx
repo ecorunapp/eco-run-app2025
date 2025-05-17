@@ -36,6 +36,9 @@ export {
   Edit3,
   CreditCard, // Added CreditCard icon
   Leaf,       // Added Leaf icon for CO2
-  Coins       // Added Coins icon
+  Coins,      // Added Coins icon
+  Star,       // Added Star icon
+  Wifi,       // Added Wifi icon
+  ArrowUpRight, // Added ArrowUpRight icon
+  ArrowDownLeft // Added ArrowDownLeft icon
 } from 'lucide-react';
-
