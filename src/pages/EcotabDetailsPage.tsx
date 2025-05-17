@@ -3,37 +3,42 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import GradientDebitCard from '@/components/GradientDebitCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from '@/components/icons';
+import { ArrowLeft, CreditCard } from '@/components/icons'; // Added CreditCard for potential use as network logo
 import EcoRunLogo from '@/components/EcoRunLogo';
 
 const EcotabDetailsPage: React.FC = () => {
   const navigate = useNavigate();
+
+  // Example: Define a Visa logo component or image
+  // const VisaLogo = () => <img src="/path/to/visa-logo.svg" alt="Visa" className="h-6" />;
 
   const cardsData = [
     {
       id: '1',
       gradientClass: 'bg-gradient-to-br from-eco-purple via-eco-pink to-orange-400',
       cardNumberSuffix: '1234',
-      cardHolder: 'Jane Doe',
+      cardHolder: 'JANE DOE', // Uppercase for style
       expiryDate: '12/28',
       cvv: '123',
       nfcActive: true,
       isPrimary: true,
+      // cardNetworkLogo: <CreditCard size={30} className="text-white" /> // Example network logo
     },
     {
       id: '2',
       gradientClass: 'bg-gradient-to-tr from-green-400 via-teal-500 to-blue-600',
       cardNumberSuffix: '5678',
-      cardHolder: 'Jane Doe',
+      cardHolder: 'JANE DOE', // Uppercase for style
       expiryDate: '10/27',
       cvv: '456',
       nfcActive: true,
+      // cardNetworkLogo: <CreditCard size={30} className="text-white" />
     },
     {
       id: '3',
       gradientClass: 'bg-gradient-to-bl from-gray-700 via-gray-800 to-black',
       cardNumberSuffix: '9012',
-      cardHolder: 'Jane Doe',
+      cardHolder: 'JANE DOE', // Uppercase for style
       expiryDate: '08/29',
       cvv: '789',
       nfcActive: false,
@@ -47,7 +52,7 @@ const EcotabDetailsPage: React.FC = () => {
           <ArrowLeft size={24} />
         </Button>
         <h1 className="text-xl font-semibold text-eco-light">My Ecotab Cards</h1>
-        <EcoRunLogo size="small" /> {/* Changed size to "small" */}
+        <EcoRunLogo size="small" /> {/* Correct usage */}
       </header>
 
       <main className="flex-grow p-4 sm:p-6 space-y-6 overflow-y-auto pb-16">
@@ -64,6 +69,7 @@ const EcotabDetailsPage: React.FC = () => {
               cvv={card.cvv}
               nfcActive={card.nfcActive}
               isPrimary={card.isPrimary}
+              cardNetworkLogo={card.cardNetworkLogo} // Pass the network logo if defined
             />
           ))}
         </div>
