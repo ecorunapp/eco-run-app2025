@@ -47,7 +47,7 @@ const EcotabDetailsPage: React.FC = () => {
           <ArrowLeft size={24} />
         </Button>
         <h1 className="text-xl font-semibold text-eco-light">My Ecotab Cards</h1>
-        <EcoRunLogo size="monogram" />
+        <EcoRunLogo size="small" /> {/* Changed size to "small" */}
       </header>
 
       <main className="flex-grow p-4 sm:p-6 space-y-6 overflow-y-auto pb-16">

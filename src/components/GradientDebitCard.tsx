@@ -31,7 +31,7 @@ const GradientDebitCard: React.FC<GradientDebitCardProps> = ({
         <div className="absolute top-2 right-2 bg-black/20 text-white px-2 py-1 text-xs rounded">Primary</div>
       )}
       <div className="flex justify-between items-start">
-        <EcoRunLogo size="monogram" monogramColor="white" />
+        <EcoRunLogo size="small" monogramColor="white" /> {/* Changed size to "small" */}
         <Nfc size={28} className={`${nfcActive ? 'text-white' : 'text-white/50'}`} />
       </div>
       
