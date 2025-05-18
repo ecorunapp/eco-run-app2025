@@ -149,7 +149,7 @@ const sampleEcotabCardsData: EcotabCardData[] = [
 
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
-  const userEcoPoints = 7580;
+  const [userEcoPoints, setUserEcoPoints] = useState(7580); // Made stateful
   const [showAllEcotabCards, setShowAllEcotabCards] = useState(false);
   const [dialogCard, setDialogCard] = useState<EcotabCardData | null>(null);
 
@@ -158,6 +158,16 @@ const RewardsPage: React.FC = () => {
   };
 
   const primaryCard = sampleEcotabCardsData.find(card => card.isPrimary) || sampleEcotabCardsData[0];
+
+  const handleRedeemReward = (pointsToDeduct: number, rewardName: string) => {
+    if (userEcoPoints >= pointsToDeduct) {
+      setUserEcoPoints(prevPoints => prevPoints - pointsToDeduct);
+      // TODO: Add to transaction history (would require making sampleTransactions stateful too)
+      alert(`Successfully redeemed "${rewardName}" for ${pointsToDeduct} EcoPoints!`);
+    } else {
+      alert(`Not enough EcoPoints to redeem "${rewardName}".`);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
@@ -241,9 +251,11 @@ const RewardsPage: React.FC = () => {
                 description={offer.description}
                 claimedBy={offer.claimedBy}
                 isNew={offer.isNew}
+                // onRedeem={() => handleRedeemReward(offer.points, offer.title)} // This would be ideal if RewardOfferCard supported it
               />
             ))}
           </div>
+          <p className="text-xs text-eco-gray mt-2 text-center">Note: Redeeming Featured Offers directly from this card is illustrative. Full functionality would require updates to the `RewardOfferCard` component.</p>
         </section>
         
         {/* Transaction History Section */}
@@ -266,7 +278,7 @@ const RewardsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Available Rewards Section */}
+        {/* Available Rewards Section - Now with redemption */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Other Rewards</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -279,7 +291,11 @@ const RewardsPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-eco-gray mb-3">Redeem for 500 EcoPoints</CardDescription>
-                <Button variant="outline" className="w-full border-eco-accent text-eco-accent hover:bg-eco-accent hover:text-eco-dark">
+                <Button 
+                  variant="outline" 
+                  className="w-full border-eco-accent text-eco-accent hover:bg-eco-accent hover:text-eco-dark"
+                  onClick={() => handleRedeemReward(500, "Free Healthy Snack")}
+                >
                   Redeem Now
                 </Button>
               </CardContent>
@@ -293,7 +309,11 @@ const RewardsPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-eco-gray mb-3">Redeem for 2000 EcoPoints</CardDescription>
-                <Button variant="outline" className="w-full border-eco-pink text-eco-pink hover:bg-eco-pink hover:text-eco-dark">
+                <Button 
+                  variant="outline" 
+                  className="w-full border-eco-pink text-eco-pink hover:bg-eco-pink hover:text-eco-dark"
+                  onClick={() => handleRedeemReward(2000, "$5 Off Sports Gear")}
+                >
                   Redeem Now
                 </Button>
               </CardContent>

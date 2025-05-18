@@ -1,12 +1,19 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Leaf, Coins, Clock, Flame, Play, Pause, StopCircle, MapPin, RefreshCw } from '@/components/icons';
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 
+interface ActivitySummary {
+  steps: number;
+  elapsedTime: number;
+  calories: number;
+  co2Saved: number;
+  coinsEarned: number;
+}
+
 interface ActivityTrackerProps {
-  onStopTracking: () => void;
+  onStopTracking: (activitySummary: ActivitySummary) => void;
 }
 
 const GOAL_STEPS = 10000; // Example daily goal
@@ -47,13 +54,13 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
 
       stepInterval = setInterval(() => {
         setSteps(prevSteps => {
-          const newSteps = prevSteps + Math.floor(Math.random() * 5) + 1; // Simulate steps
+          const newSteps = prevSteps + Math.floor(Math.random() * 10) + 5; // Simulate steps more actively
           setCalories(Math.floor(newSteps * 0.04)); // Approximate calories
-          setCo2Saved(parseFloat((newSteps * 0.0008).toFixed(2))); // Approximate CO2 saved (e.g., 0.8g per step if replacing car)
+          setCo2Saved(parseFloat((newSteps * 0.0008).toFixed(2))); 
           setCoinsEarned(Math.floor(newSteps / 100)); // 1 coin per 100 steps
           return newSteps;
         });
-      }, 2000); // Add steps every 2 seconds
+      }, 2000); 
     }
 
     return () => {
@@ -71,19 +78,17 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
 
   const handlePauseResume = () => {
     setIsPaused(!isPaused);
-    if (!isPaused) { // if resuming
-        if(elapsedTime === 0 && steps === 0) { // If resuming from a reset state, treat as start
+    if (!isPaused) { 
+        if(elapsedTime === 0 && steps === 0) { 
             setStartTime(new Date());
         }
-        // If paused, current startTime is fine for calculating total duration
     }
   };
 
   const handleStop = () => {
     setIsTracking(false);
-    setIsPaused(true); // Effectively stop, keep stats for summary
-    // Here you could save the activity, for now, we just allow stopping
-    onStopTracking(); // Notify parent to hide tracker
+    setIsPaused(true); 
+    onStopTracking({ steps, elapsedTime, calories, co2Saved, coinsEarned });
   };
 
   const formatTime = (totalSeconds: number) => {

@@ -7,6 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WeeklyActivityChart from '@/components/WeeklyActivityChart';
 import ActivityTracker from '@/components/ActivityTracker';
 
+interface ActivitySummary {
+  steps: number;
+  elapsedTime: number;
+  calories: number;
+  co2Saved: number;
+  coinsEarned: number;
+}
+
 const ActivitiesPage: React.FC = () => {
   console.log('ActivitiesPage: component mounted');
   const [isTracking, setIsTracking] = useState(false);
@@ -15,10 +23,23 @@ const ActivitiesPage: React.FC = () => {
     setIsTracking(true);
   };
 
-  const handleStopTracking = () => {
+  const handleStopTracking = (activitySummary: ActivitySummary) => {
     setIsTracking(false);
-    // Optionally, you could show a summary or save activity data here
+    console.log('Activity Ended:', activitySummary);
+    // Here, activitySummary.coinsEarned would ideally be added to a global user balance.
+    // For now, we'll just show an alert.
+    // To update RewardsPage balance, a global state (e.g. Context API or Zustand) or backend integration is needed.
+    alert(`Activity ended!\nSteps: ${activitySummary.steps}\nTime: ${formatTime(activitySummary.elapsedTime)}\nCalories: ${activitySummary.calories}\nCO2 Saved: ${activitySummary.co2Saved}g\nEcoCoins Earned: ${activitySummary.coinsEarned}`);
   };
+  
+  // Helper function to format time, can be moved to utils if used elsewhere
+  const formatTime = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
 
   if (isTracking) {
     return (
@@ -26,8 +47,9 @@ const ActivitiesPage: React.FC = () => {
         <header className="p-4 flex justify-between items-center sticky top-0 bg-eco-dark z-40 shadow-sm">
           <EcoRunLogo size="small" />
           <h1 className="text-xl font-semibold text-eco-light">Activity Tracker</h1>
-          <Button variant="ghost" size="icon" className="text-eco-gray hover:text-eco-accent" onClick={() => setIsTracking(false)}>
-            <Settings size={24} />
+          {/* Changed Settings button to simply stop tracking for now if user wants to exit tracker view */}
+          <Button variant="ghost" size="icon" className="text-eco-gray hover:text-eco-accent" onClick={() => handleStopTracking({steps:0, elapsedTime:0, calories:0, co2Saved:0, coinsEarned:0}) /* Pass a dummy summary or fetch current tracker state */}>
+             <Settings size={24} /> {/* Or use X icon for closing tracker view */}
           </Button>
         </header>
         <main className="flex-grow overflow-y-auto pb-24"> {/* pb-24 for bottom nav space */}
