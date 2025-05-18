@@ -11,8 +11,9 @@ const DashboardPage: React.FC = () => {
   const userEcoPoints = 12580; // Example data
   const currentSteps = 6789; // Example current steps
   const goalSteps = 10000; // Example goal steps
-  const co2SavedToday = 150; // Example CO2 saved in grams
-  const coinsEarnedToday = 25; // Example coins earned
+  // co2SavedToday and coinsEarnedToday are no longer passed to StepCounter
+  // const co2SavedToday = 150; 
+  // const coinsEarnedToday = 25;
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
@@ -30,8 +31,7 @@ const DashboardPage: React.FC = () => {
           <StepCounter 
             currentSteps={currentSteps} 
             goalSteps={goalSteps}
-            co2Saved={co2SavedToday}
-            coinsEarned={coinsEarnedToday}
+            // Removed co2Saved and coinsEarned props
           />
         </section>
 
