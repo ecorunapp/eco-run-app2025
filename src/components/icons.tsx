@@ -1,3 +1,4 @@
+
 export {
   Settings,
   ChevronDown,
@@ -27,7 +28,7 @@ export {
   Filter,
   Award,
   List,
-  CheckCircle,
+  CheckCircle, // Added CheckCircle icon
   AlertTriangle,
   Info,
   PlusCircle,
@@ -45,3 +46,4 @@ export {
   ShieldCheck, // Added ShieldCheck icon for Profile page
   Palette // Added Palette icon for Profile page
 } from 'lucide-react';
+

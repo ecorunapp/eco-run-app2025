@@ -1,5 +1,4 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,8 @@ import { Settings, Zap, Gift, Star, Wifi, CreditCard, Coins } from '@/components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import RewardOfferCard from '@/components/RewardOfferCard';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
+import GradientDebitCard from '@/components/GradientDebitCard';
+import { useToast } from "@/hooks/use-toast";
 
 // Sample data for featured offers
 const featuredOffers = [
@@ -88,9 +89,49 @@ const sampleTransactions = [
   },
 ];
 
+// Sample data for Ecotab cards, similar to EcotabDetailsPage
+const sampleEcotabCardsData = [
+  {
+    id: 'ecotab-rewards-1',
+    gradientClass: 'bg-gradient-to-br from-eco-purple via-eco-pink to-orange-400',
+    cardNumberSuffix: '1234',
+    cardHolder: 'JANE DOE',
+    expiryDate: '12/28',
+    cvv: '123',
+    nfcActive: true,
+    isPrimary: true,
+    cardNetworkLogo: <CreditCard size={36} className="text-white opacity-70" />
+  },
+  {
+    id: 'ecotab-rewards-2',
+    gradientClass: 'bg-gradient-to-tr from-green-400 via-teal-500 to-blue-600',
+    cardNumberSuffix: '5678',
+    cardHolder: 'JANE DOE',
+    expiryDate: '10/27',
+    cvv: '456',
+    nfcActive: true,
+    isPrimary: false,
+    cardNetworkLogo: <CreditCard size={24} className="text-white opacity-50" /> // Example of a different/smaller logo
+  },
+  {
+    id: 'ecotab-rewards-3',
+    gradientClass: 'bg-gradient-to-bl from-gray-700 via-gray-800 to-black',
+    cardNumberSuffix: '9012',
+    cardHolder: 'JANE DOE',
+    expiryDate: '08/29',
+    cvv: '789',
+    nfcActive: false,
+    isPrimary: false,
+    cardNetworkLogo: undefined // Default logo will be used
+  },
+];
+
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
   const userEcoPoints = 7580; // Example data
+  const [showAllEcotabCards, setShowAllEcotabCards] = useState(false);
+  const [selectedEcotabCardId, setSelectedEcotabCardId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
@@ -117,8 +158,63 @@ const RewardsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Featured Offers Section */}
+        {/* Ecotab Card Section - Interactive */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-eco-light">My Ecotab Cards</h2>
+            {showAllEcotabCards && sampleEcotabCardsData.length > 1 && (
+                 <Button variant="outline" size="sm" className="border-eco-accent text-eco-accent hover:bg-eco-accent hover:text-eco-dark" onClick={() => {
+                    setShowAllEcotabCards(false);
+                    setSelectedEcotabCardId(null);
+                 }}>
+                    Show Primary
+                 </Button>
+            )}
+          </div>
+          {!showAllEcotabCards && sampleEcotabCardsData.length > 0 && (
+            <div 
+                onClick={() => setShowAllEcotabCards(true)} 
+                className="cursor-pointer hover:shadow-eco-accent/30 hover:shadow-lg transition-shadow rounded-xl"
+                title="Click to view all cards"
+            >
+              <GradientDebitCard {...sampleEcotabCardsData.find(card => card.isPrimary) || sampleEcotabCardsData[0]} />
+              {sampleEcotabCardsData.length > 1 && <p className="text-center text-eco-gray mt-3 text-sm">Click card to see all Ecotabs</p>}
+            </div>
+          )}
+          {showAllEcotabCards && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {sampleEcotabCardsData.map(card => (
+                <div 
+                    key={card.id} 
+                    onClick={() => {
+                        setSelectedEcotabCardId(card.id);
+                        toast({ 
+                            title: "Ecotab Selected", 
+                            description: `Card ending in •••• ${card.cardNumberSuffix} is ready for use.` 
+                        });
+                    }}
+                    className={`cursor-pointer rounded-xl transition-all duration-300 ${selectedEcotabCardId === card.id ? 'ring-2 ring-eco-accent shadow-eco-accent/50 shadow-lg' : 'hover:shadow-eco-accent/20 hover:shadow-md'}`}
+                >
+                  <GradientDebitCard {...card} />
+                </div>
+              ))}
+            </div>
+          )}
+           {selectedEcotabCardId && showAllEcotabCards && (
+            <div className="mt-6 p-4 bg-eco-dark-secondary rounded-lg shadow-md border border-eco-gray/20">
+              <h3 className="text-lg font-semibold text-eco-light mb-2">
+                Card Details (•••• {sampleEcotabCardsData.find(c => c.id === selectedEcotabCardId)?.cardNumberSuffix})
+              </h3>
+              <p className="text-eco-accent font-medium"><CheckCircle size={18} className="inline mr-2" />Ready for use</p>
+              <p className="text-eco-gray text-sm mt-2">
+                Full Ecopoint redemption history for this card will be available in a future update.
+              </p>
+            </div>
+          )}
+        </section>
+        
+        {/* Featured Offers Section */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}> {/* Adjusted animation delay */}
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Featured Offers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {featuredOffers.map((offer) => (
@@ -136,34 +232,6 @@ const RewardsPage: React.FC = () => {
             ))}
           </div>
         </section>
-
-        {/* Ecotab Card Section - Now a Link */}
-        <Link to="/ecotab-details" className="block animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-          <Card 
-            className="bg-zinc-900 text-white shadow-2xl rounded-xl border-transparent hover:shadow-eco-accent/30 transition-all duration-300 cursor-pointer group"
-          >
-            <CardHeader className="flex flex-row justify-between items-start p-6">
-              <Star size={28} className="text-eco-accent group-hover:animate-pulse" />
-              <Wifi size={24} className="text-gray-400" />
-            </CardHeader>
-            <CardContent className="p-6 pt-0">
-              <div className="mb-8">
-                <p className="text-xs text-gray-400 tracking-wider uppercase">Member Since</p>
-                <p className="text-lg font-medium mt-1">05/24</p>
-              </div>
-              <div className="mb-4">
-                <p className="text-2xl font-semibold tracking-wide">Valued EcoRunner</p>
-              </div>
-              <div className="flex justify-between items-end">
-                <p className="text-sm text-gray-400">EcoTab Debit</p>
-                <div className="flex items-center">
-                  <div className="w-7 h-7 bg-red-500 rounded-full z-10 border-2 border-zinc-900"></div>
-                  <div className="w-7 h-7 bg-yellow-500 rounded-full -ml-3 border-2 border-zinc-900"></div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
         
         {/* Transaction History Section */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
@@ -186,7 +254,7 @@ const RewardsPage: React.FC = () => {
         </section>
 
         {/* Available Rewards Section */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.8s' }}> {/* Adjusted animation delay */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Other Rewards</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card className="bg-eco-dark-secondary hover:shadow-eco-accent/20 hover:shadow-lg transition-shadow">
