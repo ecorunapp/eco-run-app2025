@@ -3,45 +3,48 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import GradientDebitCard from '@/components/GradientDebitCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard } from '@/components/icons'; // Added CreditCard for potential use as network logo
+import { ArrowLeft, CreditCard } from '@/components/icons'; // CreditCard can be used for cardNetworkLogo
 import EcoRunLogo from '@/components/EcoRunLogo';
 
 const EcotabDetailsPage: React.FC = () => {
   const navigate = useNavigate();
 
   // Example: Define a Visa logo component or image
-  // const VisaLogo = () => <img src="/path/to/visa-logo.svg" alt="Visa" className="h-6" />;
+  // const VisaLogo = () => <CreditCard size={36} className="text-white opacity-70" />; // Example Visa Logo
 
   const cardsData = [
     {
       id: '1',
       gradientClass: 'bg-gradient-to-br from-eco-purple via-eco-pink to-orange-400',
       cardNumberSuffix: '1234',
-      cardHolder: 'JANE DOE', // Uppercase for style
+      cardHolder: 'JANE DOE',
       expiryDate: '12/28',
       cvv: '123',
       nfcActive: true,
       isPrimary: true,
-      // cardNetworkLogo: <CreditCard size={30} className="text-white" /> // Example network logo
+      cardNetworkLogo: <CreditCard size={36} className="text-white opacity-70" /> // Example network logo
     },
     {
       id: '2',
       gradientClass: 'bg-gradient-to-tr from-green-400 via-teal-500 to-blue-600',
       cardNumberSuffix: '5678',
-      cardHolder: 'JANE DOE', // Uppercase for style
+      cardHolder: 'JANE DOE',
       expiryDate: '10/27',
       cvv: '456',
       nfcActive: true,
-      // cardNetworkLogo: <CreditCard size={30} className="text-white" />
+      isPrimary: false, // Explicitly set isPrimary
+      cardNetworkLogo: undefined // No specific logo, will use default
     },
     {
       id: '3',
       gradientClass: 'bg-gradient-to-bl from-gray-700 via-gray-800 to-black',
       cardNumberSuffix: '9012',
-      cardHolder: 'JANE DOE', // Uppercase for style
+      cardHolder: 'JANE DOE',
       expiryDate: '08/29',
       cvv: '789',
       nfcActive: false,
+      isPrimary: false, // Explicitly set isPrimary
+      cardNetworkLogo: undefined // No specific logo, will use default
     },
   ];
 
@@ -52,7 +55,7 @@ const EcotabDetailsPage: React.FC = () => {
           <ArrowLeft size={24} />
         </Button>
         <h1 className="text-xl font-semibold text-eco-light">My Ecotab Cards</h1>
-        <EcoRunLogo size="small" /> {/* Correct usage */}
+        <EcoRunLogo size="small" />
       </header>
 
       <main className="flex-grow p-4 sm:p-6 space-y-6 overflow-y-auto pb-16">
@@ -66,10 +69,10 @@ const EcotabDetailsPage: React.FC = () => {
               cardNumberSuffix={card.cardNumberSuffix}
               cardHolder={card.cardHolder}
               expiryDate={card.expiryDate}
-              cvv={card.cvv}
+              cvv={card.cvv} // CVV is a prop, even if not displayed on front
               nfcActive={card.nfcActive}
               isPrimary={card.isPrimary}
-              cardNetworkLogo={card.cardNetworkLogo} // Pass the network logo if defined
+              cardNetworkLogo={card.cardNetworkLogo}
             />
           ))}
         </div>
