@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Gift, Star, Wifi, CreditCard, Coins } from '@/components/icons';
+import { Settings, Zap, Gift, Star, Wifi, CreditCard, Coins, CheckCircle } from '@/components/icons'; // Added CheckCircle here
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import RewardOfferCard from '@/components/RewardOfferCard';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
@@ -144,20 +145,6 @@ const RewardsPage: React.FC = () => {
       </header>
 
       <main className="flex-grow p-4 space-y-8 overflow-y-auto pb-24">
-        {/* Balance Section */}
-        <Card className="bg-eco-dark-secondary border-eco-accent shadow-xl animate-fade-in-up">
-          <CardHeader>
-            <CardTitle className="text-eco-light flex items-center">
-              <Zap size={28} className="mr-2 text-yellow-300" />
-              Your EcoPoints Balance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-extrabold text-eco-accent">{userEcoPoints.toLocaleString()}</p>
-            <p className="text-sm text-eco-gray mt-1">Redeem your points for amazing rewards!</p>
-          </CardContent>
-        </Card>
-
         {/* Ecotab Card Section - Interactive */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <div className="flex justify-between items-center mb-4">
@@ -212,6 +199,20 @@ const RewardsPage: React.FC = () => {
             </div>
           )}
         </section>
+        
+        {/* Balance Section */}
+        <Card className="bg-eco-dark-secondary border-eco-accent shadow-xl animate-fade-in-up">
+          <CardHeader>
+            <CardTitle className="text-eco-light flex items-center">
+              <Zap size={28} className="mr-2 text-yellow-300" />
+              Your EcoPoints Balance
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-extrabold text-eco-accent">{userEcoPoints.toLocaleString()}</p>
+            <p className="text-sm text-eco-gray mt-1">Redeem your points for amazing rewards!</p>
+          </CardContent>
+        </Card>
         
         {/* Featured Offers Section */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}> {/* Adjusted animation delay */}
