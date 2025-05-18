@@ -8,8 +8,9 @@ import WelcomeScreen from "./pages/Index";
 import DashboardPage from "./pages/DashboardPage";
 import ActivitiesPage from "./pages/ActivitiesPage";
 import RewardsPage from "./pages/RewardsPage";
-import ProfilePage from "./pages/ProfilePage"; // Added ProfilePage import
-import EcotabDetailsPage from "./pages/EcotabDetailsPage"; // Added EcotabDetailsPage import
+import ProfilePage from "./pages/ProfilePage";
+import EcotabDetailsPage from "./pages/EcotabDetailsPage";
+import GoalSelectionPage from "./pages/GoalSelectionPage"; // Added GoalSelectionPage import
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,11 +24,12 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Navigate replace to="/welcome" />} />
           <Route path="/welcome" element={<WelcomeScreen />} />
+          <Route path="/goal-selection" element={<GoalSelectionPage />} /> {/* Added GoalSelectionPage route */}
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/activities" element={<ActivitiesPage />} />
           <Route path="/rewards" element={<RewardsPage />} />
-          <Route path="/ecotab-details" element={<EcotabDetailsPage />} /> {/* Added EcotabDetailsPage route */}
-          <Route path="/profile" element={<ProfilePage />} /> {/* Updated /profile route */}
+          <Route path="/ecotab-details" element={<EcotabDetailsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
