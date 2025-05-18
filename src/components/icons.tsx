@@ -1,4 +1,3 @@
-
 export {
   Settings,
   ChevronDown,
@@ -44,6 +43,9 @@ export {
   Nfc, // Added NFC icon
   Mail, // Added Mail icon for Profile page
   ShieldCheck, // Added ShieldCheck icon for Profile page
-  Palette // Added Palette icon for Profile page
+  Palette, // Added Palette icon for Profile page
+  Play,       // Added for tracker
+  Pause,      // Added for tracker
+  StopCircle, // Added for tracker
+  RefreshCw   // Added for reset/restart tracker
 } from 'lucide-react';
-

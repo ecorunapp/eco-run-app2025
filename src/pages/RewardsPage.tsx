@@ -1,14 +1,21 @@
-
 import React, { useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Gift, Star, Wifi, CreditCard, Coins, CheckCircle } from '@/components/icons'; // Added CheckCircle here
+import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import RewardOfferCard from '@/components/RewardOfferCard';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
 import GradientDebitCard from '@/components/GradientDebitCard';
-import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 // Sample data for featured offers
 const featuredOffers = [
@@ -90,8 +97,21 @@ const sampleTransactions = [
   },
 ];
 
-// Sample data for Ecotab cards, similar to EcotabDetailsPage
-const sampleEcotabCardsData = [
+// Type for Ecotab card data
+interface EcotabCardData {
+  id: string;
+  gradientClass: string;
+  cardNumberSuffix: string;
+  cardHolder: string;
+  expiryDate: string;
+  cvv: string;
+  nfcActive: boolean;
+  isPrimary: boolean;
+  cardNetworkLogo?: React.ReactNode;
+}
+
+// Sample data for Ecotab cards
+const sampleEcotabCardsData: EcotabCardData[] = [
   {
     id: 'ecotab-rewards-1',
     gradientClass: 'bg-gradient-to-br from-eco-purple via-eco-pink to-orange-400',
@@ -112,7 +132,7 @@ const sampleEcotabCardsData = [
     cvv: '456',
     nfcActive: true,
     isPrimary: false,
-    cardNetworkLogo: <CreditCard size={24} className="text-white opacity-50" /> // Example of a different/smaller logo
+    cardNetworkLogo: <CreditCard size={24} className="text-white opacity-50" />
   },
   {
     id: 'ecotab-rewards-3',
@@ -123,16 +143,21 @@ const sampleEcotabCardsData = [
     cvv: '789',
     nfcActive: false,
     isPrimary: false,
-    cardNetworkLogo: undefined // Default logo will be used
+    cardNetworkLogo: undefined
   },
 ];
 
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
-  const userEcoPoints = 7580; // Example data
+  const userEcoPoints = 7580;
   const [showAllEcotabCards, setShowAllEcotabCards] = useState(false);
-  const [selectedEcotabCardId, setSelectedEcotabCardId] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [dialogCard, setDialogCard] = useState<EcotabCardData | null>(null);
+
+  const handleCardClick = (card: EcotabCardData) => {
+    setDialogCard(card);
+  };
+
+  const primaryCard = sampleEcotabCardsData.find(card => card.isPrimary) || sampleEcotabCardsData[0];
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
@@ -149,53 +174,40 @@ const RewardsPage: React.FC = () => {
         <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-eco-light">My Ecotab Cards</h2>
-            {showAllEcotabCards && sampleEcotabCardsData.length > 1 && (
-                 <Button variant="outline" size="sm" className="border-eco-accent text-eco-accent hover:bg-eco-accent hover:text-eco-dark" onClick={() => {
-                    setShowAllEcotabCards(false);
-                    setSelectedEcotabCardId(null);
-                 }}>
-                    Show Primary
-                 </Button>
+            {sampleEcotabCardsData.length > 1 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-eco-accent text-eco-accent hover:bg-eco-accent hover:text-eco-dark" 
+                onClick={() => setShowAllEcotabCards(!showAllEcotabCards)}
+              >
+                {showAllEcotabCards ? 'Show Primary' : 'Show All'}
+              </Button>
             )}
           </div>
-          {!showAllEcotabCards && sampleEcotabCardsData.length > 0 && (
+
+          {!showAllEcotabCards && primaryCard && (
             <div 
-                onClick={() => setShowAllEcotabCards(true)} 
+                onClick={() => handleCardClick(primaryCard)} 
                 className="cursor-pointer hover:shadow-eco-accent/30 hover:shadow-lg transition-shadow rounded-xl"
-                title="Click to view all cards"
+                title="Click to view card details"
             >
-              <GradientDebitCard {...sampleEcotabCardsData.find(card => card.isPrimary) || sampleEcotabCardsData[0]} />
-              {sampleEcotabCardsData.length > 1 && <p className="text-center text-eco-gray mt-3 text-sm">Click card to see all Ecotabs</p>}
+              <GradientDebitCard {...primaryCard} />
+              {sampleEcotabCardsData.length > 1 && <p className="text-center text-eco-gray mt-3 text-sm">View all cards by clicking "Show All"</p>}
             </div>
           )}
+
           {showAllEcotabCards && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {sampleEcotabCardsData.map(card => (
                 <div 
                     key={card.id} 
-                    onClick={() => {
-                        setSelectedEcotabCardId(card.id);
-                        toast({ 
-                            title: "Ecotab Selected", 
-                            description: `Card ending in •••• ${card.cardNumberSuffix} is ready for use.` 
-                        });
-                    }}
-                    className={`cursor-pointer rounded-xl transition-all duration-300 ${selectedEcotabCardId === card.id ? 'ring-2 ring-eco-accent shadow-eco-accent/50 shadow-lg' : 'hover:shadow-eco-accent/20 hover:shadow-md'}`}
+                    onClick={() => handleCardClick(card)}
+                    className={`cursor-pointer rounded-xl transition-all duration-300 hover:shadow-eco-accent/20 hover:shadow-md ${dialogCard?.id === card.id ? 'ring-2 ring-eco-accent shadow-eco-accent/50 shadow-lg' : ''}`}
                 >
                   <GradientDebitCard {...card} />
                 </div>
               ))}
-            </div>
-          )}
-           {selectedEcotabCardId && showAllEcotabCards && (
-            <div className="mt-6 p-4 bg-eco-dark-secondary rounded-lg shadow-md border border-eco-gray/20">
-              <h3 className="text-lg font-semibold text-eco-light mb-2">
-                Card Details (•••• {sampleEcotabCardsData.find(c => c.id === selectedEcotabCardId)?.cardNumberSuffix})
-              </h3>
-              <p className="text-eco-accent font-medium"><CheckCircle size={18} className="inline mr-2" />Ready for use</p>
-              <p className="text-eco-gray text-sm mt-2">
-                Full Ecopoint redemption history for this card will be available in a future update.
-              </p>
             </div>
           )}
         </section>
@@ -291,6 +303,51 @@ const RewardsPage: React.FC = () => {
         </section>
       </main>
       <BottomNav />
+
+      {/* Ecotab Card Dialog */}
+      <Dialog open={!!dialogCard} onOpenChange={(isOpen) => { if (!isOpen) setDialogCard(null); }}>
+        <DialogContent className="bg-eco-dark-secondary text-eco-light border-eco-accent max-w-md">
+          {dialogCard && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-eco-light text-2xl">Ecotab Card Details</DialogTitle>
+                <DialogDescription className="text-eco-gray">
+                  Card ending in •••• {dialogCard.cardNumberSuffix}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="my-4">
+                <GradientDebitCard {...dialogCard} />
+              </div>
+              <div className="space-y-3 my-4 px-2">
+                <div className="flex items-center text-sm">
+                  <NfcIcon size={20} className={`mr-2 ${dialogCard.nfcActive ? 'text-eco-accent' : 'text-eco-gray'}`} />
+                  NFC Status: <span className={`font-semibold ml-1 ${dialogCard.nfcActive ? 'text-eco-accent' : 'text-eco-gray'}`}>
+                    {dialogCard.nfcActive ? 'Enabled' : 'Disabled'}
+                  </span>
+                </div>
+                 <div className="flex items-center text-sm">
+                   <CheckCircle size={20} className="mr-2 text-green-400" />
+                   Status: <span className="font-semibold ml-1 text-green-400">Ready for use</span>
+                 </div>
+                <div>
+                  <h4 className="text-md font-semibold text-eco-light mb-1">Redemption History</h4>
+                  <p className="text-xs text-eco-gray">
+                    Ecopoint redemption history for this specific card will be shown here in a future update.
+                    For now, please refer to the general transaction history.
+                  </p>
+                </div>
+              </div>
+              <DialogFooter className="sm:justify-start">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline" className="border-eco-gray text-eco-gray hover:bg-eco-gray hover:text-eco-dark">
+                    Close
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
