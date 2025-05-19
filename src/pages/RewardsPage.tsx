@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import RewardOfferCard from '@/components/RewardOfferCard';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
 import GradientDebitCard from '@/components/GradientDebitCard';
+import { GiftCardSwiper } from '@/components/GiftCardSwiper';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +18,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { GradientCard } from '@/components/GradientCard';
 
 // Sample data for featured offers
 const featuredOffers = [
@@ -147,6 +150,49 @@ const sampleEcotabCardsData: EcotabCardData[] = [
   },
 ];
 
+const giftCards = [
+  {
+    id: '1',
+    title: 'Premium Coffee Experience',
+    description: 'Enjoy a month of specialty coffee delivered to your door. Includes 4 bags of premium beans.',
+    imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
+    price: 49.99,
+    points: 500,
+    expiryDate: 'Dec 31, 2024',
+    category: 'Food & Drink'
+  },
+  {
+    id: '2',
+    title: 'Luxury Spa Day',
+    description: 'Treat yourself to a day of relaxation and pampering at our premium spa center.',
+    imageUrl: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874',
+    price: 199.99,
+    points: 2000,
+    expiryDate: 'Jan 15, 2025',
+    category: 'Wellness'
+  },
+  {
+    id: '3',
+    title: 'Master Chef Class',
+    description: 'Learn to cook like a professional chef with our expert-led cooking workshop.',
+    imageUrl: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d',
+    price: 89.99,
+    points: 1000,
+    expiryDate: 'Feb 28, 2025',
+    category: 'Experience'
+  },
+  {
+    id: '4',
+    title: 'Wine Tasting Journey',
+    description: 'Discover fine wines with expert sommeliers in an exclusive tasting session.',
+    imageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3',
+    price: 129.99,
+    points: 1500,
+    expiryDate: 'Mar 15, 2025',
+    category: 'Food & Drink'
+  },
+];
+
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
   const [userEcoPoints, setUserEcoPoints] = useState(7580); // Made stateful
@@ -166,6 +212,15 @@ const RewardsPage: React.FC = () => {
       alert(`Successfully redeemed "${rewardName}" for ${pointsToDeduct} EcoPoints!`);
     } else {
       alert(`Not enough EcoPoints to redeem "${rewardName}".`);
+    }
+  };
+
+  const handleGiftCardSwipe = (direction: 'left' | 'right', cardId: string) => {
+    const card = giftCards.find(c => c.id === cardId);
+    if (direction === 'right') {
+      toast.success(`Added ${card?.title} to favorites!`);
+    } else {
+      toast.info(`Skipped ${card?.title}`);
     }
   };
 
@@ -236,30 +291,8 @@ const RewardsPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Featured Offers Section */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}> {/* Adjusted animation delay */}
-          <h2 className="text-2xl font-semibold text-eco-light mb-4">Featured Offers</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {featuredOffers.map((offer) => (
-              <RewardOfferCard
-                key={offer.id}
-                id={offer.id}
-                title={offer.title}
-                category={offer.category}
-                imageUrl={offer.imageUrl}
-                points={offer.points}
-                description={offer.description}
-                claimedBy={offer.claimedBy}
-                isNew={offer.isNew}
-                // onRedeem={() => handleRedeemReward(offer.points, offer.title)} // This would be ideal if RewardOfferCard supported it
-              />
-            ))}
-          </div>
-          <p className="text-xs text-eco-gray mt-2 text-center">Note: Redeeming Featured Offers directly from this card is illustrative. Full functionality would require updates to the `RewardOfferCard` component.</p>
-        </section>
-        
         {/* Transaction History Section */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-eco-light">Transaction History</h2>
             <Button variant="link" className="text-eco-accent hover:text-eco-accent-secondary">View All</Button>
@@ -276,50 +309,6 @@ const RewardsPage: React.FC = () => {
               />
             ))}
           </div>
-        </section>
-
-        {/* Available Rewards Section - Now with redemption */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
-          <h2 className="text-2xl font-semibold text-eco-light mb-4">Other Rewards</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className="bg-eco-dark-secondary hover:shadow-eco-accent/20 hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center text-eco-accent">
-                  <Gift size={24} className="mr-2" />
-                  <CardTitle className="text-eco-light">Free Healthy Snack</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-eco-gray mb-3">Redeem for 500 EcoPoints</CardDescription>
-                <Button 
-                  variant="outline" 
-                  className="w-full border-eco-accent text-eco-accent hover:bg-eco-accent hover:text-eco-dark"
-                  onClick={() => handleRedeemReward(500, "Free Healthy Snack")}
-                >
-                  Redeem Now
-                </Button>
-              </CardContent>
-            </Card>
-            <Card className="bg-eco-dark-secondary hover:shadow-eco-pink/20 hover:shadow-lg transition-shadow">
-              <CardHeader>
-                 <div className="flex items-center text-eco-pink">
-                  <Gift size={24} className="mr-2" />
-                  <CardTitle className="text-eco-light">$5 Off Sports Gear</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-eco-gray mb-3">Redeem for 2000 EcoPoints</CardDescription>
-                <Button 
-                  variant="outline" 
-                  className="w-full border-eco-pink text-eco-pink hover:bg-eco-pink hover:text-eco-dark"
-                  onClick={() => handleRedeemReward(2000, "$5 Off Sports Gear")}
-                >
-                  Redeem Now
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-           <p className="text-center text-eco-gray mt-8">More exciting rewards coming soon!</p>
         </section>
       </main>
       <BottomNav />
