@@ -21,14 +21,16 @@ const ActivityRewardCard: React.FC<ActivityRewardCardProps> = ({ coinsEarned, on
       description: `${coinsEarned} EcoCoins will be credited to your Ecotab card.`,
       duration: 3000,
     });
-    onClose();
+    setTimeout(() => {
+      onClose();
+    }, 500);
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <Card className="w-11/12 max-w-md bg-eco-dark-secondary border-eco-gray/20 p-6 rounded-2xl shadow-2xl relative overflow-hidden">
+    <div className="fixed inset-0 flex items-center justify-center z-[100] bg-black/70 backdrop-blur-sm animate-fade-in">
+      <Card className="w-11/12 max-w-md bg-eco-dark-secondary border-eco-gray/20 p-6 rounded-2xl shadow-2xl relative overflow-hidden animate-fade-in-up">
         {/* Confetti animation effect */}
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none"> {/* Ensure confetti covers card and doesn't block interaction */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
           <div className="flex justify-between absolute top-0 left-0 w-full">
             {[...Array(8)].map((_, i) => (
               <div 
@@ -37,28 +39,26 @@ const ActivityRewardCard: React.FC<ActivityRewardCardProps> = ({ coinsEarned, on
                 style={{ 
                   animationDelay: `${i * 0.1}s`, 
                   animationDuration: `${0.5 + Math.random()}s`,
-                  marginLeft: `${Math.random() * 10}%`, // Add some horizontal spread
+                  marginLeft: `${Math.random() * 10}%`,
                   marginRight: `${Math.random() * 10}%`,
                 }}
               >
-                <Confetti size={20 + Math.random() * 10} /> {/* Varied size */}
+                <Confetti size={20 + Math.random() * 10} />
               </div>
             ))}
           </div>
-           {/* Add more confetti from bottom or sides if desired */}
         </div>
 
-        <div className="flex flex-col items-center text-center space-y-4 sm:space-y-6 py-8 z-10 relative"> {/* Ensure content is above confetti */}
+        <div className="flex flex-col items-center text-center space-y-4 sm:space-y-6 py-8 z-10 relative">
           {/* Main Reward Text */}
           <h2 className="text-5xl sm:text-6xl font-extrabold text-eco-light flex flex-col items-center justify-center">
             <div className="flex items-baseline">
               <span className="text-eco-accent">{coinsEarned}</span>
-              {/* Optional: Small coin icon if needed <Coins size={30} className="ml-2 text-yellow-400" /> */}
             </div>
             <span className="text-2xl sm:text-3xl font-semibold text-eco-gray mt-1">EcoCoins</span>
           </h2>
 
-          {/* "YOU WON" Badge - Styled to look more like a plaque */}
+          {/* "YOU WON" Badge */}
           <div className="inline-block bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold py-1.5 px-4 rounded shadow-md border border-slate-400 transform -rotate-3">
             YOU WON!
           </div>

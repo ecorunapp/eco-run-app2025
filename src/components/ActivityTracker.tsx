@@ -90,16 +90,25 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
   };
 
   const handleStop = () => {
+    if (!isTracking && !startTime) return; // Prevent multiple stops
+    
     setIsTracking(false);
     setIsPaused(true); 
     setActivityCompleted(true);
     setShowRewardCard(true);
-    // We'll call onStopTracking after the user claims their reward
   };
 
   const handleCloseReward = () => {
     setShowRewardCard(false);
-    onStopTracking({ steps, elapsedTime, calories, co2Saved, coinsEarned });
+    // Ensure we have the final values before calling onStopTracking
+    const finalSummary = {
+      steps,
+      elapsedTime,
+      calories,
+      co2Saved,
+      coinsEarned
+    };
+    onStopTracking(finalSummary);
   };
 
   const formatTime = (totalSeconds: number) => {

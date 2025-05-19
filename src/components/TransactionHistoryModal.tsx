@@ -1,6 +1,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useEcoCoins } from '@/context/EcoCoinsContext';
 
 const data = [
   { month: 'Jun', value: 2000 },
@@ -10,21 +11,11 @@ const data = [
   { month: 'Oct', value: 3000 },
 ];
 
-const transactions = [
-  { label: 'Challenge Completed', value: 500, date: '30 Jun', type: 'income' },
-  { label: 'Steps Earned', value: 200, date: '01 Jul', type: 'income' },
-  { label: 'Task Completed', value: 150, date: '02 Jul', type: 'income' },
-  { label: 'EcoCoins Growth', value: 100, date: '03 Jul', type: 'income' },
-  { label: 'Amazon Gift Card Redeemed', value: 1000, date: '02 Sep', type: 'redeem' },
-  { label: 'EV Charging Session', value: 50, date: '10 Sep', type: 'ev' },
-  { label: 'Coffee Shop Purchase', value: 20, date: '12 Sep', type: 'spend' },
-  { label: 'EcoTab Card Used', value: 300, date: '15 Sep', type: 'ecotab' },
-];
-
 export const TransactionHistoryModal = ({ open, onClose }) => {
   const [filter, setFilter] = React.useState<'earn' | 'spend'>('earn');
+  const { history } = useEcoCoins();
 
-  const filteredTransactions = transactions.filter(tx =>
+  const filteredTransactions = history.filter(tx =>
     filter === 'earn'
       ? tx.type === 'income'
       : tx.type === 'redeem' || tx.type === 'ev' || tx.type === 'spend' || tx.type === 'ecotab'

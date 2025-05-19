@@ -19,6 +19,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { GradientCard } from '@/components/GradientCard';
+import { TransactionHistoryModal } from '@/components/TransactionHistoryModal';
 
 // Sample data for featured offers
 const featuredOffers = [
@@ -198,6 +199,7 @@ const RewardsPage: React.FC = () => {
   const [userEcoPoints, setUserEcoPoints] = useState(7580); // Made stateful
   const [showAllEcotabCards, setShowAllEcotabCards] = useState(false);
   const [dialogCard, setDialogCard] = useState<EcotabCardData | null>(null);
+  const [showTxModal, setShowTxModal] = useState(false);
 
   const handleCardClick = (card: EcotabCardData) => {
     setDialogCard(card);
@@ -295,7 +297,13 @@ const RewardsPage: React.FC = () => {
         <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-eco-light">Transaction History</h2>
-            <Button variant="link" className="text-eco-accent hover:text-eco-accent-secondary">View All</Button>
+            <Button
+              variant="link"
+              className="text-eco-accent hover:text-eco-accent-secondary"
+              onClick={() => setShowTxModal(true)}
+            >
+              View All
+            </Button>
           </div>
           <div className="space-y-3">
             {sampleTransactions.map((transaction) => (
@@ -357,6 +365,8 @@ const RewardsPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <TransactionHistoryModal open={showTxModal} onClose={() => setShowTxModal(false)} />
     </div>
   );
 };

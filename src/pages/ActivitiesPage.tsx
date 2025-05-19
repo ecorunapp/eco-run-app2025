@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
@@ -27,10 +26,12 @@ const ActivitiesPage: React.FC = () => {
   };
 
   const handleStopTracking = (activitySummary: ActivitySummary) => {
-    setIsTracking(false);
     console.log('Activity Ended:', activitySummary);
-    // The reward card is now shown directly in the ActivityTracker component
-    // No need for an alert here anymore
+    // Don't immediately unmount - let the reward card handle the transition
+    if (activitySummary.steps === 0 && activitySummary.elapsedTime === 0) {
+      // Only unmount immediately if it's a manual exit (settings button)
+      setIsTracking(false);
+    }
   };
   
   // Helper function to format time, can be moved to utils if used elsewhere
