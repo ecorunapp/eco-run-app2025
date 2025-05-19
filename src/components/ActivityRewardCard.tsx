@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Confetti, Coins } from '@/components/icons'; // Removed unused Award import
 import { useToast } from "@/hooks/use-toast";
+import { useEcoCoins } from '@/context/EcoCoinsContext';
 
 interface ActivityRewardCardProps {
   coinsEarned: number;
@@ -12,11 +12,13 @@ interface ActivityRewardCardProps {
 
 const ActivityRewardCard: React.FC<ActivityRewardCardProps> = ({ coinsEarned, onClose }) => {
   const { toast } = useToast();
+  const { addEarnings } = useEcoCoins();
   
   const handleClaimReward = () => {
+    addEarnings(coinsEarned, 'Activity Reward');
     toast({
       title: "Reward Claimed!",
-      description: `${coinsEarned} EcoCoins will be credited to your Ecotab card.`, // Updated toast description
+      description: `${coinsEarned} EcoCoins will be credited to your Ecotab card.`,
       duration: 3000,
     });
     onClose();
