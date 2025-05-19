@@ -113,6 +113,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
   const radialData = [{ name: 'Steps', value: percentage, fill: 'url(#activityGradient)' }];
   const endAngle = 90 - (percentage / 100) * 360;
 
+  // Make sure this token is correct and accessible
   const mapboxAccessToken = "pk.eyJ1IjoicGFyaXNhdXJhIiwiYSI6ImNtYXA3eHA1NzBmdHgya3M2YXBqdnhmOHAifQ.kYY2uhGtf6O2HGBDhvamIA";
 
   return (
@@ -204,19 +205,19 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
            <StopCircle size={20} className="mr-2" /> Stop & End Activity
          </Button>
 
-        {/* Map Display */}
-        <Card className="w-full max-w-md bg-eco-dark-secondary border-eco-gray/20 mt-4">
+        {/* Map Display - Updated for better visibility */}
+        <Card className="w-full max-w-md bg-eco-dark-secondary border-eco-gray/20 overflow-hidden">
           <CardHeader>
             <CardTitle className="text-eco-light text-lg flex items-center">
-              <MapPin size={20} className="mr-2 text-eco-accent" /> Current Location
+              <MapPin size={20} className="mr-2 text-eco-accent" /> Live Location Tracking
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {isTracking || startTime ? ( // Show map if tracking or if an activity was started and might be paused
+          <CardContent className="p-0"> {/* Remove padding for better map display */}
+            {isTracking || startTime ? (
               <LiveActivityMap accessToken={mapboxAccessToken} />
             ) : (
-              <div className="h-64 bg-eco-gray/10 rounded-md flex items-center justify-center">
-                 <p className="text-eco-gray text-sm">Start tracking to see your live location.</p>
+              <div className="h-64 bg-eco-gray/10 rounded-md flex items-center justify-center p-4">
+                <p className="text-eco-gray text-sm">Start tracking to see your live location.</p>
               </div>
             )}
           </CardContent>

@@ -1,8 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl, { Map as MapboxMap, Marker } from 'mapbox-gl';
+import { MapPin } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { MapPin } from '@/components/icons'; // For marker icon
 
 interface LiveActivityMapProps {
   accessToken: string;
@@ -10,110 +9,174 @@ interface LiveActivityMapProps {
 
 const LiveActivityMap: React.FC<LiveActivityMapProps> = ({ accessToken }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<MapboxMap | null>(null);
-  const marker = useRef<Marker | null>(null);
+  const map = useRef<any>(null);
+  const marker = useRef<any>(null);
   const [lng, setLng] = useState(-73.985130); // Default: Times Square
   const [lat, setLat] = useState(40.758896);  // Default: Times Square
   const [zoom, setZoom] = useState(14);
   const [mapStyleLoaded, setMapStyleLoaded] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
-  mapboxgl.accessToken = accessToken;
-
+  // Dynamically import mapbox-gl to avoid SSR issues
   useEffect(() => {
-    if (map.current || !mapContainer.current) return; // Initialize map only once
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12', // or use a sporty style like 'mapbox://styles/mapbox/outdoors-v12'
-      center: [lng, lat],
-      zoom: zoom,
-    });
-
-    map.current.on('load', () => {
-      setMapStyleLoaded(true);
-      map.current?.resize(); // Ensure map resizes correctly after container is ready
-       // Add navigation controls (zoom, rotate)
-      map.current?.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    });
-    
-    // Attempt to get user's current location
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(
-        (position) => {
-          const newLng = position.coords.longitude;
-          const newLat = position.coords.latitude;
-          setLng(newLng);
-          setLat(newLat);
-          if (map.current) {
-            map.current.setCenter([newLng, newLat]);
-            if (marker.current) {
-              marker.current.setLngLat([newLng, newLat]);
+    const loadMapbox = async () => {
+      try {
+        const mapboxgl = await import('mapbox-gl');
+        mapboxgl.default.accessToken = accessToken;
+        
+        if (mapContainer.current && !map.current) {
+          const mapInstance = new mapboxgl.default.Map({
+            container: mapContainer.current,
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [lng, lat],
+            zoom: zoom,
+          });
+          
+          map.current = mapInstance;
+          
+          mapInstance.on('load', () => {
+            setMapStyleLoaded(true);
+            mapInstance.resize();
+            mapInstance.addControl(new mapboxgl.default.NavigationControl(), 'top-right');
+            setMapLoaded(true);
+          });
+          
+          // Create location tracking function
+          const trackLocation = () => {
+            if (navigator.geolocation) {
+              navigator.geolocation.watchPosition(
+                (position) => {
+                  const newLng = position.coords.longitude;
+                  const newLat = position.coords.latitude;
+                  
+                  setLng(newLng);
+                  setLat(newLat);
+                  
+                  if (mapInstance) {
+                    mapInstance.flyTo({
+                      center: [newLng, newLat],
+                      essential: true,
+                      speed: 0.5
+                    });
+                    
+                    if (marker.current) {
+                      marker.current.setLngLat([newLng, newLat]);
+                    } else {
+                      // Create a custom marker element
+                      const el = document.createElement('div');
+                      el.className = 'custom-marker';
+                      el.innerHTML = `<div class="pulse-dot"></div>`;
+                      
+                      marker.current = new mapboxgl.default.Marker(el)
+                        .setLngLat([newLng, newLat])
+                        .addTo(mapInstance);
+                    }
+                  }
+                },
+                (error) => {
+                  console.warn("Error getting geolocation: ", error.message);
+                  // Fallback to default marker if geolocation fails or is denied
+                  if (mapInstance && !marker.current && mapStyleLoaded) {
+                    const el = document.createElement('div');
+                    el.className = 'custom-marker';
+                    el.innerHTML = `<div class="pulse-dot"></div>`;
+                    
+                    marker.current = new mapboxgl.default.Marker(el)
+                      .setLngLat([lng, lat])
+                      .addTo(mapInstance);
+                  }
+                },
+                {
+                  enableHighAccuracy: true,
+                  timeout: 5000,
+                  maximumAge: 0
+                }
+              );
             } else {
-               // Create a custom marker element
-              const el = document.createElement('div');
-              el.className = 'custom-marker';
-              const iconEl = document.createElement('span');
-              iconEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-eco-accent, #00F5D4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
-              el.appendChild(iconEl);
-
-              marker.current = new mapboxgl.Marker(el)
-                .setLngLat([newLng, newLat])
-                .addTo(map.current);
+              console.warn("Geolocation is not supported by this browser.");
+              // Fallback to default marker if geolocation is not supported
+              if (mapInstance && !marker.current && mapStyleLoaded) {
+                const el = document.createElement('div');
+                el.className = 'custom-marker';
+                el.innerHTML = `<div class="pulse-dot"></div>`;
+                
+                marker.current = new mapboxgl.default.Marker(el)
+                  .setLngLat([lng, lat])
+                  .addTo(mapInstance);
+              }
             }
-          }
-        },
-        (error) => {
-          console.warn("Error getting geolocation: ", error.message);
-          // Fallback to default marker if geolocation fails or is denied
-          if (map.current && !marker.current && mapStyleLoaded) {
-             const el = document.createElement('div');
-              el.className = 'custom-marker';
-              const iconEl = document.createElement('span');
-              iconEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-eco-accent, #00F5D4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
-              el.appendChild(iconEl);
-            marker.current = new mapboxgl.Marker(el)
-              .setLngLat([lng, lat]) // Use default lng/lat
-              .addTo(map.current);
-          }
-        },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-      );
-    } else {
-      console.warn("Geolocation is not supported by this browser.");
-       // Fallback to default marker if geolocation is not supported
-      if (map.current && !marker.current && mapStyleLoaded) {
-         const el = document.createElement('div');
-          el.className = 'custom-marker';
-          const iconEl = document.createElement('span');
-          iconEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-eco-accent, #00F5D4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
-          el.appendChild(iconEl);
-        marker.current = new mapboxgl.Marker(el)
-          .setLngLat([lng, lat]) // Use default lng/lat
-          .addTo(map.current);
+          };
+          
+          // Start tracking location once the map is loaded
+          mapInstance.on('load', trackLocation);
+        }
+      } catch (error) {
+        console.error('Error loading Mapbox:', error);
       }
-    }
+    };
+    
+    loadMapbox();
     
     // Cleanup on unmount
     return () => {
-      map.current?.remove();
-      map.current = null;
-      marker.current = null;
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+        marker.current = null;
+      }
     };
-  }, [accessToken, mapStyleLoaded]); // Rerun effect if accessToken changes or map style loaded
+  }, [accessToken, lng, lat, zoom]);
 
-  // Add style for custom marker if needed
+  // Add style for custom marker and pulse effect
   useEffect(() => {
     const styleSheet = document.createElement("style");
     styleSheet.type = "text/css";
-    styleSheet.innerText = `.custom-marker svg { filter: drop-shadow(0px 2px 2px rgba(0, 0, 0, 0.5)); }`;
+    styleSheet.innerText = `
+      .custom-marker {
+        width: 20px;
+        height: 20px;
+        position: relative;
+      }
+      .pulse-dot {
+        background: var(--color-eco-accent, #00F5D4);
+        border-radius: 50%;
+        height: 14px;
+        width: 14px;
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        box-shadow: 0 0 0 rgba(0, 245, 212, 0.4);
+        animation: pulse 2s infinite;
+      }
+      
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(0, 245, 212, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(0, 245, 212, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(0, 245, 212, 0);
+        }
+      }
+    `;
     document.head.appendChild(styleSheet);
     return () => {
       document.head.removeChild(styleSheet);
     };
   }, []);
 
-
-  return <div ref={mapContainer} className="h-64 w-full rounded-md" />;
+  return (
+    <div className="relative h-64 w-full rounded-md">
+      {!mapLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-eco-dark-secondary rounded-md">
+          <div className="text-eco-accent animate-pulse">Loading map...</div>
+        </div>
+      )}
+      <div ref={mapContainer} className="h-full w-full rounded-md" />
+    </div>
+  );
 };
 
 export default LiveActivityMap;
