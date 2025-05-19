@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import EcoRunLogo from '@/components/EcoRunLogo';
-import { Run, Coins, Gift, Target, ArrowRight } from 'lucide-react'; // Direct import for icons
+// Updated import statement to use icons from the project's icon component
+import { Footprints, Coins, Gift, Award, ChevronRight } from '@/components/icons';
 
 interface SplashSlide {
   icon: React.ElementType;
@@ -13,7 +14,7 @@ interface SplashSlide {
 
 const splashSlides: SplashSlide[] = [
   {
-    icon: Run,
+    icon: Footprints, // Changed from Run to Footprints
     title: 'Track Your Every Move',
     description: 'Log your steps, runs, and cycling effortlessly. See your progress and stay motivated.',
   },
@@ -28,7 +29,7 @@ const splashSlides: SplashSlide[] = [
     description: 'Use your EcoPoints to unlock exclusive offers, discounts, and cool merchandise.',
   },
   {
-    icon: Target,
+    icon: Award, // Changed from Target to Award
     title: 'Achieve Your Fitness Goals',
     description: 'Set personalized goals and let EcoRun help you on your journey to a healthier lifestyle.',
   },
@@ -90,7 +91,8 @@ const SplashScreenPage: React.FC = () => {
           size="lg"
         >
           {currentSlide < splashSlides.length - 1 ? 'Next' : 'Get Started'}
-          {currentSlide < splashSlides.length - 1 && <ArrowRight size={20} className="ml-2" />}
+          {/* Changed ArrowRight to ChevronRight */}
+          {currentSlide < splashSlides.length - 1 && <ChevronRight size={20} className="ml-2" />}
         </Button>
       </footer>
     </div>
