@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
@@ -6,6 +7,7 @@ import { Settings, Play } from '@/components/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WeeklyActivityChart from '@/components/WeeklyActivityChart';
 import ActivityTracker from '@/components/ActivityTracker';
+import { useToast } from "@/hooks/use-toast";
 
 interface ActivitySummary {
   steps: number;
@@ -18,6 +20,7 @@ interface ActivitySummary {
 const ActivitiesPage: React.FC = () => {
   console.log('ActivitiesPage: component mounted');
   const [isTracking, setIsTracking] = useState(false);
+  const { toast } = useToast();
 
   const handleStartTracking = () => {
     setIsTracking(true);
@@ -26,10 +29,8 @@ const ActivitiesPage: React.FC = () => {
   const handleStopTracking = (activitySummary: ActivitySummary) => {
     setIsTracking(false);
     console.log('Activity Ended:', activitySummary);
-    // Here, activitySummary.coinsEarned would ideally be added to a global user balance.
-    // For now, we'll just show an alert.
-    // To update RewardsPage balance, a global state (e.g. Context API or Zustand) or backend integration is needed.
-    alert(`Activity ended!\nSteps: ${activitySummary.steps}\nTime: ${formatTime(activitySummary.elapsedTime)}\nCalories: ${activitySummary.calories}\nCO2 Saved: ${activitySummary.co2Saved}g\nEcoCoins Earned: ${activitySummary.coinsEarned}`);
+    // The reward card is now shown directly in the ActivityTracker component
+    // No need for an alert here anymore
   };
   
   // Helper function to format time, can be moved to utils if used elsewhere

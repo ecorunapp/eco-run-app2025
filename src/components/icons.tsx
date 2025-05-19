@@ -1,51 +1,98 @@
-export {
-  Settings,
+import {
+  Award,
+  AlertCircle,
+  ArrowRight,
+  BadgeCheck,
+  Bolt,
+  Calendar,
+  Check,
+  CheckCircle,
   ChevronDown,
-  Heart,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronUpDown,
+  Circle,
   Clock,
+  CreditCard,
+  Coins,
+  DollarSign,
+  Dot,
+  Download,
+  ExternalLink,
+  Eye,
+  EyeOff,
   Flame,
   Footprints,
-  Bike,
-  Zap, // For EcoPoints or energy
+  Gift,
+  GitFork,
+  GitPullRequest,
+  Github,
   Home,
-  BarChart2, // For Activity/Stats
-  Gift,    // For Rewards
-  User,    // For Profile
-  ArrowLeft,
-  ChevronRight,
-  TrendingUp, // Alternative for calories or progress
-  MapPin,
-  Users,
-  LogOut,
-  HelpCircle,
-  Bell,
-  Menu,
-  X,
-  Sun,
-  Moon,
-  Search,
-  Filter,
-  Award,
-  List,
-  CheckCircle, // Added CheckCircle icon
-  AlertTriangle,
   Info,
-  PlusCircle,
-  MinusCircle,
-  Edit3,
-  CreditCard, // Added CreditCard icon
-  Leaf,       // Added Leaf icon for CO2
-  Coins,      // Added Coins icon
-  Star,       // Added Star icon
-  Wifi,       // Added Wifi icon
-  ArrowUpRight, // Added ArrowUpRight icon
-  ArrowDownLeft, // Added ArrowDownLeft icon
-  Nfc, // Added NFC icon
-  Mail, // Added Mail icon for Profile page
-  ShieldCheck, // Added ShieldCheck icon for Profile page
-  Palette, // Added Palette icon for Profile page
-  Play,       // Added for tracker
-  Pause,      // Added for tracker
-  StopCircle, // Added for tracker
-  RefreshCw   // Added for reset/restart tracker
-} from 'lucide-react';
+  Languages,
+  Leaf,
+  LifeBuoy,
+  Link2,
+  Loader2,
+  LogIn,
+  LogOut,
+  Mail,
+  MapPin,
+  Menu,
+  MessageSquare,
+  Minus,
+  Nfc,
+  Package,
+  Pause,
+  PenSquare,
+  PieChart,
+  Play,
+  Plus,
+  Pointer,
+  RefreshCw,
+  Search,
+  Settings,
+  Sigma,
+  Smile,
+  Star,
+  StopCircle,
+  SunMedium,
+  ThumbsUp,
+  Trophy,
+  Twitter,
+  Type,
+  User,
+  Users,
+  X,
+  Zap,
+} from "lucide-react";
+
+// Create a custom Confetti icon
+export const Confetti = ({ size = 24, color = "currentColor", ...props }) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M4 7h.01" />
+      <path d="M8 3h.01" />
+      <path d="M12 5h.01" />
+      <path d="M16 3h.01" />
+      <path d="M20 7h.01" />
+      <path d="M17 17h.01" />
+      <path d="M13 19h.01" />
+      <path d="M9 17h.01" />
+      <path d="M5 19h.01" />
+      <path d="M8 12c1.333-1.333 2.667-2 4-2 1.333 0 2.667.667 4 2 1.333 1.333 2.667 2 4 2 1.333 0 2-1 2-3" />
+    </svg>
+  );
+};
