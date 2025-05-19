@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Confetti, Coins, Award } from '@/components/icons';
+import { Confetti, Coins } from '@/components/icons'; // Removed unused Award import
 import { useToast } from "@/hooks/use-toast";
 
 interface ActivityRewardCardProps {
@@ -16,7 +16,7 @@ const ActivityRewardCard: React.FC<ActivityRewardCardProps> = ({ coinsEarned, on
   const handleClaimReward = () => {
     toast({
       title: "Reward Claimed!",
-      description: `${coinsEarned} EcoCoins have been added to your balance.`,
+      description: `${coinsEarned} EcoCoins will be credited to your Ecotab card.`, // Updated toast description
       duration: 3000,
     });
     onClose();
@@ -26,47 +26,54 @@ const ActivityRewardCard: React.FC<ActivityRewardCardProps> = ({ coinsEarned, on
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm animate-fade-in">
       <Card className="w-11/12 max-w-md bg-eco-dark-secondary border-eco-gray/20 p-6 rounded-2xl shadow-2xl relative overflow-hidden">
         {/* Confetti animation effect */}
-        <div className="absolute top-0 left-0 w-full">
-          <div className="flex justify-between">
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none"> {/* Ensure confetti covers card and doesn't block interaction */}
+          <div className="flex justify-between absolute top-0 left-0 w-full">
             {[...Array(8)].map((_, i) => (
               <div 
-                key={i} 
+                key={`confetti-top-${i}`}
                 className={`text-eco-accent transform translate-y-${Math.random() * 10} animate-bounce`}
                 style={{ 
                   animationDelay: `${i * 0.1}s`, 
-                  animationDuration: `${0.5 + Math.random()}s` 
+                  animationDuration: `${0.5 + Math.random()}s`,
+                  marginLeft: `${Math.random() * 10}%`, // Add some horizontal spread
+                  marginRight: `${Math.random() * 10}%`,
                 }}
               >
-                <Confetti size={24} />
+                <Confetti size={20 + Math.random() * 10} /> {/* Varied size */}
               </div>
             ))}
           </div>
+           {/* Add more confetti from bottom or sides if desired */}
         </div>
 
-        <div className="flex flex-col items-center text-center space-y-6 py-8">
-          <div className="h-24 w-24 rounded-full bg-gradient-to-r from-eco-accent to-eco-purple flex items-center justify-center shadow-lg">
-            <Coins size={60} className="text-eco-dark" />
-          </div>
-          
-          <div className="space-y-3">
-            <h2 className="text-4xl font-bold text-eco-light flex items-center justify-center">
+        <div className="flex flex-col items-center text-center space-y-4 sm:space-y-6 py-8 z-10 relative"> {/* Ensure content is above confetti */}
+          {/* Main Reward Text */}
+          <h2 className="text-5xl sm:text-6xl font-extrabold text-eco-light flex flex-col items-center justify-center">
+            <div className="flex items-baseline">
               <span className="text-eco-accent">{coinsEarned}</span>
-              <span className="mx-1">EcoCoins</span>
-            </h2>
-            <div className="bg-eco-gray/20 text-eco-accent text-sm py-1 px-3 rounded-full inline-block">
-              YOU WON!
+              {/* Optional: Small coin icon if needed <Coins size={30} className="ml-2 text-yellow-400" /> */}
             </div>
-            <p className="text-eco-light text-xl font-semibold">Claim your prize!</p>
-            <p className="text-eco-gray text-sm">
-              Your reward for completing this activity. Claim your EcoCoins and use them for rewards!
-            </p>
+            <span className="text-2xl sm:text-3xl font-semibold text-eco-gray mt-1">EcoCoins</span>
+          </h2>
+
+          {/* "YOU WON" Badge - Styled to look more like a plaque */}
+          <div className="inline-block bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold py-1.5 px-4 rounded shadow-md border border-slate-400 transform -rotate-3">
+            YOU WON!
           </div>
+
+          {/* Title */}
+          <p className="text-eco-light text-xl sm:text-2xl font-bold pt-2">Claim Your Prize!</p>
+            
+          {/* Description */}
+          <p className="text-eco-gray text-sm sm:text-base px-2 sm:px-4 max-w-xs">
+            Your <span className="font-semibold text-eco-accent">{coinsEarned} EcoCoins</span> will be credited to your Ecotab card shortly.
+          </p>
           
           <Button 
             onClick={handleClaimReward}
-            className="w-full py-6 bg-gradient-to-r from-eco-accent to-eco-purple hover:opacity-90 text-eco-dark font-bold text-lg rounded-xl"
+            className="w-full max-w-xs py-4 sm:py-5 bg-gradient-to-r from-sky-400 to-green-400 hover:opacity-90 text-eco-dark font-bold text-base sm:text-lg rounded-xl mt-3 sm:mt-4 shadow-lg"
           >
-            Claim prize
+            Claim Prize
           </Button>
         </div>
       </Card>
@@ -75,3 +82,4 @@ const ActivityRewardCard: React.FC<ActivityRewardCardProps> = ({ coinsEarned, on
 };
 
 export default ActivityRewardCard;
+
