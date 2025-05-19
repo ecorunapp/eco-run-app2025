@@ -10,7 +10,8 @@ import ActivitiesPage from "./pages/ActivitiesPage";
 import RewardsPage from "./pages/RewardsPage";
 import ProfilePage from "./pages/ProfilePage";
 import EcotabDetailsPage from "./pages/EcotabDetailsPage";
-import GoalSelectionPage from "./pages/GoalSelectionPage"; // Added GoalSelectionPage import
+import GoalSelectionPage from "./pages/GoalSelectionPage";
+import SplashScreenPage from "./pages/SplashScreenPage"; // Added SplashScreenPage import
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,9 +23,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate replace to="/welcome" />} />
+          <Route path="/" element={<Navigate replace to="/splash" />} /> {/* Changed to /splash */}
+          <Route path="/splash" element={<SplashScreenPage />} /> {/* Added SplashScreenPage route */}
           <Route path="/welcome" element={<WelcomeScreen />} />
-          <Route path="/goal-selection" element={<GoalSelectionPage />} /> {/* Added GoalSelectionPage route */}
+          <Route path="/goal-selection" element={<GoalSelectionPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/activities" element={<ActivitiesPage />} />
           <Route path="/rewards" element={<RewardsPage />} />
