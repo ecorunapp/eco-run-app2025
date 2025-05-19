@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Leaf, Coins, Clock, Flame, Play, Pause, StopCircle, MapPin, RefreshCw } from '@/components/icons';
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 import ActivityRewardCard from './ActivityRewardCard';
+import LiveActivityMap from './LiveActivityMap';
 
 interface ActivitySummary {
   steps: number;
@@ -112,6 +113,8 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
   const radialData = [{ name: 'Steps', value: percentage, fill: 'url(#activityGradient)' }];
   const endAngle = 90 - (percentage / 100) * 360;
 
+  const mapboxAccessToken = "pk.eyJ1IjoicGFyaXNhdXJhIiwiYSI6ImNtYXA3eHA1NzBmdHgya3M2YXBqdnhmOHAifQ.kYY2uhGtf6O2HGBDhvamIA";
+
   return (
     <>
       <div className="flex flex-col items-center space-y-6 p-4 bg-eco-dark text-eco-light animate-fade-in-up">
@@ -201,8 +204,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
            <StopCircle size={20} className="mr-2" /> Stop & End Activity
          </Button>
 
-
-        {/* Map Placeholder */}
+        {/* Map Display */}
         <Card className="w-full max-w-md bg-eco-dark-secondary border-eco-gray/20 mt-4">
           <CardHeader>
             <CardTitle className="text-eco-light text-lg flex items-center">
@@ -210,9 +212,13 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-32 bg-eco-gray/10 rounded-md flex items-center justify-center">
-              <p className="text-eco-gray text-sm">Map preview will be available soon.</p>
-            </div>
+            {isTracking || startTime ? ( // Show map if tracking or if an activity was started and might be paused
+              <LiveActivityMap accessToken={mapboxAccessToken} />
+            ) : (
+              <div className="h-64 bg-eco-gray/10 rounded-md flex items-center justify-center">
+                 <p className="text-eco-gray text-sm">Start tracking to see your live location.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
