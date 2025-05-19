@@ -1,8 +1,14 @@
+
 import {
   Award,
   AlertCircle,
   ArrowRight,
+  ArrowLeft, // Added
+  ArrowUpRight, // Added
+  ArrowDownLeft, // Added
   BadgeCheck,
+  BarChart2, // Added
+  Bell, // Added
   Bolt,
   Calendar,
   Check,
@@ -11,7 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  ChevronUpDown,
+  ChevronsUpDown, // Corrected from ChevronUpDown
   Circle,
   Clock,
   CreditCard,
@@ -19,6 +25,7 @@ import {
   DollarSign,
   Dot,
   Download,
+  Edit3, // Added
   ExternalLink,
   Eye,
   EyeOff,
@@ -28,6 +35,7 @@ import {
   GitFork,
   GitPullRequest,
   Github,
+  Heart, // Added
   Home,
   Info,
   Languages,
@@ -44,6 +52,7 @@ import {
   Minus,
   Nfc,
   Package,
+  Palette, // Added
   Pause,
   PenSquare,
   PieChart,
@@ -53,6 +62,7 @@ import {
   RefreshCw,
   Search,
   Settings,
+  ShieldCheck, // Added
   Sigma,
   Smile,
   Star,
@@ -66,10 +76,11 @@ import {
   Users,
   X,
   Zap,
+  LucideProps // Added for Confetti icon typing
 } from "lucide-react";
 
 // Create a custom Confetti icon
-export const Confetti = ({ size = 24, color = "currentColor", ...props }) => {
+export const Confetti: React.FC<LucideProps> = ({ size = 24, color = "currentColor", ...props }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -96,3 +107,84 @@ export const Confetti = ({ size = 24, color = "currentColor", ...props }) => {
     </svg>
   );
 };
+
+// Export all imported icons so they can be used throughout the app
+export {
+  Award,
+  AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+  ArrowUpRight,
+  ArrowDownLeft,
+  BadgeCheck,
+  BarChart2,
+  Bell,
+  Bolt,
+  Calendar,
+  Check,
+  CheckCircle,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronsUpDown,
+  Circle,
+  Clock,
+  CreditCard,
+  Coins,
+  DollarSign,
+  Dot,
+  Download,
+  Edit3,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Flame,
+  Footprints,
+  Gift,
+  GitFork,
+  GitPullRequest,
+  Github,
+  Heart,
+  Home,
+  Info,
+  Languages,
+  Leaf,
+  LifeBuoy,
+  Link2,
+  Loader2,
+  LogIn,
+  LogOut,
+  Mail,
+  MapPin,
+  Menu,
+  MessageSquare,
+  Minus,
+  Nfc,
+  Package,
+  Palette,
+  Pause,
+  PenSquare,
+  PieChart,
+  Play,
+  Plus,
+  Pointer,
+  RefreshCw,
+  Search,
+  Settings,
+  ShieldCheck,
+  Sigma,
+  Smile,
+  Star,
+  StopCircle,
+  SunMedium,
+  ThumbsUp,
+  Trophy,
+  Twitter,
+  Type,
+  User,
+  Users,
+  X,
+  Zap,
+};
+
