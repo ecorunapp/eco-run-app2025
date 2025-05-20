@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon } from '@/components/icons';
+import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, ShoppingBag, Info } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import RewardOfferCard from '@/components/RewardOfferCard';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
@@ -18,7 +18,8 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { GradientCard } from '@/components/GradientCard';
+import { Input } from "@/components/ui/input";
+import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { TransactionHistoryModal } from '@/components/TransactionHistoryModal';
 
 // Sample data for featured offers
@@ -196,24 +197,44 @@ const giftCards = [
 
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
-  const [userEcoPoints, setUserEcoPoints] = useState(7580); // Made stateful
+  const { balance: userEcoPoints, history: transactionHistory, redeemPoints } = useEcoCoins();
   const [showAllEcotabCards, setShowAllEcotabCards] = useState(false);
   const [dialogCard, setDialogCard] = useState<EcotabCardData | null>(null);
+  const [showRedeemInput, setShowRedeemInput] = useState(false);
+  const [redeemAmount, setRedeemAmount] = useState('');
   const [showTxModal, setShowTxModal] = useState(false);
 
   const handleCardClick = (card: EcotabCardData) => {
     setDialogCard(card);
+    setShowRedeemInput(false);
+    setRedeemAmount('');
   };
 
   const primaryCard = sampleEcotabCardsData.find(card => card.isPrimary) || sampleEcotabCardsData[0];
 
-  const handleRedeemReward = (pointsToDeduct: number, rewardName: string) => {
-    if (userEcoPoints >= pointsToDeduct) {
-      setUserEcoPoints(prevPoints => prevPoints - pointsToDeduct);
-      // TODO: Add to transaction history (would require making sampleTransactions stateful too)
-      alert(`Successfully redeemed "${rewardName}" for ${pointsToDeduct} EcoPoints!`);
+  const handleRedeemOffer = (pointsToDeduct: number, rewardName: string) => {
+    if (redeemPoints(pointsToDeduct, `Redeemed: ${rewardName}`)) {
+      toast.success(`Successfully redeemed "${rewardName}" for ${pointsToDeduct} EcoPoints! Your new balance is ${userEcoPoints - pointsToDeduct}.`);
     } else {
-      alert(`Not enough EcoPoints to redeem "${rewardName}".`);
+      toast.error(`Not enough EcoPoints to redeem "${rewardName}". You have ${userEcoPoints}.`);
+    }
+  };
+
+  const handleEcotabRedemption = () => {
+    const amount = parseInt(redeemAmount, 10);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Please enter a valid amount of points to redeem.");
+      return;
+    }
+    if (dialogCard) {
+      if (redeemPoints(amount, `Redeemed from Ecotab Card ${dialogCard.cardNumberSuffix}`)) {
+        toast.success(`${amount} EcoPoints successfully redeemed from Ecotab Card ${dialogCard.cardNumberSuffix}!`);
+        setDialogCard(null);
+        setShowRedeemInput(false);
+        setRedeemAmount('');
+      } else {
+        toast.error(`Not enough EcoPoints. You have ${userEcoPoints}, tried to redeem ${amount}.`);
+      }
     }
   };
 
@@ -225,6 +246,25 @@ const RewardsPage: React.FC = () => {
       toast.info(`Skipped ${card?.title}`);
     }
   };
+
+  const getIconForTransactionType = (type: string) => {
+    switch (type) {
+      case 'income': return Coins;
+      case 'redeem': return Gift;
+      case 'spend': return ShoppingBag;
+      case 'ecotab': return CreditCard;
+      default: return Info;
+    }
+  };
+
+  const displayedTransactions = transactionHistory.slice(0, 4).map(tx => ({
+    id: tx.date + tx.label + tx.value,
+    icon: getIconForTransactionType(tx.type),
+    title: tx.label,
+    descriptionType: tx.type,
+    amount: tx.value,
+    date: tx.date,
+  }));
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
@@ -296,7 +336,7 @@ const RewardsPage: React.FC = () => {
         {/* Transaction History Section */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold text-eco-light">Transaction History</h2>
+            <h2 className="text-2xl font-semibold text-eco-light">Recent Transactions</h2>
             <Button
               variant="link"
               className="text-eco-accent hover:text-eco-accent-secondary"
@@ -306,23 +346,23 @@ const RewardsPage: React.FC = () => {
             </Button>
           </div>
           <div className="space-y-3">
-            {sampleTransactions.map((transaction) => (
+            {displayedTransactions.length > 0 ? displayedTransactions.map((transaction) => (
               <TransactionHistoryItem
                 key={transaction.id}
                 icon={transaction.icon}
                 title={transaction.title}
-                description={transaction.description}
+                descriptionType={transaction.descriptionType}
                 amount={transaction.amount}
                 date={transaction.date}
               />
-            ))}
+            )) : <p className="text-eco-gray text-center py-4">No transactions yet. Start earning EcoPoints!</p>}
           </div>
         </section>
       </main>
       <BottomNav />
 
-      {/* Ecotab Card Dialog */}
-      <Dialog open={!!dialogCard} onOpenChange={(isOpen) => { if (!isOpen) setDialogCard(null); }}>
+      {/* Ecotab Card Dialog with Redemption */}
+      <Dialog open={!!dialogCard} onOpenChange={(isOpen) => { if (!isOpen) { setDialogCard(null); setShowRedeemInput(false); setRedeemAmount(''); } }}>
         <DialogContent className="bg-eco-dark-secondary text-eco-light border-eco-accent max-w-md">
           {dialogCard && (
             <>
@@ -335,32 +375,84 @@ const RewardsPage: React.FC = () => {
               <div className="my-4">
                 <GradientDebitCard {...dialogCard} />
               </div>
-              <div className="space-y-3 my-4 px-2">
-                <div className="flex items-center text-sm">
-                  <NfcIcon size={20} className={`mr-2 ${dialogCard.nfcActive ? 'text-eco-accent' : 'text-eco-gray'}`} />
-                  NFC Status: <span className={`font-semibold ml-1 ${dialogCard.nfcActive ? 'text-eco-accent' : 'text-eco-gray'}`}>
-                    {dialogCard.nfcActive ? 'Enabled' : 'Disabled'}
-                  </span>
-                </div>
-                 <div className="flex items-center text-sm">
-                   <CheckCircle size={20} className="mr-2 text-green-400" />
-                   Status: <span className="font-semibold ml-1 text-green-400">Ready for use</span>
-                 </div>
-                <div>
-                  <h4 className="text-md font-semibold text-eco-light mb-1">Redemption History</h4>
+
+              {!showRedeemInput ? (
+                <>
+                  <div className="space-y-3 my-4 px-2">
+                    <div className="flex items-center text-sm">
+                      <NfcIcon size={20} className={`mr-2 ${dialogCard.nfcActive ? 'text-eco-accent' : 'text-eco-gray'}`} />
+                      NFC Status: <span className={`font-semibold ml-1 ${dialogCard.nfcActive ? 'text-eco-accent' : 'text-eco-gray'}`}>
+                        {dialogCard.nfcActive ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <CheckCircle size={20} className="mr-2 text-green-400" />
+                      Status: <span className="font-semibold ml-1 text-green-400">Ready for use</span>
+                    </div>
+                    <div>
+                      <h4 className="text-md font-semibold text-eco-light mb-1">Redemption History</h4>
+                      <p className="text-xs text-eco-gray">
+                        Ecopoint redemption history for this specific card will be shown here in a future update.
+                        For now, please refer to the general transaction history.
+                      </p>
+                    </div>
+                  </div>
+                  <DialogFooter className="sm:justify-start gap-2">
+                    <Button 
+                      type="button" 
+                      className="bg-eco-accent text-eco-dark hover:bg-eco-accent/90"
+                      onClick={() => setShowRedeemInput(true)}
+                    >
+                      Redeem EcoPoints
+                    </Button>
+                    <DialogClose asChild>
+                      <Button type="button" variant="outline" className="border-eco-gray text-eco-gray hover:bg-eco-gray hover:text-eco-dark">
+                        Close
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </>
+              ) : (
+                <div className="my-4 px-2 space-y-4">
+                  <h3 className="text-lg font-semibold text-eco-light">Redeem EcoPoints</h3>
+                  <p className="text-sm text-eco-gray">Your current balance: <span className="font-bold text-eco-accent">{userEcoPoints.toLocaleString()} pts</span></p>
+                  <div>
+                    <label htmlFor="redeemAmount" className="text-sm font-medium text-eco-gray block mb-1">
+                      Points to redeem:
+                    </label>
+                    <Input
+                      id="redeemAmount"
+                      type="number"
+                      placeholder="Enter amount"
+                      value={redeemAmount}
+                      onChange={(e) => setRedeemAmount(e.target.value)}
+                      className="bg-eco-dark border-eco-gray focus:border-eco-accent text-eco-light"
+                    />
+                  </div>
                   <p className="text-xs text-eco-gray">
-                    Ecopoint redemption history for this specific card will be shown here in a future update.
-                    For now, please refer to the general transaction history.
+                    These points can be used for online/offline gift cards or other partnered services.
+                    Specific gift card selection will be available in the main "Gift Cards" section.
                   </p>
+                  <DialogFooter className="sm:justify-start gap-2">
+                    <Button 
+                      type="button" 
+                      className="bg-eco-accent text-eco-dark hover:bg-eco-accent/90"
+                      onClick={handleEcotabRedemption}
+                      disabled={!redeemAmount || parseInt(redeemAmount) <= 0 || parseInt(redeemAmount) > userEcoPoints}
+                    >
+                      Confirm Redemption
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="border-eco-gray text-eco-gray hover:bg-eco-gray hover:text-eco-dark"
+                      onClick={() => { setShowRedeemInput(false); setRedeemAmount(''); }}
+                    >
+                      Cancel
+                    </Button>
+                  </DialogFooter>
                 </div>
-              </div>
-              <DialogFooter className="sm:justify-start">
-                <DialogClose asChild>
-                  <Button type="button" variant="outline" className="border-eco-gray text-eco-gray hover:bg-eco-gray hover:text-eco-dark">
-                    Close
-                  </Button>
-                </DialogClose>
-              </DialogFooter>
+              )}
             </>
           )}
         </DialogContent>
