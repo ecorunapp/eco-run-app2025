@@ -1,3 +1,4 @@
+
 import {
   Award,
   AlertCircle,
@@ -77,8 +78,8 @@ import {
   X,
   Zap,
   Lock,
-  type LucideProps,
-  type LucideIcon
+  type LucideProps, // Ensure this is type LucideProps
+  type LucideIcon  // Ensure this is type LucideIcon
 } from "lucide-react";
 
 // Create a custom Confetti icon
@@ -111,6 +112,7 @@ export const Confetti: React.FC<LucideProps> = ({ size = 24, color = "currentCol
 };
 
 // Export all imported icons so they can be used throughout the app
+// The Confetti icon is already exported above when it's defined, so it's removed from this block.
 export {
   Award,
   AlertCircle,
@@ -191,6 +193,7 @@ export {
   Zap,
   Lock,
   type LucideIcon,
-  type LucideProps,
-  Confetti
+  type LucideProps
+  // Confetti removed from here as it's exported at definition
 };
+
