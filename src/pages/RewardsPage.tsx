@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, ShoppingBag, Info } from '@/components/icons';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import RewardOfferCard from '@/components/RewardOfferCard';
+import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, Info } from '@/components/icons';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
 import GradientDebitCard from '@/components/GradientDebitCard';
-import { GiftCardSwiper } from '@/components/GiftCardSwiper';
+import { getIconForTransactionType } from '@/utils/iconHelper';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -152,49 +151,6 @@ const sampleEcotabCardsData: EcotabCardData[] = [
   },
 ];
 
-const giftCards = [
-  {
-    id: '1',
-    title: 'Premium Coffee Experience',
-    description: 'Enjoy a month of specialty coffee delivered to your door. Includes 4 bags of premium beans.',
-    imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
-    price: 49.99,
-    points: 500,
-    expiryDate: 'Dec 31, 2024',
-    category: 'Food & Drink'
-  },
-  {
-    id: '2',
-    title: 'Luxury Spa Day',
-    description: 'Treat yourself to a day of relaxation and pampering at our premium spa center.',
-    imageUrl: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874',
-    price: 199.99,
-    points: 2000,
-    expiryDate: 'Jan 15, 2025',
-    category: 'Wellness'
-  },
-  {
-    id: '3',
-    title: 'Master Chef Class',
-    description: 'Learn to cook like a professional chef with our expert-led cooking workshop.',
-    imageUrl: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d',
-    price: 89.99,
-    points: 1000,
-    expiryDate: 'Feb 28, 2025',
-    category: 'Experience'
-  },
-  {
-    id: '4',
-    title: 'Wine Tasting Journey',
-    description: 'Discover fine wines with expert sommeliers in an exclusive tasting session.',
-    imageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3',
-    price: 129.99,
-    points: 1500,
-    expiryDate: 'Mar 15, 2025',
-    category: 'Food & Drink'
-  },
-];
-
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
   const { balance: userEcoPoints, history: transactionHistory, redeemPoints } = useEcoCoins();
@@ -212,14 +168,6 @@ const RewardsPage: React.FC = () => {
 
   const primaryCard = sampleEcotabCardsData.find(card => card.isPrimary) || sampleEcotabCardsData[0];
 
-  const handleRedeemOffer = (pointsToDeduct: number, rewardName: string) => {
-    if (redeemPoints(pointsToDeduct, `Redeemed: ${rewardName}`)) {
-      toast.success(`Successfully redeemed "${rewardName}" for ${pointsToDeduct} EcoPoints! Your new balance is ${userEcoPoints - pointsToDeduct}.`);
-    } else {
-      toast.error(`Not enough EcoPoints to redeem "${rewardName}". You have ${userEcoPoints}.`);
-    }
-  };
-
   const handleEcotabRedemption = () => {
     const amount = parseInt(redeemAmount, 10);
     if (isNaN(amount) || amount <= 0) {
@@ -227,48 +175,29 @@ const RewardsPage: React.FC = () => {
       return;
     }
     if (dialogCard) {
-      if (redeemPoints(amount, `Redeemed from Ecotab Card ${dialogCard.cardNumberSuffix}`)) {
-        toast.success(`${amount} EcoPoints successfully redeemed from Ecotab Card ${dialogCard.cardNumberSuffix}!`);
+      if (redeemPoints(amount, `Redeemed to Ecotab Card ${dialogCard.cardNumberSuffix}`)) {
+        toast.success(`${amount} EcoPoints successfully redeemed to Ecotab Card ${dialogCard.cardNumberSuffix}!`);
         setDialogCard(null);
         setShowRedeemInput(false);
         setRedeemAmount('');
       } else {
-        toast.error(`Not enough EcoPoints. You have ${userEcoPoints}, tried to redeem ${amount}.`);
+        toast.error(`Not enough EcoPoints. You have ${userEcoPoints.toLocaleString()}, tried to redeem ${amount.toLocaleString()}.`);
       }
     }
   };
 
-  const handleGiftCardSwipe = (direction: 'left' | 'right', cardId: string) => {
-    const card = giftCards.find(c => c.id === cardId);
-    if (direction === 'right') {
-      toast.success(`Added ${card?.title} to favorites!`);
-    } else {
-      toast.info(`Skipped ${card?.title}`);
-    }
-  };
-
-  const getIconForTransactionType = (type: string) => {
-    switch (type) {
-      case 'income': return Coins;
-      case 'redeem': return Gift;
-      case 'spend': return ShoppingBag;
-      case 'ecotab': return CreditCard;
-      default: return Info;
-    }
-  };
-
   const displayedTransactions = transactionHistory.slice(0, 4).map(tx => ({
-    id: tx.date + tx.label + tx.value,
+    id: tx.date + tx.label + tx.value + tx.type,
     icon: getIconForTransactionType(tx.type),
     title: tx.label,
     descriptionType: tx.type,
-    amount: tx.value,
+    amount: tx.type === 'income' ? tx.value : -tx.value,
     date: tx.date,
   }));
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
-      <header className="p-4 flex justify-between items-center sticky top-0 bg-eco-dark z-40 shadow-sm">
+      <header className="p-4 flex justify-between items-center sticky top-0 bg-eco-dark/80 backdrop-blur-md z-40 shadow-sm">
         <EcoRunLogo size="small" />
         <h1 className="text-xl font-semibold text-eco-light">Rewards</h1>
         <Button variant="ghost" size="icon" className="text-eco-gray hover:text-eco-accent">
@@ -277,18 +206,18 @@ const RewardsPage: React.FC = () => {
       </header>
 
       <main className="flex-grow p-4 space-y-8 overflow-y-auto pb-24">
-        {/* Ecotab Card Section - Interactive */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+        {/* Ecotab Card Section */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-eco-light">My Ecotab Cards</h2>
             {sampleEcotabCardsData.length > 1 && (
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="border-eco-accent text-eco-accent hover:bg-eco-accent hover:text-eco-dark" 
+                className="border-eco-accent text-eco-accent hover:bg-eco-accent hover:text-eco-dark transition-colors" 
                 onClick={() => setShowAllEcotabCards(!showAllEcotabCards)}
               >
-                {showAllEcotabCards ? 'Show Primary' : 'Show All'}
+                {showAllEcotabCards ? 'Show Primary' : `Show All (${sampleEcotabCardsData.length})`}
               </Button>
             )}
           </div>
@@ -300,17 +229,17 @@ const RewardsPage: React.FC = () => {
                 title="Click to view card details"
             >
               <GradientDebitCard {...primaryCard} />
-              {sampleEcotabCardsData.length > 1 && <p className="text-center text-eco-gray mt-3 text-sm">View all cards by clicking "Show All"</p>}
+              {sampleEcotabCardsData.length > 1 && <p className="text-center text-eco-gray mt-3 text-xs">View all cards by clicking "Show All"</p>}
             </div>
           )}
 
           {showAllEcotabCards && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {sampleEcotabCardsData.map(card => (
                 <div 
                     key={card.id} 
                     onClick={() => handleCardClick(card)}
-                    className={`cursor-pointer rounded-xl transition-all duration-300 hover:shadow-eco-accent/20 hover:shadow-md ${dialogCard?.id === card.id ? 'ring-2 ring-eco-accent shadow-eco-accent/50 shadow-lg' : ''}`}
+                    className={`cursor-pointer rounded-xl transition-all duration-300 hover:shadow-eco-accent/20 hover:shadow-lg ${dialogCard?.id === card.id ? 'ring-2 ring-eco-accent shadow-eco-accent/50 ' : 'ring-1 ring-transparent hover:ring-eco-gray/50'}`}
                 >
                   <GradientDebitCard {...card} />
                 </div>
@@ -320,10 +249,10 @@ const RewardsPage: React.FC = () => {
         </section>
         
         {/* Balance Section */}
-        <Card className="bg-eco-dark-secondary border-eco-accent shadow-xl animate-fade-in-up">
+        <Card className="bg-eco-dark-secondary border-transparent shadow-xl animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <CardHeader>
-            <CardTitle className="text-eco-light flex items-center">
-              <Zap size={28} className="mr-2 text-yellow-300" />
+            <CardTitle className="text-eco-light flex items-center text-xl">
+              <Zap size={24} className="mr-2 text-yellow-400" />
               Your EcoPoints Balance
             </CardTitle>
           </CardHeader>
@@ -334,12 +263,12 @@ const RewardsPage: React.FC = () => {
         </Card>
         
         {/* Transaction History Section */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold text-eco-light">Recent Transactions</h2>
+            <h2 className="text-xl font-semibold text-eco-light">Recent Activity</h2>
             <Button
               variant="link"
-              className="text-eco-accent hover:text-eco-accent-secondary"
+              className="text-eco-accent hover:text-eco-accent-secondary px-0"
               onClick={() => setShowTxModal(true)}
             >
               View All
@@ -355,97 +284,112 @@ const RewardsPage: React.FC = () => {
                 amount={transaction.amount}
                 date={transaction.date}
               />
-            )) : <p className="text-eco-gray text-center py-4">No transactions yet. Start earning EcoPoints!</p>}
+            )) : <p className="text-eco-gray text-center py-4 text-sm">No recent activity. Start earning EcoPoints!</p>}
           </div>
         </section>
+        
+        {/* Featured Offers Section - Placeholder for where RewardOfferCard might go */}
+        {/* <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+          <h2 className="text-2xl font-semibold text-eco-light mb-4">Featured Offers</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {featuredOffers.map(offer => ( // Assuming featuredOffers is defined
+              <RewardOfferCard key={offer.id} {...offer} onRedeem={() => handleRedeemOffer(offer.points, offer.title)} />
+            ))}
+          </div>
+        </section> */}
+
       </main>
       <BottomNav />
 
       {/* Ecotab Card Dialog with Redemption */}
       <Dialog open={!!dialogCard} onOpenChange={(isOpen) => { if (!isOpen) { setDialogCard(null); setShowRedeemInput(false); setRedeemAmount(''); } }}>
-        <DialogContent className="bg-eco-dark-secondary text-eco-light border-eco-accent max-w-md">
+        <DialogContent className="bg-eco-dark-secondary text-eco-light border-eco-accent/50 max-w-md rounded-xl">
           {dialogCard && (
             <>
-              <DialogHeader>
-                <DialogTitle className="text-eco-light text-2xl">Ecotab Card Details</DialogTitle>
-                <DialogDescription className="text-eco-gray">
+              <DialogHeader className="pt-2">
+                <DialogTitle className="text-eco-light text-xl text-center">Ecotab Card Details</DialogTitle>
+                <DialogDescription className="text-eco-gray text-center text-xs">
                   Card ending in •••• {dialogCard.cardNumberSuffix}
                 </DialogDescription>
               </DialogHeader>
-              <div className="my-4">
+              <div className="my-4 px-2">
                 <GradientDebitCard {...dialogCard} />
               </div>
 
               {!showRedeemInput ? (
                 <>
-                  <div className="space-y-3 my-4 px-2">
-                    <div className="flex items-center text-sm">
-                      <NfcIcon size={20} className={`mr-2 ${dialogCard.nfcActive ? 'text-eco-accent' : 'text-eco-gray'}`} />
-                      NFC Status: <span className={`font-semibold ml-1 ${dialogCard.nfcActive ? 'text-eco-accent' : 'text-eco-gray'}`}>
+                  <div className="space-y-3 my-4 px-4 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center text-eco-gray">
+                        <NfcIcon size={18} className={`mr-2 ${dialogCard.nfcActive ? 'text-eco-accent' : 'text-eco-gray/70'}`} />
+                        NFC Status:
+                      </span>
+                      <span className={`font-semibold ${dialogCard.nfcActive ? 'text-eco-accent' : 'text-eco-gray/70'}`}>
                         {dialogCard.nfcActive ? 'Enabled' : 'Disabled'}
                       </span>
                     </div>
-                    <div className="flex items-center text-sm">
-                      <CheckCircle size={20} className="mr-2 text-green-400" />
-                      Status: <span className="font-semibold ml-1 text-green-400">Ready for use</span>
+                    <div className="flex items-center justify-between">
+                       <span className="flex items-center text-eco-gray">
+                        <CheckCircle size={18} className="mr-2 text-green-400" />
+                        Card Status:
+                       </span>
+                       <span className="font-semibold text-green-400">Ready for use</span>
                     </div>
                     <div>
-                      <h4 className="text-md font-semibold text-eco-light mb-1">Redemption History</h4>
-                      <p className="text-xs text-eco-gray">
-                        Ecopoint redemption history for this specific card will be shown here in a future update.
-                        For now, please refer to the general transaction history.
+                      <h4 className="text-md font-semibold text-eco-light mt-3 mb-1">Redemption Note</h4>
+                      <p className="text-xs text-eco-gray leading-relaxed">
+                        Redeemed EcoPoints can be used towards online/offline gift cards or services via this Ecotab card. 
+                        Select specific gift cards from the "Gift Cards" section in the app.
                       </p>
                     </div>
                   </div>
-                  <DialogFooter className="sm:justify-start gap-2">
+                  <DialogFooter className="sm:justify-center gap-3 px-4 pb-4 pt-2">
                     <Button 
                       type="button" 
-                      className="bg-eco-accent text-eco-dark hover:bg-eco-accent/90"
+                      className="flex-1 bg-eco-accent text-eco-dark hover:bg-eco-accent/90 font-semibold"
                       onClick={() => setShowRedeemInput(true)}
                     >
                       Redeem EcoPoints
                     </Button>
                     <DialogClose asChild>
-                      <Button type="button" variant="outline" className="border-eco-gray text-eco-gray hover:bg-eco-gray hover:text-eco-dark">
+                      <Button type="button" variant="outline" className="flex-1 border-eco-gray text-eco-gray hover:bg-eco-gray/20 hover:text-eco-light font-semibold">
                         Close
                       </Button>
                     </DialogClose>
                   </DialogFooter>
                 </>
               ) : (
-                <div className="my-4 px-2 space-y-4">
-                  <h3 className="text-lg font-semibold text-eco-light">Redeem EcoPoints</h3>
-                  <p className="text-sm text-eco-gray">Your current balance: <span className="font-bold text-eco-accent">{userEcoPoints.toLocaleString()} pts</span></p>
+                <div className="my-2 px-4 space-y-4">
+                  <h3 className="text-lg font-semibold text-eco-light text-center">Redeem EcoPoints</h3>
+                  <p className="text-sm text-eco-gray text-center">Your balance: <span className="font-bold text-eco-accent">{userEcoPoints.toLocaleString()} pts</span></p>
                   <div>
-                    <label htmlFor="redeemAmount" className="text-sm font-medium text-eco-gray block mb-1">
-                      Points to redeem:
+                    <label htmlFor="redeemAmount" className="text-xs font-medium text-eco-gray block mb-1.5">
+                      Enter points to load onto this card:
                     </label>
                     <Input
                       id="redeemAmount"
                       type="number"
-                      placeholder="Enter amount"
+                      placeholder="e.g., 500"
                       value={redeemAmount}
                       onChange={(e) => setRedeemAmount(e.target.value)}
-                      className="bg-eco-dark border-eco-gray focus:border-eco-accent text-eco-light"
+                      className="bg-eco-dark border-eco-gray focus:border-eco-accent text-eco-light placeholder:text-eco-gray/50"
+                      min="1"
+                      step="1"
                     />
                   </div>
-                  <p className="text-xs text-eco-gray">
-                    These points can be used for online/offline gift cards or other partnered services.
-                    Specific gift card selection will be available in the main "Gift Cards" section.
-                  </p>
-                  <DialogFooter className="sm:justify-start gap-2">
+                  <DialogFooter className="sm:justify-center gap-3 pt-2 pb-4">
                     <Button 
                       type="button" 
-                      className="bg-eco-accent text-eco-dark hover:bg-eco-accent/90"
+                      className="flex-1 bg-eco-accent text-eco-dark hover:bg-eco-accent/90 font-semibold"
                       onClick={handleEcotabRedemption}
                       disabled={!redeemAmount || parseInt(redeemAmount) <= 0 || parseInt(redeemAmount) > userEcoPoints}
                     >
-                      Confirm Redemption
+                      Confirm & Load
                     </Button>
                     <Button 
                       type="button" 
                       variant="outline" 
-                      className="border-eco-gray text-eco-gray hover:bg-eco-gray hover:text-eco-dark"
+                      className="flex-1 border-eco-gray text-eco-gray hover:bg-eco-gray/20 hover:text-eco-light font-semibold"
                       onClick={() => { setShowRedeemInput(false); setRedeemAmount(''); }}
                     >
                       Cancel

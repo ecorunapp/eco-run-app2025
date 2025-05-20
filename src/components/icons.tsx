@@ -1,14 +1,13 @@
-
 import {
   Award,
   AlertCircle,
   ArrowRight,
-  ArrowLeft, // Added
-  ArrowUpRight, // Added
-  ArrowDownLeft, // Added
+  ArrowLeft,
+  ArrowUpRight,
+  ArrowDownLeft,
   BadgeCheck,
-  BarChart2, // Added
-  Bell, // Added
+  BarChart2,
+  Bell,
   Bolt,
   Calendar,
   Check,
@@ -17,7 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  ChevronsUpDown, // Corrected from ChevronUpDown
+  ChevronsUpDown,
   Circle,
   Clock,
   CreditCard,
@@ -25,7 +24,7 @@ import {
   DollarSign,
   Dot,
   Download,
-  Edit3, // Added
+  Edit3,
   ExternalLink,
   Eye,
   EyeOff,
@@ -35,7 +34,7 @@ import {
   GitFork,
   GitPullRequest,
   Github,
-  Heart, // Added
+  Heart,
   Home,
   Info,
   Languages,
@@ -52,7 +51,7 @@ import {
   Minus,
   Nfc,
   Package,
-  Palette, // Added
+  Palette,
   Pause,
   PenSquare,
   PieChart,
@@ -62,7 +61,8 @@ import {
   RefreshCw,
   Search,
   Settings,
-  ShieldCheck, // Added
+  ShieldCheck,
+  ShoppingBag,
   Sigma,
   Smile,
   Star,
@@ -76,7 +76,8 @@ import {
   Users,
   X,
   Zap,
-  LucideProps // Added for Confetti icon typing
+  LucideProps,
+  LucideIcon
 } from "lucide-react";
 
 // Create a custom Confetti icon
@@ -173,6 +174,7 @@ export {
   Search,
   Settings,
   ShieldCheck,
+  ShoppingBag,
   Sigma,
   Smile,
   Star,
@@ -186,5 +188,6 @@ export {
   Users,
   X,
   Zap,
+  LucideIcon,
+  type LucideProps
 };
-

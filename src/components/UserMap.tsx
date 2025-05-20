@@ -1,5 +1,6 @@
+
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import L, { LatLngTuple } from 'leaflet'; // Imported LatLngTuple
 import 'leaflet/dist/leaflet.css';
 
 // Custom walking icon
@@ -11,7 +12,13 @@ const walkingIcon = new L.Icon({
 });
 
 // Example user data
-const users = [
+interface UserMapData {
+  id: number;
+  name: string;
+  position: LatLngTuple; // Explicitly typed as LatLngTuple
+}
+
+const users: UserMapData[] = [
   { id: 1, name: 'Alice', position: [51.505, -0.09] },
   { id: 2, name: 'Bob', position: [51.51, -0.1] },
   { id: 3, name: 'Charlie', position: [51.49, -0.08] },
@@ -30,4 +37,4 @@ export default function UserMap() {
       ))}
     </MapContainer>
   );
-} 
+}

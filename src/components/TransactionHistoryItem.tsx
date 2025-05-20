@@ -2,13 +2,13 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { ArrowUpRight, ArrowDownLeft, AlertCircle } from '@/components/icons'; // Assuming general icons for now
-import { IconType } from 'lucide-react'; // For icon type
+import { LucideIcon } from 'lucide-react'; // Changed from IconType
 
 interface TransactionHistoryItemProps {
-  icon?: IconType; // Making icon optional for now, can be derived from type
-  title: string; // was label
-  descriptionType: 'income' | 'redeem' | 'spend' | 'ecotab' | string; // was description, now reflects transaction type
-  amount: number; // was value
+  icon?: LucideIcon; // Changed from IconType
+  title: string;
+  descriptionType: 'income' | 'redeem' | 'spend' | 'ecotab' | string;
+  amount: number;
   date: string;
 }
 
@@ -19,8 +19,8 @@ const TransactionHistoryItem: React.FC<TransactionHistoryItemProps> = ({
   amount,
   date,
 }) => {
-  const isPositive = descriptionType === 'income';
-  const amountColor = isPositive ? 'text-green-400' : 'text-eco-pink'; // Adjusted for points
+  const isPositive = descriptionType === 'income' || amount > 0; // Also consider amount for positive
+  const amountColor = isPositive ? 'text-green-400' : 'text-eco-pink';
   const AmountIcon = isPositive ? ArrowUpRight : ArrowDownLeft;
   
   // Determine icon based on type if not provided
@@ -34,7 +34,7 @@ const TransactionHistoryItem: React.FC<TransactionHistoryItemProps> = ({
         </div>
         <div>
           <p className="font-semibold text-eco-light text-sm">{title}</p>
-          <p className="text-xs text-eco-gray capitalize">{descriptionType.replace('_', ' ')}</p>
+          <p className="text-xs text-eco-gray capitalize">{descriptionType.replace(/_/g, ' ')}</p> {/* Replaced underscore globally */}
         </div>
       </div>
       <div className="text-right">
