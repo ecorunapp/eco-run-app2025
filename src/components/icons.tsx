@@ -62,7 +62,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  ShoppingBag,
+  ShoppingBag, // Added ShoppingBag here
   Sigma,
   Smile,
   Star,
@@ -76,8 +76,8 @@ import {
   Users,
   X,
   Zap,
-  LucideProps,
-  LucideIcon
+  LucideProps, // This is a type
+  LucideIcon  // This is a type
 } from "lucide-react";
 
 // Create a custom Confetti icon
@@ -174,7 +174,7 @@ export {
   Search,
   Settings,
   ShieldCheck,
-  ShoppingBag,
+  ShoppingBag, // Added ShoppingBag here
   Sigma,
   Smile,
   Star,
@@ -188,6 +188,6 @@ export {
   Users,
   X,
   Zap,
-  LucideIcon,
-  type LucideProps
+  type LucideIcon, // Changed to export type
+  type LucideProps // Ensured this is also export type
 };
