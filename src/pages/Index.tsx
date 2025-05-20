@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,8 @@ import { Button } from '@/components/ui/button';
 const WelcomeScreen: React.FC = () => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check if onboarding is complete
-    if (localStorage.getItem('hasCompletedOnboarding') === 'true') {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [navigate]);
+  // Removed useEffect that checked for 'hasCompletedOnboarding'
+  // This screen is now purely for pre-authentication choices.
 
   return (
     <div className="flex flex-col items-center justify-between min-h-screen bg-eco-dark text-eco-light p-8 pt-16 sm:pt-24 relative overflow-hidden">
@@ -41,13 +37,21 @@ const WelcomeScreen: React.FC = () => {
         </p>
       </div>
 
-      <div className="w-full max-w-xs z-10 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+      <div className="w-full max-w-xs z-10 animate-fade-in-up space-y-4" style={{ animationDelay: '0.3s' }}>
         <Button
-          onClick={() => navigate('/goal-selection')} // Navigate to goal selection
+          onClick={() => navigate('/signup')}
           className="w-full bg-eco-accent hover:bg-eco-accent-secondary text-eco-dark font-bold py-4 text-lg rounded-xl shadow-lg transform transition-transform hover:scale-105 active:scale-95"
           size="lg"
         >
-          Get Started
+          Sign Up
+        </Button>
+        <Button
+          onClick={() => navigate('/login')}
+          variant="outline"
+          className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20 text-eco-light font-bold py-4 text-lg rounded-xl shadow-lg transform transition-transform hover:scale-105 active:scale-95"
+          size="lg"
+        >
+          Log In
         </Button>
       </div>
       <div className="h-16"></div> {/* Spacer for bottom */}
@@ -56,3 +60,4 @@ const WelcomeScreen: React.FC = () => {
 };
 
 export default WelcomeScreen;
+

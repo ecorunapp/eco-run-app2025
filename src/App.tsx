@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { EcoCoinsProvider } from "./context/EcoCoinsContext"; // Import EcoCoinsProvider
+import { EcoCoinsProvider } from "./context/EcoCoinsContext";
 import WelcomeScreen from "./pages/Index";
 import DashboardPage from "./pages/DashboardPage";
 import ActivitiesPage from "./pages/ActivitiesPage";
@@ -13,6 +13,8 @@ import ProfilePage from "./pages/ProfilePage";
 import EcotabDetailsPage from "./pages/EcotabDetailsPage";
 import GoalSelectionPage from "./pages/GoalSelectionPage";
 import SplashScreenPage from "./pages/SplashScreenPage";
+import LoginPage from "./pages/LoginPage"; // Import LoginPage
+import SignupPage from "./pages/SignupPage"; // Import SignupPage
 import NotFound from "./pages/NotFound";
 import GiftCards from './pages/GiftCards';
 
@@ -20,7 +22,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <EcoCoinsProvider> {/* Wrap with EcoCoinsProvider */}
+    <EcoCoinsProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -29,6 +31,8 @@ const App = () => (
             <Route path="/" element={<Navigate replace to="/splash" />} />
             <Route path="/splash" element={<SplashScreenPage />} />
             <Route path="/welcome" element={<WelcomeScreen />} />
+            <Route path="/signup" element={<SignupPage />} /> {/* Add SignupPage route */}
+            <Route path="/login" element={<LoginPage />} /> {/* Add LoginPage route */}
             <Route path="/goal-selection" element={<GoalSelectionPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/activities" element={<ActivitiesPage />} />
