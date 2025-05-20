@@ -1,4 +1,3 @@
-
 import {
   Award,
   AlertCircle,
@@ -45,7 +44,7 @@ import {
   Loader2,
   LogIn,
   LogOut,
-  Mail, // Added Mail
+  Mail,
   MapPin,
   Menu,
   MessageSquare,
@@ -77,9 +76,9 @@ import {
   Users,
   X,
   Zap,
-  Lock, // Added Lock
-  LucideProps, 
-  LucideIcon  
+  Lock,
+  type LucideProps,
+  type LucideIcon
 } from "lucide-react";
 
 // Create a custom Confetti icon
@@ -158,7 +157,7 @@ export {
   Loader2,
   LogIn,
   LogOut,
-  Mail, // Added Mail
+  Mail,
   MapPin,
   Menu,
   MessageSquare,
@@ -176,7 +175,7 @@ export {
   Search,
   Settings,
   ShieldCheck,
-  ShoppingBag, 
+  ShoppingBag,
   Sigma,
   Smile,
   Star,
@@ -190,8 +189,8 @@ export {
   Users,
   X,
   Zap,
-  Lock, // Added Lock
-  type LucideIcon, 
-  type LucideProps 
+  Lock,
+  type LucideIcon,
+  type LucideProps,
+  Confetti
 };
-
