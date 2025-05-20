@@ -1,35 +1,64 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import EcoRunLogo from '@/components/EcoRunLogo';
-import { ArrowLeft, Mail, Lock } from '@/components/icons'; // Assuming Mail and Lock icons exist or are added
+import { ArrowLeft, Mail, Lock, Loader2 } from '@/components/icons';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Basic validation (can be expanded with a library like Zod)
     if (password !== confirmPassword) {
-      alert("Passwords don't match!"); // Replace with a toast notification later
+      toast.error("Passwords don't match!");
       return;
     }
-    console.log('Signing up with:', { email, password });
-    // For now, simulate successful signup and navigate
-    localStorage.setItem('hasCompletedOnboarding', 'false'); // Mark as new user, onboarding not done
-    navigate('/goal-selection');
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else if (data.user && data.user.identities?.length === 0) {
+        // This case can happen if email confirmation is required but the user already exists with an unconfirmed email.
+        // Supabase might return a user object but with no identities if the email is already in use by an unconfirmed account.
+        toast.error("User already exists or sign up failed. Please try logging in or use a different email.");
+      } else if (data.user) {
+        toast.success('Signup successful! Please check your email to confirm your account.');
+        // The handle_new_user trigger in Supabase should create a profile automatically.
+        // No need to set 'hasCompletedOnboarding' in localStorage here.
+        // That state should be managed based on the user's profile after login.
+        navigate('/login'); // Navigate to login page after signup
+      } else {
+        toast.error("An unexpected error occurred during sign up. Please try again.");
+      }
+    } catch (catchError: any) {
+      toast.error(catchError.message || 'An unexpected error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light p-6 pt-10 justify-between items-center">
       <header className="w-full max-w-md flex items-center justify-between mb-8">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/welcome')} className="text-eco-gray hover:text-eco-accent">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/welcome')} className="text-eco-gray hover:text-eco-accent" disabled={isLoading}>
           <ArrowLeft size={24} />
         </Button>
         <EcoRunLogo size="small" />
@@ -53,6 +82,7 @@ const SignupPage: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="pl-10 text-base"
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -63,11 +93,12 @@ const SignupPage: React.FC = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="•••••••• (min. 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="pl-10 text-base"
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -83,28 +114,26 @@ const SignupPage: React.FC = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 className="pl-10 text-base"
+                disabled={isLoading}
               />
             </div>
           </div>
-          <Button type="submit" className="w-full bg-eco-accent hover:bg-eco-accent-secondary text-eco-dark font-bold py-3 text-lg" size="lg">
-            Create Account
+          <Button type="submit" className="w-full bg-eco-accent hover:bg-eco-accent-secondary text-eco-dark font-bold py-3 text-lg" size="lg" disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Create Account'}
           </Button>
         </form>
 
-        {/* Social Logins Placeholder */}
+        {/* Social Logins Placeholder - TODO: Implement with Supabase OAuth */}
         <div className="mt-8 text-center w-full">
           <p className="text-eco-gray text-sm mb-4">Or continue with</p>
           <div className="space-y-3">
-            <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20">
-              {/* Placeholder for Google Icon */}
+            <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20" disabled={isLoading}>
               Continue with Google
             </Button>
-            <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20">
-              {/* Placeholder for Facebook Icon */}
+            <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20" disabled={isLoading}>
               Continue with Facebook
             </Button>
-            <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20">
-              {/* Placeholder for Apple Icon */}
+            <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20" disabled={isLoading}>
               Continue with Apple
             </Button>
           </div>
@@ -112,7 +141,7 @@ const SignupPage: React.FC = () => {
         
         <p className="mt-8 text-eco-gray">
           Already have an account?{' '}
-          <Button variant="link" onClick={() => navigate('/login')} className="text-eco-accent p-0 h-auto hover:underline">
+          <Button variant="link" onClick={() => navigate('/login')} className="text-eco-accent p-0 h-auto hover:underline" disabled={isLoading}>
             Log In
           </Button>
         </p>
@@ -123,4 +152,3 @@ const SignupPage: React.FC = () => {
 };
 
 export default SignupPage;
-

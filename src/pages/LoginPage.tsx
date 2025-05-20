@@ -1,35 +1,75 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import EcoRunLogo from '@/components/EcoRunLogo';
-import { ArrowLeft, Mail, Lock } from '@/components/icons';
+import { ArrowLeft, Mail, Lock, Loader2 } from '@/components/icons';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // User is already logged in, check onboarding status from their profile (to be implemented later)
+        // For now, navigate to dashboard directly
+        navigate('/dashboard');
+      }
+    };
+    checkSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        // Potentially check onboarding status from user profile here
+        // const userProfile = await supabase.from('profiles').select('has_completed_onboarding').eq('id', session.user.id).single()
+        // if (userProfile.data && userProfile.data.has_completed_onboarding) {
+        //   navigate('/dashboard');
+        // } else {
+        //   navigate('/goal-selection');
+        // }
+        toast.success('Logged in successfully!');
+        navigate('/dashboard');
+      } else if (event === 'SIGNED_OUT') {
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Logging in with:', { email, password });
-    // For now, simulate successful login and navigate
-    const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding') === 'true';
-    if (hasCompletedOnboarding) {
-      navigate('/dashboard');
-    } else {
-      // If they log in but never finished onboarding, send them to goal selection
-      // or if 'hasCompletedOnboarding' is not 'true' (e.g. 'false' or null)
-      navigate('/goal-selection');
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error(error.message);
+      }
+      // Successful login is handled by onAuthStateChange
+    } catch (catchError: any) {
+      toast.error(catchError.message || 'An unexpected error occurred.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light p-6 pt-10 justify-between items-center">
       <header className="w-full max-w-md flex items-center justify-between mb-8">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/welcome')} className="text-eco-gray hover:text-eco-accent">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/welcome')} className="text-eco-gray hover:text-eco-accent" disabled={isLoading}>
           <ArrowLeft size={24} />
         </Button>
         <EcoRunLogo size="small" />
@@ -53,6 +93,7 @@ const LoginPage: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="pl-10 text-base"
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -68,30 +109,31 @@ const LoginPage: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="pl-10 text-base"
+                disabled={isLoading}
               />
             </div>
           </div>
           <div className="text-right">
-            <Button variant="link" onClick={() => {/* TODO: Forgot password flow */}} className="text-eco-accent p-0 h-auto text-sm hover:underline">
+            <Button variant="link" onClick={() => { /* TODO: Implement Supabase password reset flow */ toast.info("Forgot password functionality coming soon!") }} className="text-eco-accent p-0 h-auto text-sm hover:underline" disabled={isLoading}>
               Forgot password?
             </Button>
           </div>
-          <Button type="submit" className="w-full bg-eco-accent hover:bg-eco-accent-secondary text-eco-dark font-bold py-3 text-lg" size="lg">
-            Log In
+          <Button type="submit" className="w-full bg-eco-accent hover:bg-eco-accent-secondary text-eco-dark font-bold py-3 text-lg" size="lg" disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Log In'}
           </Button>
         </form>
 
-         {/* Social Logins Placeholder */}
+         {/* Social Logins Placeholder - TODO: Implement with Supabase OAuth */}
         <div className="mt-8 text-center w-full">
           <p className="text-eco-gray text-sm mb-4">Or continue with</p>
           <div className="space-y-3">
-            <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20">
+            <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20" disabled={isLoading}>
               Continue with Google
             </Button>
-             <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20">
+             <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20" disabled={isLoading}>
               Continue with Facebook
             </Button>
-             <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20">
+             <Button variant="outline" className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20" disabled={isLoading}>
               Continue with Apple
             </Button>
           </div>
@@ -99,7 +141,7 @@ const LoginPage: React.FC = () => {
 
         <p className="mt-8 text-eco-gray">
           Don't have an account?{' '}
-          <Button variant="link" onClick={() => navigate('/signup')} className="text-eco-accent p-0 h-auto hover:underline">
+          <Button variant="link" onClick={() => navigate('/signup')} className="text-eco-accent p-0 h-auto hover:underline" disabled={isLoading}>
             Sign Up
           </Button>
         </p>
@@ -110,4 +152,3 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
-
