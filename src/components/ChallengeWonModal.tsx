@@ -1,19 +1,21 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Challenge } from '@/data/challenges';
 import GiftCardDisplay from './GiftCardDisplay';
 import { Confetti, Gift } from '@/components/icons';
+import { useEcoCoins } from '@/context/EcoCoinsContext';
 
 interface ChallengeWonModalProps {
   isOpen: boolean;
   onClose: () => void;
   challenge: Challenge;
+  userGiftCardId: string | null;
 }
 
-const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, challenge }) => {
+const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, challenge, userGiftCardId }) => {
   const [isScratched, setIsScratched] = useState(false);
+  const { claimGiftCardPrize } = useEcoCoins();
 
   const handleScratch = () => {
     setIsScratched(true);
@@ -25,8 +27,13 @@ const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, 
     }
   }, [isOpen]);
 
-  // Specific message for Noon cards, or cards that require activation info
   const activationMessage = "Card is activated within 12 hours. After activated you will get mail.";
+
+  const handlePromoCodeCopied = async () => {
+    if (userGiftCardId && challenge.giftCardKey) {
+      await claimGiftCardPrize(userGiftCardId);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -59,7 +66,8 @@ const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, 
               frontImageUrl={challenge.prizeImageUrl || '/placeholder-noon-card-front.png'} 
               backImageUrl="/placeholder-noon-card-back.png" 
               promoCode={challenge.prizePromoCode || "NOON-XXX-XXX"}
-              activationMessage={activationMessage} // Pass the activation message
+              activationMessage={activationMessage}
+              onCodeCopied={handlePromoCodeCopied}
             />
           )}
         </div>

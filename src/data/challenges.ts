@@ -1,20 +1,23 @@
-import { LucideIcon, Footprints, Award, Lock } from '@/components/icons'; // Using our icons.tsx // Added Lock icon
+
+import { LucideIcon, Footprints, Award, Lock } from '@/components/icons';
 
 export interface Challenge {
   id: string;
   title: string;
   description: string;
   stepsGoal: number;
-  rewardCoins: number;
+  rewardCoins: number; // EcoCoins initially awarded upon completion
   icon: LucideIcon;
   prizeImageUrl?: string;
-  prizePromoCode?: string;
+  prizePromoCode?: string; // Generic promo code for display
   primaryColor: string;
   textColor: string;
   buttonBgColor: string;
   buttonTextColor: string;
-  isLockedInitially?: boolean; // New property for initial lock state
-  unlockDescription?: string; // New property for unlock instructions
+  isLockedInitially?: boolean;
+  unlockDescription?: string;
+  giftCardKey?: string; // Key to link to the 'gift_cards' table for specific card details
+  // associatedClaimCost is implicitly rewardCoins for gift card challenges
 }
 
 export const challenges: Challenge[] = [
@@ -23,7 +26,7 @@ export const challenges: Challenge[] = [
     title: 'Noon 10 AED Sprint',
     description: 'Complete 2,000 steps & win a 10 AED Noon Card!',
     stepsGoal: 2000,
-    rewardCoins: 50,
+    rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
     prizeImageUrl: '/noon-10aed-card-front.png',
     prizePromoCode: 'NOON10-SPRINT',
@@ -31,13 +34,14 @@ export const challenges: Challenge[] = [
     textColor: 'text-white',
     buttonBgColor: 'bg-white',
     buttonTextColor: 'text-orange-600',
+    giftCardKey: 'NOON_10_AED',
   },
   {
     id: 'challenge_5k_steps',
-    title: 'Daily 5K Grind',
+    title: 'Daily 5K Grind (10 AED)',
     description: 'Push yourself to 5,000 steps today & win a 10 AED Noon Card!',
     stepsGoal: 5000,
-    rewardCoins: 75,
+    rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
     prizeImageUrl: '/noon-10aed-card-front.png',
     prizePromoCode: 'NOON10-DAILYGRIND',
@@ -45,67 +49,73 @@ export const challenges: Challenge[] = [
     textColor: 'text-white',
     buttonBgColor: 'bg-white',
     buttonTextColor: 'text-blue-600',
+    giftCardKey: 'NOON_10_AED',
   },
   {
-    id: 'challenge_5k_noon_10aed', 
+    id: 'challenge_5k_noon_10aed',
     title: '5K Steps for 10 AED',
     description: 'Achieve 5,000 steps and get a 10 AED Noon Card!',
     stepsGoal: 5000,
-    rewardCoins: 75, 
+    rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/noon-10aed-card-front.png', 
+    prizeImageUrl: '/noon-10aed-card-front.png',
     prizePromoCode: 'NOON10-5KSTEP',
     primaryColor: 'bg-green-500',
     textColor: 'text-white',
     buttonBgColor: 'bg-white',
     buttonTextColor: 'text-green-600',
+    giftCardKey: 'NOON_10_AED',
   },
   {
-    id: 'challenge_7.5k_noon_20aed', 
+    id: 'challenge_7.5k_noon_20aed',
     title: 'Power Walk for 20 AED',
     description: 'Complete 7,500 steps for a 20 AED Noon Card!',
     stepsGoal: 7500,
-    rewardCoins: 120, 
-    icon: Award, 
-    prizeImageUrl: '/placeholder-noon-card-front.png', 
+    rewardCoins: 100, // 20 AED card = 100 EcoCoins
+    icon: Award,
+    prizeImageUrl: '/placeholder-noon-card-front.png', // Make sure this image exists for 20 AED
     prizePromoCode: 'NOON20-POWER',
     primaryColor: 'bg-purple-500',
     textColor: 'text-white',
     buttonBgColor: 'bg-white',
     buttonTextColor: 'text-purple-600',
+    giftCardKey: 'NOON_20_AED',
   },
   {
     id: 'challenge_10k_steps',
-    title: 'Marathon Prep',
-    description: 'Conquer 10,000 steps today!',
+    title: 'Marathon Prep (20 AED)',
+    description: 'Conquer 10,000 steps today & win a 20 AED Noon Card!', // Assuming 20 AED prize
     stepsGoal: 10000,
-    rewardCoins: 150,
+    rewardCoins: 100, // 20 AED card = 100 EcoCoins
     icon: Award,
-    prizeImageUrl: '/placeholder-noon-card-front.png', // Assuming still placeholder
-    prizePromoCode: 'NOON-MARATHON-PRO', // Assuming still placeholder code
+    prizeImageUrl: '/placeholder-noon-card-front.png', // Placeholder for 20 AED
+    prizePromoCode: 'NOON20-MARATHON-PRO',
     primaryColor: 'bg-teal-500',
     textColor: 'text-white',
     buttonBgColor: 'bg-white',
     buttonTextColor: 'text-teal-600',
+    giftCardKey: 'NOON_20_AED',
   },
   {
     id: 'challenge_20k_ecotab_300aed',
     title: 'Ultimate 20K Ecotab Challenge',
     description: 'Conquer 20,000 steps & win a 300 AED Noon Card! Requires Ecotab activation.',
     stepsGoal: 20000,
-    rewardCoins: 1500, // Significant reward for a big challenge + prize
-    icon: Award, // Or a new "epic" icon if available
-    prizeImageUrl: '/placeholder-noon-card-300aed.png', // You'll need to upload this image
+    rewardCoins: 1500, // 300 AED card = 1500 EcoCoins (30 * 50)
+    icon: Award,
+    prizeImageUrl: '/placeholder-noon-card-300aed.png',
     prizePromoCode: 'NOON300-ULTIMATE',
-    primaryColor: 'bg-gray-700', // Distinct color for this special challenge
+    primaryColor: 'bg-gray-700',
     textColor: 'text-yellow-300',
     buttonBgColor: 'bg-yellow-400',
     buttonTextColor: 'text-gray-800',
     isLockedInitially: true,
     unlockDescription: 'Activate your Ecotab card to unlock this challenge.',
+    giftCardKey: 'NOON_300_AED_ULTIMATE',
   },
 ];
 
 export const getChallengeById = (id: string): Challenge | undefined => {
   return challenges.find(challenge => challenge.id === id);
 };
+

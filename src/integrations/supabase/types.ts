@@ -11,37 +11,46 @@ export type Database = {
     Tables: {
       gift_cards: {
         Row: {
+          card_key: string | null
           card_type: string | null
           created_at: string | null
+          currency: string | null
           description: string | null
           expiry_date: string | null
           id: string
           image_url: string | null
           is_active: boolean | null
+          monetary_value_aed: number | null
           title: string
           updated_at: string | null
           value_coins: number
         }
         Insert: {
+          card_key?: string | null
           card_type?: string | null
           created_at?: string | null
+          currency?: string | null
           description?: string | null
           expiry_date?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          monetary_value_aed?: number | null
           title: string
           updated_at?: string | null
           value_coins: number
         }
         Update: {
+          card_key?: string | null
           card_type?: string | null
           created_at?: string | null
+          currency?: string | null
           description?: string | null
           expiry_date?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          monetary_value_aed?: number | null
           title?: string
           updated_at?: string | null
           value_coins?: number
@@ -240,9 +249,16 @@ export type Database = {
       user_gift_cards: {
         Row: {
           assigned_at: string | null
+          associated_eco_coins_value: number | null
+          challenge_id_won_from: string | null
           created_at: string | null
           gift_card_id: string
           id: string
+          prize_currency: string | null
+          prize_image_url: string | null
+          prize_monetary_value_aed: number | null
+          prize_promo_code: string | null
+          prize_title: string | null
           status: string | null
           updated_at: string | null
           used_at: string | null
@@ -250,9 +266,16 @@ export type Database = {
         }
         Insert: {
           assigned_at?: string | null
+          associated_eco_coins_value?: number | null
+          challenge_id_won_from?: string | null
           created_at?: string | null
           gift_card_id: string
           id?: string
+          prize_currency?: string | null
+          prize_image_url?: string | null
+          prize_monetary_value_aed?: number | null
+          prize_promo_code?: string | null
+          prize_title?: string | null
           status?: string | null
           updated_at?: string | null
           used_at?: string | null
@@ -260,9 +283,16 @@ export type Database = {
         }
         Update: {
           assigned_at?: string | null
+          associated_eco_coins_value?: number | null
+          challenge_id_won_from?: string | null
           created_at?: string | null
           gift_card_id?: string
           id?: string
+          prize_currency?: string | null
+          prize_image_url?: string | null
+          prize_monetary_value_aed?: number | null
+          prize_promo_code?: string | null
+          prize_title?: string | null
           status?: string | null
           updated_at?: string | null
           used_at?: string | null
