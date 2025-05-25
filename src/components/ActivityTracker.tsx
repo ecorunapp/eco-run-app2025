@@ -262,17 +262,17 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
         {/* CO2 Saved and Coins */}
         <div className="flex justify-around w-full max-w-md">
           <div className="flex flex-col items-center text-center">
-            <Leaf size={24} className="text-green-400 mb-1" />
+            <Leaf size={24} className="text-foreground mb-1" />
             <span className="text-lg font-semibold text-foreground">{co2Saved.toLocaleString()} g</span>
             <span className="text-xs text-muted-foreground">CO₂ Saved</span>
           </div>
           <div className="flex flex-col items-center text-center">
-            <MapPin size={24} className="text-blue-400 mb-1" />
+            <MapPin size={24} className="text-foreground mb-1" />
             <span className="text-lg font-semibold text-foreground">{distanceCovered.toFixed(2)} km</span>
             <span className="text-xs text-muted-foreground">Distance</span>
           </div>
           <div className="flex flex-col items-center text-center">
-            <Coins size={24} className="text-yellow-400 mb-1" />
+            <Coins size={24} className="text-foreground mb-1" />
             <span className="text-lg font-semibold text-foreground">{coinsEarned.toLocaleString()}</span>
             <span className="text-xs text-muted-foreground">General Coins</span>
           </div>

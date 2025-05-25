@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -32,7 +31,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <EcoCoinsProvider>
       <ChallengesProvider> {/* Wrap with ChallengesProvider */}
-        <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+        <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -67,4 +66,3 @@ const App = () => (
 );
 
 export default App;
-
