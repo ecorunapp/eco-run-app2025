@@ -37,8 +37,19 @@ const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, 
 
   const handlePromoCodeCopied = async () => {
     if (userGiftCardId && challenge.giftCardKey) {
-      await claimGiftCardPrize(userGiftCardId);
-      // Potentially add a toast message for successful claim initiation
+      const claimedSuccessfully = await claimGiftCardPrize(userGiftCardId);
+      if (claimedSuccessfully) {
+        // Toast for successful claim is handled within claimGiftCardPrize
+        onClose(); // Close the modal on successful claim
+      } else {
+        // Toast for failed claim is also handled within claimGiftCardPrize
+        // Modal remains open for user to review or if action is needed
+        console.warn("Gift card claim was not successful. Modal remains open.");
+      }
+    } else {
+      console.error("handlePromoCodeCopied called without a valid userGiftCardId or challenge.giftCardKey. This may happen if the challenge doesn't award a specific gift card or if there was an issue assigning it.");
+      // Potentially show a toast to the user if this state is unexpected.
+      // For now, we won't close the modal as the claim action couldn't be initiated.
     }
   };
 

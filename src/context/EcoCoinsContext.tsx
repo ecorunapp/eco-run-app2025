@@ -110,6 +110,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
   const addEarnings = async (amount: number, label: string, challengeDetails?: Challenge): Promise<string | null> => {
     if (!user) {
       toast.error("User not authenticated. Cannot add earnings.");
+      console.error("[EcoCoinsContext] addEarnings called without authenticated user.");
       return null;
     }
     setIsLoading(true);
@@ -156,8 +157,10 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
 
         if (masterCardError || !masterCard) {
           toast.error(`Could not find master gift card details for key: ${challengeDetails.giftCardKey}. Earnings added, but card not logged.`);
-          console.error("Master card fetch error:", masterCardError);
+          console.error("[EcoCoinsContext] Master card fetch error:", masterCardError, "for key:", challengeDetails.giftCardKey);
         } else {
+          console.log('[EcoCoinsContext] Attempting to insert user_gift_card. User ID:', user.id, 'Master Gift Card ID:', masterCard.id, 'Challenge ID:', challengeDetails.id, 'Challenge Gift Card Key:', challengeDetails.giftCardKey);
+          
           const { data: newUserGiftCard, error: userGiftCardError } = await supabase
             .from('user_gift_cards')
             .insert({
@@ -169,7 +172,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
               prize_promo_code: challengeDetails.prizePromoCode,
               prize_monetary_value_aed: masterCard.monetary_value_aed,
               prize_currency: masterCard.currency,
-              associated_eco_coins_value: challengeDetails.rewardCoins || masterCard.value_coins, // Changed from amount to challengeDetails.rewardCoins or masterCard.value_coins
+              associated_eco_coins_value: challengeDetails.rewardCoins || masterCard.value_coins,
               status: 'assigned',
               assigned_at: new Date().toISOString(),
             })
@@ -177,8 +180,10 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
             .single();
           
           if (userGiftCardError) {
-            toast.error(`Error logging won gift card: ${userGiftCardError.message}. Earnings added.`);
-            console.error("User gift card insert error:", userGiftCardError);
+            toast.error(`Error logging won gift card: ${userGiftCardError.message}`);
+            console.error("[EcoCoinsContext] User gift card insert error:", userGiftCardError.message, userGiftCardError);
+            // Do not return null here if only gift card logging failed but eco coins were earned.
+            // The function should still reflect that earnings were added, and userGiftCardId will remain null.
           } else if (newUserGiftCard) {
             userGiftCardId = newUserGiftCard.id;
             toast.info(`Gift card "${masterCard.title}" logged to your prizes!`);
@@ -194,10 +199,12 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
       
       if (balanceError) {
         toast.error(`Error updating balance: ${balanceError.message}`);
+        // If balance update fails, consider reverting the optimistic updates or handling inconsistency
       }
-      return userGiftCardId;
+      return userGiftCardId; // This will be null if gift card logging failed or no gift card key
     } catch (error: any) {
       toast.error(`An unexpected error occurred: ${error.message}`);
+      console.error("[EcoCoinsContext] Unexpected error in addEarnings:", error);
       setBalance(prev => prev - amount);
       setHistory(prev => prev.filter(tx => tx.id !== optimisticTransaction.id));
       return null;
@@ -286,7 +293,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
 
       if (fetchError || !userCard) {
         toast.error("Could not find the gift card or permission denied.");
-        console.error("Fetch user_gift_card error:", fetchError);
+        console.error("[EcoCoinsContext] Fetch user_gift_card error:", fetchError);
         setIsLoading(false);
         return false;
       }
@@ -362,9 +369,10 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (error: any) {
       toast.error(`An unexpected error occurred while claiming: ${error.message}`);
+      console.error("[EcoCoinsContext] Unexpected error in claimGiftCardPrize:", error);
       return false;
     } finally {
-      if (user) { await fetchUserEcoData(user.id); }
+      if (user) { await fetchUserEcoData(user.id); } // Refresh data after claim attempt
       setIsLoading(false);
     }
   };
