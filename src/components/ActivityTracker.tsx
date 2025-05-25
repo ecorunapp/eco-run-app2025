@@ -6,41 +6,42 @@ import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from '
 import ActivityRewardCard from './ActivityRewardCard';
 import LiveActivityMap from './LiveActivityMap';
 import Co2SavedPopup from './Co2SavedPopup';
-import type { Challenge as ActiveChallengeType } from '@/types/Challenge'; 
-import { useEcoCoins } from '@/context/EcoCoinsContext'; 
-import { useChallenges } from '@/context/ChallengesContext'; 
-import { toast as sonnerToast } from "sonner"; 
+import type { Challenge as ActiveChallengeType } from '@/types/Challenge';
+import { useEcoCoins } from '@/context/EcoCoinsContext';
+import { useChallenges } from '@/context/ChallengesContext';
+import { toast as sonnerToast } from "sonner";
 import ScratchRewardModal from './ScratchRewardModal';
-
 export interface ActivitySummary {
   steps: number;
   elapsedTime: number;
   calories: number;
   co2Saved: number;
-  coinsEarned: number; 
-  distanceCovered?: number; 
+  coinsEarned: number;
+  distanceCovered?: number;
 }
-
 interface ActivityTrackerProps {
   onStopTracking: (activitySummary: ActivitySummary) => void;
-  activeChallenge?: ActiveChallengeType & { status: 'not-started' | 'completed' }; 
+  activeChallenge?: ActiveChallengeType & {
+    status: 'not-started' | 'completed';
+  };
 }
-
-const GOAL_STEPS = 10000; 
+const GOAL_STEPS = 10000;
 const CO2_MILESTONES = [20, 50, 100, 200, 300, 400, 500, 700, 800, 900, 1000];
-const AVERAGE_STEP_LENGTH_KM = 0.0007; 
+const AVERAGE_STEP_LENGTH_KM = 0.0007;
 const NOON_GIFT_CARD_IMAGE_URL = '/lovable-uploads/70f5737d-2168-4475-9f8c-fcbe0c580657.png';
-
-const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activeChallenge }) => {
+const ActivityTracker: React.FC<ActivityTrackerProps> = ({
+  onStopTracking,
+  activeChallenge
+}) => {
   const [isTracking, setIsTracking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
-  const [elapsedTime, setElapsedTime] = useState(0); 
+  const [elapsedTime, setElapsedTime] = useState(0);
   const [steps, setSteps] = useState(0);
-  const [distanceCovered, setDistanceCovered] = useState(0); 
+  const [distanceCovered, setDistanceCovered] = useState(0);
   const [calories, setCalories] = useState(0);
   const [co2Saved, setCo2Saved] = useState(0);
-  const [coinsEarned, setCoinsEarned] = useState(0); 
+  const [coinsEarned, setCoinsEarned] = useState(0);
   const [showRewardCard, setShowRewardCard] = useState(false);
   const [activityCompleted, setActivityCompleted] = useState(false);
 
@@ -48,23 +49,28 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
   const [showCo2Popup, setShowCo2Popup] = useState(false);
   const [currentCo2Milestone, setCurrentCo2Milestone] = useState<number | null>(null);
   const achievedCo2MilestonesRef = useRef<Set<number>>(new Set());
-
-  const { addEarnings: addEcoCoins } = useEcoCoins();
-  const { completeChallenge: markChallengeAsCompleted } = useChallenges();
+  const {
+    addEarnings: addEcoCoins
+  } = useEcoCoins();
+  const {
+    completeChallenge: markChallengeAsCompleted
+  } = useChallenges();
 
   // State for the scratch reward modal
   const [showScratchModal, setShowScratchModal] = useState(false);
-  const [scratchPrizeDetails, setScratchPrizeDetails] = useState<{ name: string; imageUrl: string; code: string; } | null>(null);
-
+  const [scratchPrizeDetails, setScratchPrizeDetails] = useState<{
+    name: string;
+    imageUrl: string;
+    code: string;
+  } | null>(null);
   const generateMockGiftCode = () => `NOON${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-
   const resetTracker = useCallback(() => {
     setIsTracking(false);
     setIsPaused(false);
     setStartTime(null);
     setElapsedTime(0);
     setSteps(0);
-    setDistanceCovered(0); 
+    setDistanceCovered(0);
     setCalories(0);
     setCo2Saved(0);
     setCoinsEarned(0);
@@ -76,31 +82,26 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
     setShowScratchModal(false); // Reset scratch modal state
     setScratchPrizeDetails(null);
   }, []);
-
   useEffect(() => {
     let timerInterval: NodeJS.Timeout;
     let stepInterval: NodeJS.Timeout;
-
     if (isTracking && !isPaused) {
       if (!startTime) {
         setStartTime(new Date());
       }
-      
       timerInterval = setInterval(() => {
         setElapsedTime(prevTime => prevTime + 1);
       }, 1000);
-
       stepInterval = setInterval(() => {
         setSteps(prevSteps => {
           const newSteps = prevSteps + Math.floor(Math.random() * 10) + 5;
           const newCo2Saved = parseFloat((newSteps * 0.0008).toFixed(2));
           const newDistanceCovered = parseFloat((newSteps * AVERAGE_STEP_LENGTH_KM).toFixed(3));
-          
           setDistanceCovered(newDistanceCovered); // Update distance
           setCalories(Math.floor(newSteps * 0.04));
           setCo2Saved(newCo2Saved);
           // General coins earned, challenge coins are separate
-          setCoinsEarned(Math.floor(newSteps / 100)); 
+          setCoinsEarned(Math.floor(newSteps / 100));
 
           // Check for CO2 milestones
           for (const milestone of CO2_MILESTONES) {
@@ -113,46 +114,38 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
           }
           return newSteps;
         });
-      }, 2000); 
+      }, 2000);
     }
-
     return () => {
       clearInterval(timerInterval);
       clearInterval(stepInterval);
     };
   }, [isTracking, isPaused, startTime]);
-
   const handleStart = () => {
-    resetTracker(); 
+    resetTracker();
     setIsTracking(true);
     setIsPaused(false);
     setStartTime(new Date());
   };
-
   const handlePauseResume = () => {
     setIsPaused(!isPaused);
-    if (!isPaused) { 
-        if(elapsedTime === 0 && steps === 0) { 
-            setStartTime(new Date());
-        }
+    if (!isPaused) {
+      if (elapsedTime === 0 && steps === 0) {
+        setStartTime(new Date());
+      }
     }
   };
-
   const handleStop = () => {
-    if (!isTracking && !startTime && !activityCompleted) return; 
-    
+    if (!isTracking && !startTime && !activityCompleted) return;
     setIsTracking(false);
-    setIsPaused(true); 
+    setIsPaused(true);
     setActivityCompleted(true);
-    
     let challengeRewardTriggered = false;
-
     if (activeChallenge && activeChallenge.status === 'not-started') {
       if (distanceCovered >= activeChallenge.distance) {
         // Award EcoCoins for the challenge
         addEcoCoins(activeChallenge.reward, `Challenge: ${activeChallenge.title}`);
         markChallengeAsCompleted(activeChallenge.id);
-        
         sonnerToast.success(`+${activeChallenge.reward} EcoCoins!`, {
           description: `For completing ${activeChallenge.title}.`,
           icon: <Coins className="text-yellow-400" />
@@ -160,15 +153,16 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
 
         // Set up and show the scratch card modal for the gift card
         setScratchPrizeDetails({
-          name: "10 AED Noon Gift Card", // This can be made dynamic if challenges have specific gift card rewards
+          name: "10 AED Noon Gift Card",
+          // This can be made dynamic if challenges have specific gift card rewards
           imageUrl: NOON_GIFT_CARD_IMAGE_URL,
-          code: generateMockGiftCode(),
+          code: generateMockGiftCode()
         });
         setShowScratchModal(true);
         challengeRewardTriggered = true; // Indicates special challenge reward flow
       } else {
         sonnerToast.info("Challenge Incomplete", {
-          description: `You didn't quite meet the ${activeChallenge.distance}km goal for ${activeChallenge.title}. Keep trying!`,
+          description: `You didn't quite meet the ${activeChallenge.distance}km goal for ${activeChallenge.title}. Keep trying!`
         });
       }
     }
@@ -176,14 +170,20 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
     // If scratch modal is not triggered, proceed with normal reward card/onStopTracking
     if (!challengeRewardTriggered) {
       if (coinsEarned > 0) {
-         setShowRewardCard(true); 
+        setShowRewardCard(true);
       } else {
-        const finalSummary = { steps, elapsedTime, calories, co2Saved, coinsEarned, distanceCovered };
+        const finalSummary = {
+          steps,
+          elapsedTime,
+          calories,
+          co2Saved,
+          coinsEarned,
+          distanceCovered
+        };
         onStopTracking(finalSummary);
       }
     }
   };
-
   const handleCloseScratchModal = () => {
     setShowScratchModal(false);
     // After scratch modal is closed, check if general reward card should be shown
@@ -191,35 +191,46 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
       setShowRewardCard(true);
     } else {
       // If no general coins, call onStopTracking
-      const finalSummary = { steps, elapsedTime, calories, co2Saved, coinsEarned, distanceCovered };
+      const finalSummary = {
+        steps,
+        elapsedTime,
+        calories,
+        co2Saved,
+        coinsEarned,
+        distanceCovered
+      };
       onStopTracking(finalSummary);
     }
   };
-
   const handleCloseReward = () => {
     setShowRewardCard(false);
-    const finalSummary = { steps, elapsedTime, calories, co2Saved, coinsEarned, distanceCovered };
+    const finalSummary = {
+      steps,
+      elapsedTime,
+      calories,
+      co2Saved,
+      coinsEarned,
+      distanceCovered
+    };
     onStopTracking(finalSummary);
   };
-
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const minutes = Math.floor(totalSeconds % 3600 / 60);
     const seconds = totalSeconds % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
-
-  const percentage = GOAL_STEPS > 0 ? Math.min(100, (steps / GOAL_STEPS) * 100) : 0;
-  const radialData = [{ name: 'Steps', value: percentage, fill: 'url(#activityGradient)' }];
-  const endAngle = 90 - (percentage / 100) * 360;
-
+  const percentage = GOAL_STEPS > 0 ? Math.min(100, steps / GOAL_STEPS * 100) : 0;
+  const radialData = [{
+    name: 'Steps',
+    value: percentage,
+    fill: 'url(#activityGradient)'
+  }];
+  const endAngle = 90 - percentage / 100 * 360;
   const mapboxAccessToken = "pk.eyJ1IjoicGFyaXNhdXJhIiwiYSI6ImNtYXA3eHA1NzBmdHgya3M2YXBqdnhmOHAifQ.kYY2uhGtf6O2HGBDhvamIA";
-
-  return (
-    <>
-      <div className="flex flex-col items-center space-y-6 p-4 bg-background text-foreground animate-fade-in-up">
-        {activeChallenge && (
-          <Card className="w-full max-w-md bg-primary/10 border-primary/20 mb-4">
+  return <>
+      <div className="flex flex-col items-center space-y-6 p-4 text-foreground animate-fade-in-up bg-slate-900">
+        {activeChallenge && <Card className="w-full max-w-md bg-primary/10 border-primary/20 mb-4">
             <CardHeader className="pb-2 pt-3">
               <CardTitle className="text-primary text-md flex items-center">
                 <activeChallenge.icon size={20} className="mr-2" />
@@ -230,18 +241,12 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
               Goal: {activeChallenge.distance} km for {activeChallenge.reward} EcoCoins.
               Current: {distanceCovered.toFixed(2)} km
             </CardContent>
-          </Card>
-        )}
+          </Card>}
 
         {/* Circular Progress Display */}
         <div className="relative w-60 h-60 sm:w-72 sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <RadialBarChart
-              cx="50%" cy="50%"
-              innerRadius="70%" outerRadius="100%"
-              barSize={20} data={radialData}
-              startAngle={90} endAngle={endAngle}
-            >
+            <RadialBarChart cx="50%" cy="50%" innerRadius="70%" outerRadius="100%" barSize={20} data={radialData} startAngle={90} endAngle={endAngle}>
               <defs>
                 <linearGradient id="activityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="hsl(var(--primary))" />
@@ -249,7 +254,9 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
                 </linearGradient>
               </defs>
               <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-              <RadialBar background dataKey="value" angleAxisId={0} fill="hsla(var(--muted) / 0.2)" cornerRadius={10} data={[{ value: 100 }]} />
+              <RadialBar background dataKey="value" angleAxisId={0} fill="hsla(var(--muted) / 0.2)" cornerRadius={10} data={[{
+              value: 100
+            }]} />
               <RadialBar dataKey="value" angleAxisId={0} cornerRadius={10} />
             </RadialBarChart>
           </ResponsiveContainer>
@@ -304,37 +311,19 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
 
         {/* Controls */}
         <div className="flex space-x-4 w-full max-w-md">
-          {!isTracking && !startTime && !activityCompleted ? (
-              <Button onClick={handleStart} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
+          {!isTracking && !startTime && !activityCompleted ? <Button onClick={handleStart} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
                   <Play size={20} className="mr-2" /> Start Tracking
-              </Button>
-          ) : (
-              <>
-                  <Button 
-                    onClick={handlePauseResume} 
-                    variant="outline" 
-                    className="flex-1 border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-primary-foreground disabled:opacity-50"
-                    disabled={activityCompleted}
-                  >
+              </Button> : <>
+                  <Button onClick={handlePauseResume} variant="outline" className="flex-1 border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-primary-foreground disabled:opacity-50" disabled={activityCompleted}>
                       {isPaused ? <Play size={20} className="mr-2" /> : <Pause size={20} className="mr-2" />}
-                      {isPaused ? (elapsedTime > 0 ? 'Resume' : 'Start') : 'Pause'}
+                      {isPaused ? elapsedTime > 0 ? 'Resume' : 'Start' : 'Pause'}
                   </Button>
-                  <Button 
-                    onClick={handleStart} 
-                    variant="outline" 
-                    className="flex-1 border-muted-foreground text-muted-foreground hover:bg-muted-foreground hover:text-background"
-                  >
+                  <Button onClick={handleStart} variant="outline" className="flex-1 border-muted-foreground text-muted-foreground hover:bg-muted-foreground hover:text-background">
                       <RefreshCw size={20} className="mr-2" /> Restart
                   </Button>
-              </>
-          )}
+              </>}
         </div>
-         <Button 
-            onClick={handleStop} 
-            variant="destructive" 
-            className="w-full max-w-md mt-2"
-            disabled={activityCompleted && !showRewardCard && !showScratchModal} 
-          >
+         <Button onClick={handleStop} variant="destructive" className="w-full max-w-md mt-2" disabled={activityCompleted && !showRewardCard && !showScratchModal}>
            <StopCircle size={20} className="mr-2" /> Stop & End Activity
          </Button>
 
@@ -346,44 +335,22 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {(isTracking || startTime) && !activityCompleted ? (
-              <LiveActivityMap accessToken={mapboxAccessToken} />
-            ) : (
-              <div className="h-64 bg-muted/20 rounded-md flex items-center justify-center p-4">
+            {(isTracking || startTime) && !activityCompleted ? <LiveActivityMap accessToken={mapboxAccessToken} /> : <div className="h-64 rounded-md flex items-center justify-center p-4 bg-gray-900">
                 <p className="text-muted-foreground text-sm">
                   {activityCompleted ? "Activity ended." : "Start tracking to see your live location."}
                 </p>
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
       </div>
 
-      {scratchPrizeDetails && (
-        <ScratchRewardModal
-          isOpen={showScratchModal}
-          onClose={handleCloseScratchModal}
-          prize={scratchPrizeDetails}
-          // userName="User" // You can pass the actual username if available
-        />
-      )}
+      {scratchPrizeDetails && <ScratchRewardModal isOpen={showScratchModal} onClose={handleCloseScratchModal} prize={scratchPrizeDetails}
+    // userName="User" // You can pass the actual username if available
+    />}
 
-      {showRewardCard && (
-        <ActivityRewardCard 
-          coinsEarned={coinsEarned}
-          onClose={handleCloseReward}
-        />
-      )}
+      {showRewardCard && <ActivityRewardCard coinsEarned={coinsEarned} onClose={handleCloseReward} />}
 
-      {currentCo2Milestone !== null && (
-        <Co2SavedPopup
-          isOpen={showCo2Popup}
-          onClose={() => setShowCo2Popup(false)}
-          co2Saved={currentCo2Milestone}
-        />
-      )}
-    </>
-  );
+      {currentCo2Milestone !== null && <Co2SavedPopup isOpen={showCo2Popup} onClose={() => setShowCo2Popup(false)} co2Saved={currentCo2Milestone} />}
+    </>;
 };
-
 export default ActivityTracker;
