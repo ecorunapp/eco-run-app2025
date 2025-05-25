@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, Subscription } from '@supabase/supabase-js'; // Added Subscription type
 
 interface Transaction {
   id?: string; // Optional: if we want to use DB id as key
@@ -89,7 +89,10 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
         setSession(newSession);
         setUser(newSession?.user ?? null);
         if (newSession?.user) {
-          await fetchUserEcoData(newSession.user.id);
+          // Use setTimeout to avoid potential deadlocks with Supabase calls inside onAuthStateChange
+          setTimeout(() => {
+            fetchUserEcoData(newSession.user.id);
+          }, 0);
         } else {
           setBalance(0);
           setHistory([]);
@@ -99,7 +102,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => {
-      authListener?.unsubscribe();
+      authListener?.subscription?.unsubscribe(); // Corrected: access .subscription before calling unsubscribe
     };
   }, [fetchUserEcoData]);
 
@@ -114,6 +117,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
 
     // Optimistic update for UI
     const optimisticTransaction: Transaction = {
+        id: `optimistic-${Date.now()}`, // Add a temporary ID for optimistic update
         label,
         value: amount,
         date: new Date().toLocaleDateString(),
@@ -136,33 +140,38 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
 
       if (transactionError) {
         console.error('Error adding transaction:', transactionError);
-        // Revert optimistic update if necessary (or show error to user)
-        setBalance(prev => prev - amount); // Revert balance
-        setHistory(prev => prev.filter(tx => tx !== optimisticTransaction)); // Revert history
+        // Revert optimistic update
+        setBalance(prev => prev - amount);
+        setHistory(prev => prev.filter(tx => tx.id !== optimisticTransaction.id));
         setIsLoading(false);
         return;
       }
 
       // Update/insert balance
-      const { error: balanceError } = await supabase
+      const { data: upsertData, error: balanceError } = await supabase
         .from('user_eco_balances')
-        .upsert({ user_id: user.id, balance: newBalance, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+        .upsert({ user_id: user.id, balance: newBalance, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+        .select()
+        .single();
       
       if (balanceError) {
         console.error('Error updating balance:', balanceError);
-         // Potentially revert transaction insert if balance update fails critically, or handle more gracefully
+        // Potentially revert transaction insert if balance update fails critically
+        // For now, we'll rely on the finally block to refetch consistent data
+      } else {
+        // console.log('Balance upserted:', upsertData);
       }
-      // Fetch fresh data to ensure consistency, or rely on optimistic for now
-      // await fetchUserEcoData(user.id);
     } catch (error) {
       console.error("Error in addEarnings:", error);
        // Revert optimistic updates fully if an unexpected error occurs
        setBalance(prev => prev - amount);
-       setHistory(prev => prev.filter(tx => tx !== optimisticTransaction));
+       setHistory(prev => prev.filter(tx => tx.id !== optimisticTransaction.id));
     } finally {
+        // Fetch data again to ensure sync, especially after optimistic updates or errors
+        if (user) {
+          await fetchUserEcoData(user.id); // Refetch to ensure consistency
+        }
         setIsLoading(false);
-        // Fetch data again to ensure sync, especially if optimistic updates were complex
-        if (user) await fetchUserEcoData(user.id);
     }
   };
 
@@ -173,6 +182,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
     }
     if (balance < amount) {
       console.warn("Not enough balance to redeem.");
+      // Potentially show a toast message to the user
       return false;
     }
     setIsLoading(true);
@@ -181,8 +191,9 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
 
     // Optimistic update
     const optimisticTransaction: Transaction = {
+        id: `optimistic-${Date.now()}`, // Add a temporary ID
         label,
-        value: amount, // Storing positive value, type indicates redeem
+        value: amount, // UI shows positive value for redeem, DB stores negative if needed
         date: new Date().toLocaleDateString(),
         type: transactionType,
     };
@@ -196,7 +207,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
         .insert({
           user_id: user.id,
           label,
-          value: -amount, // Store negative value for redeem/spend in DB to make SUM easier
+          value: -amount, // Store negative value for redeem/spend in DB
           type: transactionType,
           transaction_date: new Date().toISOString(),
         });
@@ -204,12 +215,13 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
       if (transactionError) {
         console.error('Error adding redeem transaction:', transactionError);
         setBalance(prev => prev + amount); // Revert
-        setHistory(prev => prev.filter(tx => tx !== optimisticTransaction)); // Revert
+        setHistory(prev => prev.filter(tx => tx.id !== optimisticTransaction.id)); // Revert
         setIsLoading(false);
         return false;
       }
 
       // Update balance
+      // Ensure the record exists before updating, or use upsert if creating new is possible here (though unlikely for redeem)
       const { error: balanceError } = await supabase
         .from('user_eco_balances')
         .update({ balance: newBalance, updated_at: new Date().toISOString() })
@@ -218,20 +230,22 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
       if (balanceError) {
         console.error('Error updating balance after redeem:', balanceError);
         // Consider reverting transaction insert or other compensation logic
+        // For now, the finally block will refetch data.
         setIsLoading(false);
         return false;
       }
-      // await fetchUserEcoData(user.id); // Fetch fresh data
       return true;
     } catch (error) {
       console.error("Error in redeemPoints:", error);
       setBalance(prev => prev + amount); // Revert
-      setHistory(prev => prev.filter(tx => tx !== optimisticTransaction)); // Revert
+      setHistory(prev => prev.filter(tx => tx.id !== optimisticTransaction.id)); // Revert
       return false;
     } finally {
-        setIsLoading(false);
         // Fetch data again to ensure sync
-        if (user) await fetchUserEcoData(user.id);
+        if (user) {
+          await fetchUserEcoData(user.id); // Refetch to ensure consistency
+        }
+        setIsLoading(false);
     }
   };
 
@@ -249,4 +263,3 @@ export function useEcoCoins() {
   }
   return context;
 }
-
