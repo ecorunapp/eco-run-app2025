@@ -251,7 +251,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
         </div>
 
         {/* Stats Card */}
-        <Card className="w-full max-w-md bg-card border-border">
+        <Card className="w-full max-w-md bg-card border-primary"> {/* Changed border-border to border-primary */}
           <CardHeader className="pb-2 bg-gray-900">
             <CardTitle className="text-card-foreground text-lg flex justify-between items-center">
               Activity Stats
