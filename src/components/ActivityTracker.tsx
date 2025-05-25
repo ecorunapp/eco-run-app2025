@@ -251,14 +251,14 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
         </div>
 
         {/* Stats Card */}
-        <Card className="w-full max-w-md bg-card border-primary"> {/* Changed border-border to border-primary */}
-          <CardHeader className="pb-2 bg-gray-900">
+        <Card className="w-full max-w-md bg-card border-primary">
+          <CardHeader className="pb-2">
             <CardTitle className="text-card-foreground text-lg flex justify-between items-center">
               Activity Stats
               <span className="text-xs text-muted-foreground">Goal: {Math.round(percentage)}%</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-4 text-center bg-gray-900 rounded-sm">
+          <CardContent className="grid grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-2xl font-semibold text-primary">{steps.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">Steps</p>
