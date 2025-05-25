@@ -1,4 +1,3 @@
-
 import { LucideIcon, Footprints, Award, Lock } from '@/components/icons';
 
 export interface Challenge {
@@ -21,6 +20,21 @@ export interface Challenge {
 }
 
 export const challenges: Challenge[] = [
+  {
+    id: 'challenge_100_steps_5aed',
+    title: 'Quick 5 AED Dash',
+    description: 'Complete 100 steps & win a 5 AED Noon Card!',
+    stepsGoal: 100,
+    rewardCoins: 25, // 5 AED card = 25 EcoCoins
+    icon: Footprints,
+    prizeImageUrl: '/placeholder-noon-card-front.png', // Using a placeholder for now
+    prizePromoCode: 'NOON05-QUICKDASH',
+    primaryColor: 'bg-cyan-500',
+    textColor: 'text-white',
+    buttonBgColor: 'bg-white',
+    buttonTextColor: 'text-cyan-600',
+    giftCardKey: 'NOON_5_AED', // A new key for the 5 AED card
+  },
   {
     id: 'challenge_2k_steps',
     title: 'Noon 10 AED Sprint',
@@ -118,4 +132,3 @@ export const challenges: Challenge[] = [
 export const getChallengeById = (id: string): Challenge | undefined => {
   return challenges.find(challenge => challenge.id === id);
 };
-
