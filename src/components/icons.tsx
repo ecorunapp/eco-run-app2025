@@ -1,4 +1,3 @@
-
 import {
   Award,
   AlertCircle,
@@ -21,7 +20,8 @@ import {
   Circle,
   Clock,
   CreditCard,
-  Coins, // Already here
+  Coins,
+  Copy,
   DollarSign,
   Dot,
   Download,
@@ -42,7 +42,7 @@ import {
   Leaf,
   LifeBuoy,
   Link2,
-  Loader2, // Already here
+  Loader2,
   LogIn,
   LogOut,
   Mail,
@@ -50,7 +50,7 @@ import {
   Menu,
   MessageSquare,
   Minus,
-  Moon, // Added this
+  Moon,
   Nfc,
   Package,
   Palette,
@@ -61,7 +61,7 @@ import {
   Plus,
   Pointer,
   RefreshCw,
-  Save, // Added this
+  Save,
   Search,
   Settings,
   ShieldCheck,
@@ -80,9 +80,9 @@ import {
   X,
   Zap,
   Lock,
-  Weight, // Added
-  TrendingUp, // Added
-  UploadCloud, // Added
+  Weight,
+  TrendingUp,
+  UploadCloud,
   type LucideProps,
   type LucideIcon
 } from "lucide-react";
@@ -139,7 +139,8 @@ export {
   Circle,
   Clock,
   CreditCard,
-  Coins, // Already here
+  Coins,
+  Copy,
   DollarSign,
   Dot,
   Download,
@@ -160,7 +161,7 @@ export {
   Leaf,
   LifeBuoy,
   Link2,
-  Loader2, // Already here
+  Loader2,
   LogIn,
   LogOut,
   Mail,
@@ -168,7 +169,7 @@ export {
   Menu,
   MessageSquare,
   Minus,
-  Moon, // Added this
+  Moon,
   Nfc,
   Package,
   Palette,
@@ -179,7 +180,7 @@ export {
   Plus,
   Pointer,
   RefreshCw,
-  Save, // Added this
+  Save,
   Search,
   Settings,
   ShieldCheck,
@@ -198,9 +199,9 @@ export {
   X,
   Zap,
   Lock,
-  Weight, // Added
-  TrendingUp, // Added
-  UploadCloud, // Added
+  Weight,
+  TrendingUp,
+  UploadCloud,
   type LucideIcon,
   type LucideProps
   // Confetti is exported at definition

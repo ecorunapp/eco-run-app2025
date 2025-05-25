@@ -1,3 +1,4 @@
+
 import React from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
@@ -6,14 +7,13 @@ import ActivityStat from '@/components/ActivityStat';
 import WeeklyActivityChart from '@/components/WeeklyActivityChart';
 import StepCounter from '@/components/StepCounter';
 import { Button } from '@/components/ui/button';
+import ChallengeCard from '@/components/ChallengeCard'; // New import
+import { challenges } from '@/data/challenges'; // New import
 
 const DashboardPage: React.FC = () => {
   const userEcoPoints = 12580; // Example data
   const currentSteps = 6789; // Example current steps
   const goalSteps = 10000; // Example goal steps
-  // co2SavedToday and coinsEarnedToday are no longer passed to StepCounter
-  // const co2SavedToday = 150; 
-  // const coinsEarnedToday = 25;
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
@@ -24,15 +24,24 @@ const DashboardPage: React.FC = () => {
         </Button>
       </header>
 
-      <main className="flex-grow p-4 space-y-8 overflow-y-auto pb-24"> {/* Increased space-y, pb-24 for bottom nav space */}
+      <main className="flex-grow p-4 space-y-8 overflow-y-auto pb-24">
         
         {/* Step Counter Section */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <StepCounter 
             currentSteps={currentSteps} 
             goalSteps={goalSteps}
-            // Removed co2Saved and coinsEarned props
           />
+        </section>
+
+        {/* Challenges Section */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <h2 className="text-2xl font-semibold text-eco-light mb-4">Daily Challenges</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {challenges.map((challenge) => (
+              <ChallengeCard key={challenge.id} challenge={challenge} />
+            ))}
+          </div>
         </section>
 
         {/* EcoPoints Display */}
