@@ -1,4 +1,3 @@
-
 import { LucideIcon, Footprints, Award, Lock } from '@/components/icons';
 
 export interface Challenge {
@@ -28,13 +27,13 @@ export const challenges: Challenge[] = [
     stepsGoal: 100,
     rewardCoins: 25, // 5 AED card = 25 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', // Updated from placeholder
+    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', 
     prizePromoCode: 'NOON05-QUICKDASH',
     primaryColor: 'bg-cyan-500',
     textColor: 'text-white',
     buttonBgColor: 'bg-white',
     buttonTextColor: 'text-cyan-600',
-    giftCardKey: 'NOON_5_AED', // A new key for the 5 AED card
+    giftCardKey: 'NOON_5_AED', 
   },
   {
     id: 'challenge_2k_steps',
@@ -43,7 +42,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 2000,
     rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Kept as updated
+    prizeImageUrl: '/lovable-uploads/31d2166a-4cd3-4c37-9385-3f7467b342d9.png', // Updated to the second new image
     prizePromoCode: 'NOON10-SPRINT',
     primaryColor: 'bg-orange-500',
     textColor: 'text-white',
@@ -58,7 +57,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 5000,
     rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Kept as updated
+    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Kept as updated (or use first new image: /lovable-uploads/2d1a82ba-1778-452e-90e3-9de6e05bb48c.png if preferred)
     prizePromoCode: 'NOON10-DAILYGRIND',
     primaryColor: 'bg-blue-500',
     textColor: 'text-white',
@@ -73,7 +72,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 5000,
     rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Kept as updated
+    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Kept as updated (or use first new image: /lovable-uploads/2d1a82ba-1778-452e-90e3-9de6e05bb48c.png if preferred)
     prizePromoCode: 'NOON10-5KSTEP',
     primaryColor: 'bg-green-500',
     textColor: 'text-white',
@@ -88,7 +87,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 7500,
     rewardCoins: 100, // 20 AED card = 100 EcoCoins
     icon: Award,
-    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', // Updated from placeholder
+    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', 
     prizePromoCode: 'NOON20-POWER',
     primaryColor: 'bg-purple-500',
     textColor: 'text-white',
@@ -99,11 +98,11 @@ export const challenges: Challenge[] = [
   {
     id: 'challenge_10k_steps',
     title: 'Marathon Prep (20 AED)',
-    description: 'Conquer 10,000 steps today & win a 20 AED Noon Card!', // Assuming 20 AED prize
+    description: 'Conquer 10,000 steps today & win a 20 AED Noon Card!', 
     stepsGoal: 10000,
     rewardCoins: 100, // 20 AED card = 100 EcoCoins
     icon: Award,
-    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', // Updated from placeholder
+    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', 
     prizePromoCode: 'NOON20-MARATHON-PRO',
     primaryColor: 'bg-teal-500',
     textColor: 'text-white',
@@ -118,7 +117,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 20000,
     rewardCoins: 1500, // 300 AED card = 1500 EcoCoins (30 * 50)
     icon: Award,
-    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', // Updated from placeholder
+    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', 
     prizePromoCode: 'NOON300-ULTIMATE',
     primaryColor: 'bg-gray-700',
     textColor: 'text-yellow-300',
