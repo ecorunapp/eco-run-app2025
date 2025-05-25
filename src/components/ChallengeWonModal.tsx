@@ -53,6 +53,15 @@ const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, 
     }
   };
 
+  // Determine the correct front image URL, falling back to a placeholder if prizeImageUrl is empty or undefined
+  const frontImage = (challenge.prizeImageUrl && challenge.prizeImageUrl.trim() !== '') 
+    ? challenge.prizeImageUrl 
+    : '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png';
+  
+  // Set the back image to the one user uploaded previously
+  const backImage = '/lovable-uploads/1c8416bb-42a2-4d8c-93f1-9345404ac7d5.png';
+
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-[425px] bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 text-white transition-all duration-300 ease-in-out">
@@ -84,8 +93,8 @@ const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, 
           ) : (
             <div className="animate-scale-in w-full">
               <GiftCardDisplay 
-                frontImageUrl={challenge.prizeImageUrl || '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png'} 
-                backImageUrl="/placeholder-noon-card-back.png" 
+                frontImageUrl={frontImage} 
+                backImageUrl={backImage} 
                 promoCode={challenge.prizePromoCode || "NOON-XXX-XXX"}
                 activationMessage={activationMessage}
                 onCodeCopied={handlePromoCodeCopied}
