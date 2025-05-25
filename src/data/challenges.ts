@@ -8,24 +8,24 @@ export interface Challenge {
   stepsGoal: number;
   rewardCoins: number;
   icon: LucideIcon;
-  prizeImageUrl?: string; // Placeholder for actual Noon gift card image
-  prizePromoCode?: string; // Placeholder for promo code
-  primaryColor: string; // e.g., 'bg-orange-500'
-  textColor: string; // e.g., 'text-white'
-  buttonBgColor: string; // e.g., 'bg-white'
-  buttonTextColor: string; // e.g., 'text-orange-600'
+  prizeImageUrl?: string;
+  prizePromoCode?: string;
+  primaryColor: string;
+  textColor: string;
+  buttonBgColor: string;
+  buttonTextColor: string;
 }
 
 export const challenges: Challenge[] = [
   {
     id: 'challenge_2k_steps',
-    title: 'Quick Sprint',
-    description: 'Complete 2,000 steps today!',
+    title: 'Noon 10 AED Sprint', // Updated title for clarity
+    description: 'Complete 2,000 steps & win a 10 AED Noon Card!', // Updated description
     stepsGoal: 2000,
-    rewardCoins: 100,
+    rewardCoins: 50, // Adjusted coins, as there's a specific card
     icon: Footprints,
-    prizeImageUrl: '/placeholder-noon-card-front.png', // You'll need to upload this image
-    prizePromoCode: 'NOON-SPRINT-123',
+    prizeImageUrl: '/noon-10aed-card-front.png', // Specific image for Noon 10 AED card
+    prizePromoCode: 'NOON10-SPRINT', // Example promo code
     primaryColor: 'bg-orange-500',
     textColor: 'text-white',
     buttonBgColor: 'bg-white',
@@ -38,7 +38,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 5000,
     rewardCoins: 100,
     icon: Footprints,
-    prizeImageUrl: '/placeholder-noon-card-front.png', // You'll need to upload this image
+    prizeImageUrl: '/placeholder-noon-card-front.png', 
     prizePromoCode: 'NOON-PACE-456',
     primaryColor: 'bg-indigo-500',
     textColor: 'text-white',
@@ -51,8 +51,8 @@ export const challenges: Challenge[] = [
     description: 'Conquer 10,000 steps today!',
     stepsGoal: 10000,
     rewardCoins: 100,
-    icon: Award, // Using Award for the biggest challenge
-    prizeImageUrl: '/placeholder-noon-card-front.png', // You'll need to upload this image
+    icon: Award, 
+    prizeImageUrl: '/placeholder-noon-card-front.png', 
     prizePromoCode: 'NOON-MARATHON-789',
     primaryColor: 'bg-teal-500',
     textColor: 'text-white',

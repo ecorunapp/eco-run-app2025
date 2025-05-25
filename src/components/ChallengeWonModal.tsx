@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Challenge } from '@/data/challenges';
-import GiftCardDisplay from './GiftCardDisplay'; // We will create this next
-import { Confetti, Gift } from '@/components/icons'; // Using our icons.tsx
+import GiftCardDisplay from './GiftCardDisplay';
+import { Confetti, Gift } from '@/components/icons';
 
 interface ChallengeWonModalProps {
   isOpen: boolean;
@@ -17,16 +17,16 @@ const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, 
 
   const handleScratch = () => {
     setIsScratched(true);
-    // Potentially play a sound
   };
 
-  // Reset scratch state when modal is closed or challenge changes
   React.useEffect(() => {
     if (!isOpen) {
       setIsScratched(false);
     }
   }, [isOpen]);
 
+  // Specific message for Noon cards, or cards that require activation info
+  const activationMessage = "Card is activated within 12 hours. After activated you will get mail.";
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -57,8 +57,9 @@ const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, 
           ) : (
             <GiftCardDisplay 
               frontImageUrl={challenge.prizeImageUrl || '/placeholder-noon-card-front.png'} 
-              backImageUrl="/placeholder-noon-card-back.png" // You'll need to upload this
+              backImageUrl="/placeholder-noon-card-back.png" 
               promoCode={challenge.prizePromoCode || "NOON-XXX-XXX"}
+              activationMessage={activationMessage} // Pass the activation message
             />
           )}
         </div>
