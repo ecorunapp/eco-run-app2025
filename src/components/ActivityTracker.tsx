@@ -81,7 +81,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
   useEffect(() => {
     let timerInterval: NodeJS.Timeout | undefined;
     let stepInterval: NodeJS.Timeout | undefined;
-    if (isTracking && !isPaused) {
+    if (isTracking && !isPaused && !activityCompleted) { // Added !activityCompleted here
       if (!startTime) {
         setStartTime(new Date());
       }
@@ -97,7 +97,13 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
 
       stepInterval = setInterval(() => {
         setSteps(prevSteps => {
-          const stepsToAdd = Math.random() < 0.6 ? 1 : 2; // Adds 1 step 60% of the time, 2 steps 40% of time
+          // If activity is now marked as completed by another effect (e.g. goal met), stop generating steps.
+          if (activityCompleted) { 
+            clearInterval(stepInterval);
+            return prevSteps;
+          }
+
+          const stepsToAdd = Math.random() < 0.6 ? 1 : 2; 
           const newSteps = prevSteps + stepsToAdd;
           
           const newCo2Saved = parseFloat((newSteps * 0.0008).toFixed(2));
@@ -119,21 +125,21 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
           }
           return newSteps;
         });
-      }, 400); // Update steps every 400 milliseconds (2.5 times per second)
+      }, 400); 
     }
     return () => {
       if (timerInterval) clearInterval(timerInterval);
       if (stepInterval) clearInterval(stepInterval);
     };
-  }, [isTracking, isPaused, startTime, onLiveProgressUpdate, currentGoalSteps, steps, elapsedTime]);
+  }, [isTracking, isPaused, startTime, onLiveProgressUpdate, currentGoalSteps, steps, elapsedTime, activityCompleted]);
 
-  const handleStart = () => {
+  const handleStart = useCallback(() => { // Added useCallback for handleStart
     resetTrackerStates();
     setIsTracking(true);
     if (onLiveProgressUpdate) {
       onLiveProgressUpdate({ currentSteps: 0, goalSteps: currentGoalSteps, elapsedTime: 0 });
     }
-  };
+  }, [resetTrackerStates, onLiveProgressUpdate, currentGoalSteps]);
 
   const handlePauseResume = () => {
     setIsPaused(!isPaused);
@@ -144,7 +150,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     }
   };
 
-  const handleStop = () => {
+  const handleStop = useCallback(() => {
     const challengeWasCompleted = !!(challengeGoalSteps && steps >= challengeGoalSteps);
     setIsTracking(false);
     setIsPaused(true); 
@@ -159,11 +165,25 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     };
     onStopTracking(summary, challengeWasCompleted);
      if (challengeGoalSteps && !challengeWasCompleted && steps > 0) {
+        // This toast was commented out in original, keeping as is.
+        // toast({
+        //   title: "Challenge Incomplete",
+        //   description: `You stopped before reaching the goal of ${challengeGoalSteps} steps. Keep trying!`,
+        //   variant: "default",
+        // });
     }
     if (onLiveProgressUpdate) {
       onLiveProgressUpdate({ currentSteps: steps, goalSteps: currentGoalSteps, elapsedTime: elapsedTime });
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onStopTracking, challengeGoalSteps, steps, elapsedTime, calories, co2Saved, coinsEarned, onLiveProgressUpdate, currentGoalSteps /* removed toast from deps as it's stable */]);
+
+  // Effect to automatically stop tracking if challenge goal is met
+  useEffect(() => {
+    if (isTracking && !isPaused && !activityCompleted && challengeGoalSteps && steps >= challengeGoalSteps) {
+      handleStop();
+    }
+  }, [isTracking, isPaused, activityCompleted, challengeGoalSteps, steps, handleStop]);
 
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
@@ -255,20 +275,20 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
           {!isTracking && !activityCompleted ?
             <Button onClick={handleStart} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
                       <Play size={20} className="mr-2" /> Start Tracking
-                  </Button> : isTracking ?
+                  </Button> : (isTracking && !activityCompleted) ? // Added !activityCompleted condition for Pause/Resume
             <Button onClick={handlePauseResume} variant="outline" className="flex-1 border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-primary-foreground">
                       {isPaused ? <Play size={20} className="mr-2" /> : <Pause size={20} className="mr-2" />}
                       {isPaused ? 'Resume' : 'Pause'}
                   </Button> : null 
           }
           
-          {(startTime || activityCompleted) && (isPaused || !isTracking) && <Button onClick={handleStart}
+          {((isTracking && isPaused) || activityCompleted || (!isTracking && startTime)) && <Button onClick={handleStart} // Adjusted conditions for Restart button
             variant="outline" className="flex-1 border-muted-foreground text-muted-foreground hover:bg-muted-foreground hover:text-background">
                     <RefreshCw size={20} className="mr-2" /> Restart
                 </Button>}
         </div>
          <Button onClick={handleStop} variant="destructive" className="w-full max-w-md mt-2"
-            disabled={!isTracking && !startTime || activityCompleted } 
+            disabled={(!isTracking && !startTime) || activityCompleted } 
             >
            <StopCircle size={20} className="mr-2" /> Stop & End Activity
          </Button>
