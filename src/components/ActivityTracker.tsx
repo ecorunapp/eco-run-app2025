@@ -11,6 +11,8 @@ import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { useChallenges } from '@/context/ChallengesContext';
 import { toast as sonnerToast } from "sonner";
 import ScratchRewardModal from './ScratchRewardModal';
+import { useUserProfile } from '@/hooks/useUserProfile'; // Import useUserProfile
+
 export interface ActivitySummary {
   steps: number;
   elapsedTime: number;
@@ -28,7 +30,9 @@ interface ActivityTrackerProps {
 const GOAL_STEPS = 10000;
 const CO2_MILESTONES = [20, 50, 100, 200, 300, 400, 500, 700, 800, 900, 1000];
 const AVERAGE_STEP_LENGTH_KM = 0.0007;
-const NOON_GIFT_CARD_IMAGE_URL = '/lovable-uploads/70f5737d-2168-4475-9f8c-fcbe0c580657.png';
+// Updated image URL to the newly uploaded one
+const NOON_GIFT_CARD_IMAGE_URL = '/lovable-uploads/c812bce0-0038-43c0-b61d-9ca59428b893.png';
+
 const ActivityTracker: React.FC<ActivityTrackerProps> = ({
   onStopTracking,
   activeChallenge
@@ -49,12 +53,10 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
   const [showCo2Popup, setShowCo2Popup] = useState(false);
   const [currentCo2Milestone, setCurrentCo2Milestone] = useState<number | null>(null);
   const achievedCo2MilestonesRef = useRef<Set<number>>(new Set());
-  const {
-    addEarnings: addEcoCoins
-  } = useEcoCoins();
-  const {
-    completeChallenge: markChallengeAsCompleted
-  } = useChallenges();
+  
+  const { addEarnings: addEcoCoins } = useEcoCoins();
+  const { completeChallenge: markChallengeAsCompleted } = useChallenges();
+  const { profile } = useUserProfile(); // Fetch user profile
 
   // State for the scratch reward modal
   const [showScratchModal, setShowScratchModal] = useState(false);
@@ -63,7 +65,9 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     imageUrl: string;
     code: string;
   } | null>(null);
+  
   const generateMockGiftCode = () => `NOON${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+  
   const resetTracker = useCallback(() => {
     setIsTracking(false);
     setIsPaused(false);
@@ -82,6 +86,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     setShowScratchModal(false); // Reset scratch modal state
     setScratchPrizeDetails(null);
   }, []);
+  
   useEffect(() => {
     let timerInterval: NodeJS.Timeout;
     let stepInterval: NodeJS.Timeout;
@@ -121,12 +126,14 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
       clearInterval(stepInterval);
     };
   }, [isTracking, isPaused, startTime]);
+  
   const handleStart = () => {
     resetTracker();
     setIsTracking(true);
     setIsPaused(false);
     setStartTime(new Date());
   };
+  
   const handlePauseResume = () => {
     setIsPaused(!isPaused);
     if (!isPaused) {
@@ -135,6 +142,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
       }
     }
   };
+  
   const handleStop = () => {
     if (!isTracking && !startTime && !activityCompleted) return;
     setIsTracking(false);
@@ -143,7 +151,6 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     let challengeRewardTriggered = false;
     if (activeChallenge && activeChallenge.status === 'not-started') {
       if (distanceCovered >= activeChallenge.distance) {
-        // Award EcoCoins for the challenge
         addEcoCoins(activeChallenge.reward, `Challenge: ${activeChallenge.title}`);
         markChallengeAsCompleted(activeChallenge.id);
         sonnerToast.success(`+${activeChallenge.reward} EcoCoins!`, {
@@ -151,15 +158,13 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
           icon: <Coins className="text-yellow-400" />
         });
 
-        // Set up and show the scratch card modal for the gift card
         setScratchPrizeDetails({
           name: "10 AED Noon Gift Card",
-          // This can be made dynamic if challenges have specific gift card rewards
           imageUrl: NOON_GIFT_CARD_IMAGE_URL,
           code: generateMockGiftCode()
         });
         setShowScratchModal(true);
-        challengeRewardTriggered = true; // Indicates special challenge reward flow
+        challengeRewardTriggered = true;
       } else {
         sonnerToast.info("Challenge Incomplete", {
           description: `You didn't quite meet the ${activeChallenge.distance}km goal for ${activeChallenge.title}. Keep trying!`
@@ -167,7 +172,6 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
       }
     }
 
-    // If scratch modal is not triggered, proceed with normal reward card/onStopTracking
     if (!challengeRewardTriggered) {
       if (coinsEarned > 0) {
         setShowRewardCard(true);
@@ -184,13 +188,12 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
       }
     }
   };
+  
   const handleCloseScratchModal = () => {
     setShowScratchModal(false);
-    // After scratch modal is closed, check if general reward card should be shown
     if (coinsEarned > 0) {
       setShowRewardCard(true);
     } else {
-      // If no general coins, call onStopTracking
       const finalSummary = {
         steps,
         elapsedTime,
@@ -202,6 +205,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
       onStopTracking(finalSummary);
     }
   };
+  
   const handleCloseReward = () => {
     setShowRewardCard(false);
     const finalSummary = {
@@ -214,12 +218,14 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     };
     onStopTracking(finalSummary);
   };
+  
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor(totalSeconds % 3600 / 60);
     const seconds = totalSeconds % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
+  
   const percentage = GOAL_STEPS > 0 ? Math.min(100, steps / GOAL_STEPS * 100) : 0;
   const radialData = [{
     name: 'Steps',
@@ -228,8 +234,10 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
   }];
   const endAngle = 90 - percentage / 100 * 360;
   const mapboxAccessToken = "pk.eyJ1IjoicGFyaXNhdXJhIiwiYSI6ImNtYXA3eHA1NzBmdHgya3M2YXBqdnhmOHAifQ.kYY2uhGtf6O2HGBDhvamIA";
+
   return <>
       <div className="flex flex-col items-center space-y-6 p-4 text-foreground animate-fade-in-up bg-slate-900">
+        {/* ... keep existing code (activeChallenge Card display) */}
         {activeChallenge && <Card className="w-full max-w-md bg-primary/10 border-primary/20 mb-4">
             <CardHeader className="pb-2 pt-3">
               <CardTitle className="text-primary text-md flex items-center">
@@ -244,6 +252,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
           </Card>}
 
         {/* Circular Progress Display */}
+        {/* ... keep existing code (RadialBarChart display) */}
         <div className="relative w-60 h-60 sm:w-72 sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
             <RadialBarChart cx="50%" cy="50%" innerRadius="70%" outerRadius="100%" barSize={20} data={radialData} startAngle={90} endAngle={endAngle}>
@@ -267,6 +276,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
         </div>
 
         {/* CO2 Saved and Coins */}
+        {/* ... keep existing code (CO2, Distance, Coins display) */}
         <div className="flex justify-around w-full max-w-md">
           <div className="flex flex-col items-center text-center">
             <Leaf size={24} className="text-foreground mb-1" />
@@ -286,6 +296,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
         </div>
 
         {/* Stats Card */}
+        {/* ... keep existing code (Activity Stats Card display) */}
         <Card className="w-full max-w-md bg-card border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-card-foreground text-lg flex justify-between items-center">
@@ -310,6 +321,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
         </Card>
 
         {/* Controls */}
+        {/* ... keep existing code (Control buttons display) */}
         <div className="flex space-x-4 w-full max-w-md">
           {!isTracking && !startTime && !activityCompleted ? <Button onClick={handleStart} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
                   <Play size={20} className="mr-2" /> Start Tracking
@@ -328,6 +340,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
          </Button>
 
         {/* Map Display */}
+        {/* ... keep existing code (LiveActivityMap display) */}
         <Card className="w-full max-w-md bg-card border-border overflow-hidden">
           <CardHeader>
             <CardTitle className="text-card-foreground text-lg flex items-center">
@@ -344,9 +357,12 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
         </Card>
       </div>
 
-      {scratchPrizeDetails && <ScratchRewardModal isOpen={showScratchModal} onClose={handleCloseScratchModal} prize={scratchPrizeDetails}
-    // userName="User" // You can pass the actual username if available
-    />}
+      {scratchPrizeDetails && <ScratchRewardModal 
+        isOpen={showScratchModal} 
+        onClose={handleCloseScratchModal} 
+        prize={scratchPrizeDetails}
+        userName={profile?.full_name || undefined} // Pass user's full name
+      />}
 
       {showRewardCard && <ActivityRewardCard coinsEarned={coinsEarned} onClose={handleCloseReward} />}
 
