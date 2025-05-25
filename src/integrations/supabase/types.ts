@@ -122,6 +122,67 @@ export type Database = {
           },
         ]
       }
+      user_eco_balances: {
+        Row: {
+          balance: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_eco_balances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_eco_transactions: {
+        Row: {
+          id: string
+          label: string
+          transaction_date: string | null
+          type: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          id?: string
+          label: string
+          transaction_date?: string | null
+          type: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          id?: string
+          label?: string
+          transaction_date?: string | null
+          type?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_eco_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
