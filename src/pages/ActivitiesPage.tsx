@@ -3,15 +3,15 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Play, X } from '@/components/icons'; // Added X
+import { Settings, Play, X } from '@/components/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WeeklyActivityChart from '@/components/WeeklyActivityChart';
 import ActivityTracker, { ActivitySummary } from '@/components/ActivityTracker';
 import LastActivityGraph from '@/components/LastActivityGraph';
 import { useToast } from "@/hooks/use-toast";
-import { Challenge, getChallengeById } from '@/data/challenges'; // Import challenge data
-import ChallengeWonModal from '@/components/ChallengeWonModal'; // Import ChallengeWonModal
-import { useEcoCoins } from '@/context/EcoCoinsContext'; // Import useEcoCoins
+import { Challenge, getChallengeById } from '@/data/challenges';
+import ChallengeWonModal from '@/components/ChallengeWonModal';
+import { useEcoCoins } from '@/context/EcoCoinsContext';
 
 // ActivitySummary interface is now imported from ActivityTracker
 
@@ -69,20 +69,56 @@ const ActivitiesPage: React.FC = () => {
     setIsTracking(false); 
     setLastActivitySummary(activitySummary);
 
-    if (challengeCompleted && activeChallenge) {
-      console.log(`Challenge ${activeChallenge.title} completed!`);
-      setCompletedChallengeDetails(activeChallenge); // Store completed challenge details
-      setShowChallengeWonModal(true); // Show the win modal
-      addEarnings(activeChallenge.rewardCoins, `Challenge: ${activeChallenge.title}`);
+    // 1. Handle coins earned from steps during the activity
+    if (activitySummary.coinsEarned > 0) {
+      const stepCoinLabel = activeChallenge ? `Steps during ${activeChallenge.title}` : "General Activity Steps";
+      addEarnings(activitySummary.coinsEarned, stepCoinLabel);
       toast({
-        title: "Challenge Complete!",
-        description: `You earned ${activeChallenge.rewardCoins} EcoCoins for completing ${activeChallenge.title}!`,
+        title: "Congratulations!",
+        description: `You earned ${activitySummary.coinsEarned} EcoCoins from your steps.`,
+        variant: "default",
       });
-    } else if (activeChallenge) {
+    }
+
+    // 2. Handle challenge-specific outcomes
+    if (activeChallenge) {
+      if (challengeCompleted) {
+        console.log(`Challenge ${activeChallenge.title} completed!`);
+        setCompletedChallengeDetails(activeChallenge); // Store completed challenge details
+        setShowChallengeWonModal(true); // Show the win modal
+        // Add main challenge reward coins
+        addEarnings(activeChallenge.rewardCoins, `Challenge: ${activeChallenge.title}`);
         toast({
-            title: "Challenge Ended",
-            description: `You stopped ${activeChallenge.title}. Progress is saved if you resume general activity tracking.`,
+          title: "Challenge Complete!",
+          description: `Awesome! You conquered ${activeChallenge.title} and earned ${activeChallenge.rewardCoins} EcoCoins!`,
         });
+      } else { // Challenge was active but not completed
+        toast({
+          title: "Challenge Ended",
+          description: `You stopped ${activeChallenge.title}. Keep pushing next time! ${activitySummary.coinsEarned > 0 ? 'Your step coins were added.' : ''}`,
+          variant: "default"
+        });
+      }
+    } else { // Generic activity (not a challenge)
+      if (activitySummary.steps > 0 && activitySummary.coinsEarned === 0) {
+        // Generic activity with some effort but no step coins yet (e.g., < 100 steps)
+        toast({
+          title: "Activity Ended",
+          description: "Great effort! Keep going to earn EcoCoins.",
+          variant: "default"
+        });
+      } else if (activitySummary.steps === 0 && activitySummary.coinsEarned === 0 && !activitySummary.elapsedTime) {
+        // Generic activity stopped with no effort and no time passed (likely immediate stop)
+        // No toast needed, or a very mild one if preferred. For now, no toast.
+      } else if (activitySummary.steps === 0 && activitySummary.coinsEarned === 0 && activitySummary.elapsedTime > 0) {
+        // Generic activity stopped with some time but no steps/coins
+         toast({
+          title: "Tracking Stopped",
+          description: "Ready when you are for the next activity!",
+          variant: "default"
+        });
+      }
+      // If activitySummary.coinsEarned > 0 for a generic activity, the first "Congratulations!" toast already covered it.
     }
     // setActiveChallenge(null); // Reset active challenge after stopping
   };
@@ -115,14 +151,13 @@ const ActivitiesPage: React.FC = () => {
             className="text-eco-gray hover:text-eco-accent" 
             onClick={() => handleStopTracking({steps:0, elapsedTime:0, calories:0, co2Saved:0, coinsEarned:0}, false)}
           >
-             <X size={24} /> {/* Using X to indicate closing/stopping tracker */}
+             <X size={24} />
           </Button>
         </header>
         <main className="flex-grow overflow-y-auto pb-24">
           <ActivityTracker 
             onStopTracking={handleStopTracking} 
-            challengeGoalSteps={activeChallenge?.stepsGoal} // Pass challenge goal
-            // key={activeChallenge ? activeChallenge.id : 'generic'} // Add key to re-mount tracker if challenge changes
+            challengeGoalSteps={activeChallenge?.stepsGoal}
           />
         </main>
         <BottomNav />
