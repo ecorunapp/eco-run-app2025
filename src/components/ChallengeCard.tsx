@@ -1,18 +1,22 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Challenge } from '@/data/challenges';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Coins, Lock } from '@/components/icons';
+import EcotabActivationModal from './EcotabActivationModal';
 
 interface ChallengeCardProps {
   challenge: Challenge;
 }
 
+const ECOTAB_CHALLENGE_ID = 'challenge_20k_ecotab_300aed';
+
 const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
   const navigate = useNavigate();
-  const isLocked = challenge.isLockedInitially; // In a real app, this might derive from user status
-  const isUltimateEcotabChallenge = challenge.id === 'challenge_20k_ecotab_300aed';
+  const [showEcotabModal, setShowEcotabModal] = useState(false);
+
+  const isLocked = challenge.isLockedInitially;
+  const isUltimateEcotabChallenge = challenge.id === ECOTAB_CHALLENGE_ID;
 
   let cardBgClass = '';
   let cardTextColorClass = challenge.textColor; // Default text color from challenge data
@@ -46,50 +50,69 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
   }
 
   const handleJoinChallenge = () => {
-    navigate('/activities', { state: { challengeId: challenge.id } });
+    if (isUltimateEcotabChallenge && !isLocked) {
+      setShowEcotabModal(true);
+    } else {
+      navigate('/activities', { state: { challengeId: challenge.id } });
+    }
   };
 
   return (
-    <div className={`p-6 rounded-xl shadow-lg ${cardBgClass} ${cardTextColorClass} flex flex-col justify-between animate-fade-in-up`}>
-      <div>
-        <div className="flex items-center mb-2">
-          {isLocked && <Lock size={28} className={`mr-3 ${titleIconClass}`} />}
-          {!isLocked && <challenge.icon size={28} className="mr-3" />} {/* Icon color will be cardTextColorClass */}
-          <h3 className="text-2xl font-bold">{challenge.title}</h3>
-        </div>
-        <p className="text-sm mb-4 opacity-90">{challenge.description}</p>
-        
-        {isLocked && challenge.unlockDescription && (
-          <div className={`mb-4 p-3 ${unlockDescBgClass} rounded-md`}>
-            <p className={`text-sm font-semibold ${unlockDescTextClass}`}>{challenge.unlockDescription}</p>
+    <>
+      <div className={`p-6 rounded-xl shadow-lg ${cardBgClass} ${cardTextColorClass} flex flex-col justify-between animate-fade-in-up`}>
+        <div>
+          <div className="flex items-center mb-2">
+            {isLocked && <Lock size={28} className={`mr-3 ${titleIconClass}`} />}
+            {!isLocked && challenge.icon && <challenge.icon size={28} className="mr-3" />}
+            <h3 className="text-2xl font-bold">{challenge.title}</h3>
           </div>
-        )}
+          <p className="text-sm mb-4 opacity-90">{challenge.description}</p>
+          
+          {isLocked && challenge.unlockDescription && (
+            <div className={`mb-4 p-3 ${unlockDescBgClass} rounded-md`}>
+              <p className={`text-sm font-semibold ${unlockDescTextClass}`}>{challenge.unlockDescription}</p>
+            </div>
+          )}
 
-        {!isLocked && (
-          <div className="flex items-center text-sm font-semibold mb-4">
-            <Coins size={18} className="mr-2 opacity-90" />
-            <span>Reward: {challenge.rewardCoins} EcoCoins</span>
-          </div>
-        )}
+          {!isLocked && (
+            <div className="flex items-center text-sm font-semibold mb-4">
+              <Coins size={18} className="mr-2 opacity-90" />
+              <span>Reward: {challenge.rewardCoins} EcoCoins</span>
+            </div>
+          )}
+        </div>
+        <Button
+          onClick={handleJoinChallenge}
+          disabled={isLocked}
+          className={`${buttonClass} w-full font-semibold`}
+        >
+          {isLocked ? (
+            <>
+              <Lock size={20} className="mr-2" />
+              Challenge Locked
+            </>
+          ) : isUltimateEcotabChallenge ? (
+            <>
+             Activate Your EcoTab Card
+              <ArrowRight size={20} className="ml-2" />
+            </>
+          )
+          : (
+            <>
+              Join Challenge
+              <ArrowRight size={20} className="ml-2" />
+            </>
+          )}
+        </Button>
       </div>
-      <Button
-        onClick={handleJoinChallenge}
-        disabled={isLocked}
-        className={`${buttonClass} w-full font-semibold`}
-      >
-        {isLocked ? (
-          <>
-            <Lock size={20} className="mr-2" /> {/* Icon color from button's text color */}
-            Challenge Locked
-          </>
-        ) : (
-          <>
-            Join Challenge
-            <ArrowRight size={20} className="ml-2" />
-          </>
-        )}
-      </Button>
-    </div>
+      {isUltimateEcotabChallenge && (
+        <EcotabActivationModal
+          isOpen={showEcotabModal}
+          onClose={() => setShowEcotabModal(false)}
+          challengeTitle={challenge.title}
+        />
+      )}
+    </>
   );
 };
 
