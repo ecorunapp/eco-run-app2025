@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { useEcoCoins, EcoTransactionType } from '@/context/EcoCoinsContext';
-import TransactionHistoryItem from './TransactionHistoryItem';
-import { getIconForTransactionType } from '@/utils/iconHelper';
+import { useEcoCoins } from '@/context/EcoCoinsContext';
+import TransactionHistoryItem from './TransactionHistoryItem'; // Import the item component
+import { getIconForTransactionType } from '@/utils/iconHelper'; // Assuming you'll create this helper
 
 // Sample data for the chart (can be dynamic later)
 const sampleChartData = [
@@ -26,7 +27,7 @@ export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = (
   const filteredTransactions = history.filter(tx =>
     filter === 'earn'
       ? tx.type === 'income'
-      : tx.type === 'redemption' || tx.type === 'expense' || tx.type === 'ecotab' // Corrected: 'redeem' to 'redemption', 'spend' to 'expense'
+      : tx.type === 'redeem' || tx.type === 'spend' || tx.type === 'ecotab' // Removed 'ev'
   );
 
   // Calculate total for the chart based on current balance or a specific period if needed
