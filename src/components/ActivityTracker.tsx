@@ -1,36 +1,44 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Leaf, Coins, Clock, Flame, Play, Pause, StopCircle, MapPin, RefreshCw } from '@/components/icons';
+import { Leaf, Coins, Clock, Flame, Play, Pause, StopCircle, MapPin, RefreshCw, CheckCircle } from '@/components/icons';
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 import ActivityRewardCard from './ActivityRewardCard';
 import LiveActivityMap from './LiveActivityMap';
 import Co2SavedPopup from './Co2SavedPopup';
+import type { Challenge as ActiveChallengeType } from '@/types/Challenge'; // For activeChallenge prop
+import { useEcoCoins } from '@/context/EcoCoinsContext'; // For challenge rewards
+import { useChallenges } from '@/context/ChallengesContext'; // To mark challenge as complete
+import { toast as sonnerToast } from "sonner"; // For challenge completion toast
 
 export interface ActivitySummary {
   steps: number;
   elapsedTime: number;
   calories: number;
   co2Saved: number;
-  coinsEarned: number;
+  coinsEarned: number; // General coins, not challenge specific from this summary
+  distanceCovered?: number; // Add distance
 }
 
 interface ActivityTrackerProps {
   onStopTracking: (activitySummary: ActivitySummary) => void;
+  activeChallenge?: ActiveChallengeType & { status: 'not-started' | 'completed' }; // Make activeChallenge prop optional
 }
 
-const GOAL_STEPS = 10000; // Example daily goal
+const GOAL_STEPS = 10000; 
 const CO2_MILESTONES = [20, 50, 100, 200, 300, 400, 500, 700, 800, 900, 1000];
+const AVERAGE_STEP_LENGTH_KM = 0.0007; // Approx 0.7 meters per step
 
-const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => {
+const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activeChallenge }) => {
   const [isTracking, setIsTracking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0); // in seconds
   const [steps, setSteps] = useState(0);
+  const [distanceCovered, setDistanceCovered] = useState(0); // in km
   const [calories, setCalories] = useState(0);
   const [co2Saved, setCo2Saved] = useState(0);
-  const [coinsEarned, setCoinsEarned] = useState(0);
+  const [coinsEarned, setCoinsEarned] = useState(0); // General coins
   const [showRewardCard, setShowRewardCard] = useState(false);
   const [activityCompleted, setActivityCompleted] = useState(false);
 
@@ -39,12 +47,16 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
   const [currentCo2Milestone, setCurrentCo2Milestone] = useState<number | null>(null);
   const achievedCo2MilestonesRef = useRef<Set<number>>(new Set());
 
+  const { addEarnings: addEcoCoins } = useEcoCoins();
+  const { completeChallenge: markChallengeAsCompleted } = useChallenges();
+
   const resetTracker = useCallback(() => {
     setIsTracking(false);
     setIsPaused(false);
     setStartTime(null);
     setElapsedTime(0);
     setSteps(0);
+    setDistanceCovered(0); // Reset distance
     setCalories(0);
     setCo2Saved(0);
     setCoinsEarned(0);
@@ -73,10 +85,13 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
         setSteps(prevSteps => {
           const newSteps = prevSteps + Math.floor(Math.random() * 10) + 5;
           const newCo2Saved = parseFloat((newSteps * 0.0008).toFixed(2));
+          const newDistanceCovered = parseFloat((newSteps * AVERAGE_STEP_LENGTH_KM).toFixed(3));
           
+          setDistanceCovered(newDistanceCovered); // Update distance
           setCalories(Math.floor(newSteps * 0.04));
           setCo2Saved(newCo2Saved);
-          setCoinsEarned(Math.floor(newSteps / 100));
+          // General coins earned, challenge coins are separate
+          setCoinsEarned(Math.floor(newSteps / 100)); 
 
           // Check for CO2 milestones
           for (const milestone of CO2_MILESTONES) {
@@ -99,7 +114,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
   }, [isTracking, isPaused, startTime]);
 
   const handleStart = () => {
-    resetTracker(); // This now also resets CO2 milestones
+    resetTracker(); 
     setIsTracking(true);
     setIsPaused(false);
     setStartTime(new Date());
@@ -120,7 +135,51 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
     setIsTracking(false);
     setIsPaused(true); 
     setActivityCompleted(true);
-    setShowRewardCard(true); 
+    
+    let challengeCompletedSuccessfully = false;
+    if (activeChallenge && activeChallenge.status === 'not-started') {
+      if (distanceCovered >= activeChallenge.distance) {
+        addEcoCoins(activeChallenge.reward, `Challenge: ${activeChallenge.title}`);
+        markChallengeAsCompleted(activeChallenge.id);
+        sonnerToast.success("Challenge Completed!", {
+          description: `You earned ${activeChallenge.reward} EcoCoins for completing ${activeChallenge.title}.`,
+          icon: <CheckCircle className="text-green-500" />
+        });
+        challengeCompletedSuccessfully = true;
+      } else {
+        sonnerToast.info("Challenge Incomplete", {
+          description: `You didn't quite meet the ${activeChallenge.distance}km goal for ${activeChallenge.title}. Keep trying!`,
+        });
+      }
+    }
+
+    // Show general reward card only if no challenge was active or if it wasn't completed (or if we want them to stack)
+    // For now, let's show it if coinsEarned > 0, regardless of challenge. User gets base coins + challenge coins.
+    if (coinsEarned > 0 && !challengeCompletedSuccessfully) { // Or adjust this logic if general rewards shouldn't show if challenge completed
+       setShowRewardCard(true); 
+    } else if (coinsEarned === 0 && !challengeCompletedSuccessfully) {
+      // If no general coins and no challenge completed, call onStopTracking directly
+      const finalSummary = {
+        steps,
+        elapsedTime,
+        calories,
+        co2Saved,
+        coinsEarned, // This is general coins
+        distanceCovered,
+      };
+      onStopTracking(finalSummary);
+    } else if (challengeCompletedSuccessfully) {
+      // If challenge completed, call onStopTracking directly as reward is already given
+      const finalSummary = {
+        steps,
+        elapsedTime,
+        calories,
+        co2Saved,
+        coinsEarned, // This is general coins
+        distanceCovered,
+      };
+      onStopTracking(finalSummary);
+    }
   };
 
   const handleCloseReward = () => {
@@ -130,11 +189,10 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
       elapsedTime,
       calories,
       co2Saved,
-      coinsEarned
+      coinsEarned, // General coins
+      distanceCovered,
     };
     onStopTracking(finalSummary);
-    // Optionally, fully reset here if onStopTracking implies the user is done with this screen
-    // For now, reset is primarily handled by handleStart
   };
 
   const formatTime = (totalSeconds: number) => {
@@ -153,6 +211,21 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
   return (
     <>
       <div className="flex flex-col items-center space-y-6 p-4 bg-background text-foreground animate-fade-in-up">
+        {activeChallenge && (
+          <Card className="w-full max-w-md bg-primary/10 border-primary/20 mb-4">
+            <CardHeader className="pb-2 pt-3">
+              <CardTitle className="text-primary text-md flex items-center">
+                <activeChallenge.icon size={20} className="mr-2" />
+                Active Challenge: {activeChallenge.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-primary/80 pb-3">
+              Goal: {activeChallenge.distance} km for {activeChallenge.reward} EcoCoins.
+              Current: {distanceCovered.toFixed(2)} km
+            </CardContent>
+          </Card>
+        )}
+
         {/* Circular Progress Display */}
         <div className="relative w-60 h-60 sm:w-72 sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -187,9 +260,14 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking }) => 
             <span className="text-xs text-muted-foreground">CO₂ Saved</span>
           </div>
           <div className="flex flex-col items-center text-center">
+            <MapPin size={24} className="text-blue-400 mb-1" /> {/* Changed icon for distance */}
+            <span className="text-lg font-semibold text-foreground">{distanceCovered.toFixed(2)} km</span>
+            <span className="text-xs text-muted-foreground">Distance</span>
+          </div>
+          <div className="flex flex-col items-center text-center">
             <Coins size={24} className="text-yellow-400 mb-1" />
             <span className="text-lg font-semibold text-foreground">{coinsEarned.toLocaleString()}</span>
-            <span className="text-xs text-muted-foreground">Coins</span>
+            <span className="text-xs text-muted-foreground">General Coins</span> {/* Clarified these are general coins */}
           </div>
         </div>
 
