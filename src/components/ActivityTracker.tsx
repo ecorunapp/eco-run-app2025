@@ -14,16 +14,25 @@ export interface ActivitySummary {
   co2Saved: number;
   coinsEarned: number;
 }
+
+export interface LiveProgressData {
+  currentSteps: number;
+  goalSteps: number;
+  elapsedTime: number;
+}
+
 interface ActivityTrackerProps {
   onStopTracking: (activitySummary: ActivitySummary, challengeCompleted?: boolean) => void;
   challengeGoalSteps?: number;
+  onLiveProgressUpdate?: (progress: LiveProgressData) => void; // New prop
 }
 const DEFAULT_GOAL_STEPS = 10000;
 const CO2_MILESTONES = [20, 50, 100, 200, 300, 400, 500, 700, 800, 900, 1000];
 
 const ActivityTracker: React.FC<ActivityTrackerProps> = ({
   onStopTracking,
-  challengeGoalSteps
+  challengeGoalSteps,
+  onLiveProgressUpdate
 }) => {
   const { toast } = useToast();
   const [isTracking, setIsTracking] = useState(false);
@@ -57,7 +66,10 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     achievedCo2MilestonesRef.current.clear();
     setShowCo2Popup(false);
     setCurrentCo2Milestone(null);
-  }, []);
+    if (onLiveProgressUpdate) {
+      onLiveProgressUpdate({ currentSteps: 0, goalSteps: currentGoalSteps, elapsedTime: 0 });
+    }
+  }, [onLiveProgressUpdate, currentGoalSteps]);
 
   useEffect(() => {
     if (challengeGoalSteps && !isTracking && !activityCompleted) {
@@ -74,7 +86,13 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
         setStartTime(new Date());
       }
       timerInterval = setInterval(() => {
-        setElapsedTime(prevTime => prevTime + 1);
+        setElapsedTime(prevTime => {
+          const newTime = prevTime + 1;
+          if (onLiveProgressUpdate) {
+            onLiveProgressUpdate({ currentSteps: steps, goalSteps: currentGoalSteps, elapsedTime: newTime });
+          }
+          return newTime;
+        });
       }, 1000);
       stepInterval = setInterval(() => {
         setSteps(prevSteps => {
@@ -83,6 +101,10 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
           setCalories(Math.floor(newSteps * 0.04));
           setCo2Saved(newCo2Saved);
           setCoinsEarned(Math.floor(newSteps / 100));
+
+          if (onLiveProgressUpdate) {
+            onLiveProgressUpdate({ currentSteps: newSteps, goalSteps: currentGoalSteps, elapsedTime: elapsedTime });
+          }
 
           for (const milestone of CO2_MILESTONES) {
             if (newCo2Saved >= milestone && !achievedCo2MilestonesRef.current.has(milestone)) {
@@ -100,11 +122,14 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
       if (timerInterval) clearInterval(timerInterval);
       if (stepInterval) clearInterval(stepInterval);
     };
-  }, [isTracking, isPaused, startTime, challengeGoalSteps]);
+  }, [isTracking, isPaused, startTime, onLiveProgressUpdate, currentGoalSteps, steps, elapsedTime]);
 
   const handleStart = () => {
     resetTrackerStates();
     setIsTracking(true);
+    if (onLiveProgressUpdate) {
+      onLiveProgressUpdate({ currentSteps: 0, goalSteps: currentGoalSteps, elapsedTime: 0 });
+    }
   };
 
   const handlePauseResume = () => {
@@ -131,6 +156,9 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     };
     onStopTracking(summary, challengeWasCompleted);
      if (challengeGoalSteps && !challengeWasCompleted && steps > 0) {
+    }
+    if (onLiveProgressUpdate) {
+      onLiveProgressUpdate({ currentSteps: steps, goalSteps: currentGoalSteps, elapsedTime: elapsedTime });
     }
   };
 
