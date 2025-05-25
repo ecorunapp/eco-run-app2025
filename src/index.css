@@ -42,10 +42,10 @@
     --background: 18 18 26; /* eco-dark: #12121A */
     --foreground: 240 0% 94%; /* eco-light: #F0F0F0 */
 
-    --card: 220 25% 20%; /* Dark Navy Blue: #262B3D */
+    --card: 28 30 45; /* eco-dark-secondary: #1C1E2D */
     --card-foreground: 240 0% 94%; /* eco-light */
 
-    --popover: 28 30 45; /* eco-dark-secondary */ /* Kept original popover color or could be themed too */
+    --popover: 28 30 45; /* eco-dark-secondary */
     --popover-foreground: 240 0% 94%; /* eco-light */
 
     /* Primary, Secondary, Accent, Ring can remain the same as they are accent colors */
@@ -58,7 +58,7 @@
     --ring: 170 100% 48%;
 
     --muted: 40 42 58; /* A darker muted for dark theme */
-    --muted-foreground: 220 25% 55%; /* Changed from eco-gray to a dark navy blue: #697596 */
+    --muted-foreground: 142 145 150; /* eco-gray #8E9196 */
     
     --destructive: 0 62.8% 40%; /* A bit darker red for dark theme */
     --destructive-foreground: 0 0% 98%;
@@ -84,4 +84,3 @@
     @apply flex flex-col min-h-screen;
   }
 }
-
