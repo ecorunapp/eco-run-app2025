@@ -1,6 +1,8 @@
+
 import {
   Award,
   AlertCircle,
+  AlertTriangle, // Added
   ArrowRight,
   ArrowLeft,
   ArrowUpRight,
@@ -39,6 +41,7 @@ import {
   Home,
   Info,
   Languages,
+  LayoutDashboard, // Added
   Leaf,
   LifeBuoy,
   Link2,
@@ -76,6 +79,7 @@ import {
   Twitter,
   Type,
   User,
+  UserCog, // Added
   Users,
   X,
   Zap,
@@ -120,6 +124,7 @@ export const Confetti: React.FC<LucideProps> = ({ size = 24, color = "currentCol
 export {
   Award,
   AlertCircle,
+  AlertTriangle, // Added
   ArrowRight,
   ArrowLeft,
   ArrowUpRight,
@@ -158,6 +163,7 @@ export {
   Home,
   Info,
   Languages,
+  LayoutDashboard, // Added
   Leaf,
   LifeBuoy,
   Link2,
@@ -195,6 +201,7 @@ export {
   Twitter,
   Type,
   User,
+  UserCog, // Added
   Users,
   X,
   Zap,
@@ -206,3 +213,4 @@ export {
   type LucideProps
   // Confetti is exported at definition
 };
+
