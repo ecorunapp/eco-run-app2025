@@ -1,11 +1,10 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { EcoCoinsProvider } from "./context/EcoCoinsContext";
-import { ThemeProvider as NextThemesProvider } from "next-themes"; // New import
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 import WelcomeScreen from "./pages/Index";
 import DashboardPage from "./pages/DashboardPage";
@@ -23,6 +22,7 @@ import EditProfilePage from './pages/EditProfilePage';
 import OrderEcotabPage from './pages/OrderEcotabPage';
 import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import AppearanceSettingsPage from './pages/AppearanceSettingsPage';
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +32,7 @@ const App = () => (
       <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
         <TooltipProvider>
           <Toaster />
-          <Sonner /> {/* This uses next-themes internally */}
+          <Sonner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Navigate replace to="/splash" />} />
@@ -42,6 +42,7 @@ const App = () => (
               <Route path="/login" element={<LoginPage />} />
               <Route path="/goal-selection" element={<GoalSelectionPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/adashboard" element={<AdminDashboardPage />} />
               <Route path="/activities" element={<ActivitiesPage />} />
               <Route path="/rewards" element={<RewardsPage />} />
               <Route path="/ecotab-details" element={<EcotabDetailsPage />} />

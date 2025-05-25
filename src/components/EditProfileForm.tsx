@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,7 +13,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 const profileFormSchema = z.object({
-  full_name: z.string().min(2, { message: "Full name must be at least 2 characters." }).max(50),
+  full_name: z.string().min(2, { message: "Full name must be at least 2 characters." }).max(50).optional().nullable(),
   weight_kg: z.coerce.number().positive({ message: "Weight must be positive." }).optional().nullable(),
   height_cm: z.coerce.number().positive({ message: "Height must be positive." }).optional().nullable(),
   avatar_file: z.instanceof(FileList).optional(),
@@ -78,9 +77,20 @@ const EditProfileForm: React.FC = () => {
       const filePath = `${fileName}`;
 
       try {
+        // Check if 'profile_pictures' bucket exists, create if not
+        // This is ideally done once, perhaps in a setup script or admin UI
+        // For now, let's assume it exists or Supabase policies allow creation implicitly
+        // const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+        // if (bucketError) throw bucketError;
+        // if (!buckets.find(b => b.name === 'profile_pictures')) {
+        //   await supabase.storage.createBucket('profile_pictures', { public: true });
+        // }
+        // Note: Bucket creation is a one-time admin task, not typically in user-facing forms.
+        // Storage RLS policies should allow users to upload to their own folder.
+
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('profile_pictures')
-          .upload(filePath, file, { upsert: true }); // Use upsert to overwrite if file exists
+          .from('profile_pictures') // Ensure this bucket exists and has correct policies
+          .upload(filePath, file, { upsert: true });
 
         if (uploadError) throw uploadError;
 
@@ -90,7 +100,7 @@ const EditProfileForm: React.FC = () => {
         newAvatarUrl = urlData.publicUrl;
         toast.success("Avatar uploaded successfully!");
       } catch (error: any) {
-        toast.error(`Avatar upload failed: ${error.message}`);
+        toast.error(`Avatar upload failed: ${error.message}. Make sure the 'profile_pictures' storage bucket exists and has appropriate RLS policies.`);
         setIsUploading(false);
         setIsSaving(false);
         return;
@@ -100,14 +110,13 @@ const EditProfileForm: React.FC = () => {
     }
 
     const profileUpdates: Partial<UserProfile> = {
+      // id, username, roles, is_banned, total_steps are not updated here by the user
       full_name: data.full_name,
       weight_kg: data.weight_kg,
       height_cm: data.height_cm,
       avatar_url: newAvatarUrl,
-      // username is email, typically not editable by user directly in this form
     };
     
-    // Filter out undefined values to avoid overwriting with undefined
     const filteredUpdates = Object.entries(profileUpdates).reduce((acc, [key, value]) => {
         if (value !== undefined) {
             (acc as any)[key] = value;

@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      gift_cards: {
+        Row: {
+          card_type: string | null
+          created_at: string | null
+          description: string | null
+          expiry_date: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          title: string
+          updated_at: string | null
+          value_coins: number
+        }
+        Insert: {
+          card_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          expiry_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          title: string
+          updated_at?: string | null
+          value_coins: number
+        }
+        Update: {
+          card_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          expiry_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string | null
+          value_coins?: number
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -44,6 +83,8 @@ export type Database = {
           full_name: string | null
           height_cm: number | null
           id: string
+          is_banned: boolean | null
+          total_steps: number | null
           updated_at: string | null
           username: string | null
           weight_kg: number | null
@@ -53,6 +94,8 @@ export type Database = {
           full_name?: string | null
           height_cm?: number | null
           id: string
+          is_banned?: boolean | null
+          total_steps?: number | null
           updated_at?: string | null
           username?: string | null
           weight_kg?: number | null
@@ -62,6 +105,8 @@ export type Database = {
           full_name?: string | null
           height_cm?: number | null
           id?: string
+          is_banned?: boolean | null
+          total_steps?: number | null
           updated_at?: string | null
           username?: string | null
           weight_kg?: number | null
@@ -192,15 +237,102 @@ export type Database = {
           },
         ]
       }
+      user_gift_cards: {
+        Row: {
+          assigned_at: string | null
+          created_at: string | null
+          gift_card_id: string
+          id: string
+          status: string | null
+          updated_at: string | null
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          created_at?: string | null
+          gift_card_id: string
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          created_at?: string | null
+          gift_card_id?: string
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_gift_cards_gift_card_id_fkey"
+            columns: ["gift_card_id"]
+            isOneToOne: false
+            referencedRelation: "gift_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_gift_cards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_profile_id_for_auth_uid: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -315,6 +447,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

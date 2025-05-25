@@ -2,117 +2,124 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { toast } from 'sonner';
+import type { Enums } from '@/integrations/supabase/types'; // Import Enums
+
+export type AppRole = Enums<'app_role'>; // 'admin' | 'user'
 
 export interface UserProfile {
   id: string;
+  username: string | null;
   full_name: string | null;
   avatar_url: string | null;
   weight_kg: number | null;
   height_cm: number | null;
-  username: string | null; // email
+  updated_at?: string | null;
+  is_banned?: boolean | null; // Added
+  total_steps?: number | null; // Added
+  roles?: AppRole[]; // Added
 }
 
-export function useUserProfile() {
+export const useUserProfile = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchUserProfile = useCallback(async (currentUser: User | null) => {
+    if (!currentUser) {
+      setUser(null);
+      setProfile(null);
+      setRoles([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setUser(currentUser);
     setIsLoading(true);
-    setError(null);
+
     try {
-      const { data, error: profileError } = await supabase
+      // Fetch profile
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, weight_kg, height_cm, username')
-        .eq('id', userId)
+        .select('*')
+        .eq('id', currentUser.id)
         .single();
 
       if (profileError) {
-        if (profileError.code === 'PGRST116') { // Not found
-          console.warn('Profile not found for user:', userId);
-          setProfile(null);
+        // It's possible the profile might not exist immediately after sign up due to trigger delay
+        // or if the trigger failed. Handle this gracefully.
+        if (profileError.code === 'PGRST116') { // "JSON object requested, multiple (or no) rows returned"
+            toast.warning("Profile not found or multiple entries. Waiting for profile creation...");
+            // Optionally, retry or guide user. For now, set profile to null.
+            setProfile(null);
         } else {
-          throw profileError;
+            throw profileError;
         }
       } else {
-        setProfile(data as UserProfile);
+        setProfile(profileData as UserProfile);
       }
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-      setError(err);
+
+      // Fetch roles
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.id);
+
+      if (rolesError) throw rolesError;
+      setRoles(rolesData.map(r => r.role as AppRole) || []);
+
+    } catch (error: any) {
+      toast.error(`Failed to fetch user data: ${error.message}`);
       setProfile(null);
+      setRoles([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    const getSessionAndProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetchUserProfile(session?.user || null);
+    };
+
+    getSessionAndProfile();
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => { // Made non-async
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) {
-          // Defer Supabase calls with setTimeout
-          setTimeout(() => {
-            fetchProfile(currentUser.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setIsLoading(false);
-        }
+      async (_event, session) => {
+        await fetchUserProfile(session?.user || null);
       }
     );
 
-    // Initial fetch
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser) {
-        // Defer Supabase calls with setTimeout
-        setTimeout(() => {
-            fetchProfile(currentUser.id);
-        }, 0);
-      } else {
-        setIsLoading(false);
-      }
-    });
-
     return () => {
-      authListener?.subscription?.unsubscribe();
+      authListener.subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [fetchUserProfile]);
 
-  const updateProfile = useCallback(async (userId: string, updates: Partial<UserProfile>) => {
+  const updateProfile = async (userId: string, updates: Partial<UserProfile>) => {
     setIsLoading(true);
-    setError(null);
     try {
-      const { data, error: updateError } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update(updates)
         .eq('id', userId)
         .select()
         .single();
 
-      if (updateError) throw updateError;
+      if (error) throw error;
       
-      setProfile(data as UserProfile);
-      return data as UserProfile;
-    } catch (err) {
-      console.error('Error updating profile:', err);
-      setError(err);
-      if (user) {
-        // Defer Supabase calls with setTimeout if called from an async context that might interact with auth state changes
-        // For simplicity here, direct call, but if issues persist, consider setTimeout
-        await fetchProfile(user.id); // Refetch to ensure consistency
-      }
-      throw err; 
+      // Optimistically update local profile state or refetch
+      setProfile(prevProfile => prevProfile ? { ...prevProfile, ...data } : data as UserProfile);
+      toast.success('Profile updated!');
+      return data;
+    } catch (error: any) {
+      toast.error(`Failed to update profile: ${error.message}`);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  }, [fetchProfile, user]);
+  };
 
-
-  return { user, profile, isLoading, error, fetchProfile, updateProfile };
-}
-
+  return { user, profile, roles, isLoading, updateProfile, fetchUserProfile };
+};
