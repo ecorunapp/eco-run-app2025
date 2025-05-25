@@ -28,7 +28,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 100,
     rewardCoins: 25, // 5 AED card = 25 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/placeholder-noon-card-front.png', // Using a placeholder for now
+    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', // Updated from placeholder
     prizePromoCode: 'NOON05-QUICKDASH',
     primaryColor: 'bg-cyan-500',
     textColor: 'text-white',
@@ -43,7 +43,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 2000,
     rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Updated image
+    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Kept as updated
     prizePromoCode: 'NOON10-SPRINT',
     primaryColor: 'bg-orange-500',
     textColor: 'text-white',
@@ -58,7 +58,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 5000,
     rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Updated image
+    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Kept as updated
     prizePromoCode: 'NOON10-DAILYGRIND',
     primaryColor: 'bg-blue-500',
     textColor: 'text-white',
@@ -73,7 +73,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 5000,
     rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Updated image
+    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Kept as updated
     prizePromoCode: 'NOON10-5KSTEP',
     primaryColor: 'bg-green-500',
     textColor: 'text-white',
@@ -88,7 +88,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 7500,
     rewardCoins: 100, // 20 AED card = 100 EcoCoins
     icon: Award,
-    prizeImageUrl: '/placeholder-noon-card-front.png', // Make sure this image exists for 20 AED
+    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', // Updated from placeholder
     prizePromoCode: 'NOON20-POWER',
     primaryColor: 'bg-purple-500',
     textColor: 'text-white',
@@ -103,7 +103,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 10000,
     rewardCoins: 100, // 20 AED card = 100 EcoCoins
     icon: Award,
-    prizeImageUrl: '/placeholder-noon-card-front.png', // Placeholder for 20 AED
+    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', // Updated from placeholder
     prizePromoCode: 'NOON20-MARATHON-PRO',
     primaryColor: 'bg-teal-500',
     textColor: 'text-white',
@@ -118,7 +118,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 20000,
     rewardCoins: 1500, // 300 AED card = 1500 EcoCoins (30 * 50)
     icon: Award,
-    prizeImageUrl: '/placeholder-noon-card-300aed.png',
+    prizeImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', // Updated from placeholder
     prizePromoCode: 'NOON300-ULTIMATE',
     primaryColor: 'bg-gray-700',
     textColor: 'text-yellow-300',
@@ -133,4 +133,3 @@ export const challenges: Challenge[] = [
 export const getChallengeById = (id: string): Challenge | undefined => {
   return challenges.find(challenge => challenge.id === id);
 };
-
