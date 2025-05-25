@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, Info } from '@/components/icons';
+import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, Info, User } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
 import GradientDebitCard from '@/components/GradientDebitCard';
@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { TransactionHistoryModal } from '@/components/TransactionHistoryModal';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 // Sample data for featured offers
 const featuredOffers = [
@@ -114,13 +115,13 @@ interface EcotabCardData {
   cardNetworkLogo?: React.ReactNode;
 }
 
-// Sample data for Ecotab cards
-const sampleEcotabCardsData: EcotabCardData[] = [
+// Sample data for Ecotab cards - CardHolder will be overridden by user's name
+const initialEcotabCardsData: EcotabCardData[] = [
   {
     id: 'ecotab-rewards-1',
     gradientClass: 'bg-gradient-to-br from-eco-purple via-eco-pink to-orange-400',
     cardNumberSuffix: '1234',
-    cardHolder: 'JANE DOE',
+    cardHolder: 'YOUR NAME', // Placeholder, will be updated
     expiryDate: '12/28',
     cvv: '123',
     nfcActive: true,
@@ -131,34 +132,41 @@ const sampleEcotabCardsData: EcotabCardData[] = [
     id: 'ecotab-rewards-2',
     gradientClass: 'bg-gradient-to-tr from-green-400 via-teal-500 to-blue-600',
     cardNumberSuffix: '5678',
-    cardHolder: 'JANE DOE',
+    cardHolder: 'YOUR NAME', // Placeholder
     expiryDate: '10/27',
     cvv: '456',
     nfcActive: true,
     isPrimary: false,
     cardNetworkLogo: <CreditCard size={24} className="text-white opacity-50" />
   },
-  {
-    id: 'ecotab-rewards-3',
-    gradientClass: 'bg-gradient-to-bl from-gray-700 via-gray-800 to-black',
-    cardNumberSuffix: '9012',
-    cardHolder: 'JANE DOE',
-    expiryDate: '08/29',
-    cvv: '789',
-    nfcActive: false,
-    isPrimary: false,
-    cardNetworkLogo: undefined
-  },
+  // ... other cards if any
 ];
 
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
-  const { balance: userEcoPoints, history: transactionHistory, redeemPoints } = useEcoCoins();
+  const { balance: userEcoPoints, history: transactionHistory, redeemPoints, isLoading: ecoCoinsLoading } = useEcoCoins();
+  const { profile: userProfile, isLoading: profileLoading } = useUserProfile();
+
+  const [ecotabCards, setEcotabCards] = useState<EcotabCardData[]>(initialEcotabCardsData);
   const [showAllEcotabCards, setShowAllEcotabCards] = useState(false);
   const [dialogCard, setDialogCard] = useState<EcotabCardData | null>(null);
   const [showRedeemInput, setShowRedeemInput] = useState(false);
   const [redeemAmount, setRedeemAmount] = useState('');
   const [showTxModal, setShowTxModal] = useState(false);
+
+  useEffect(() => {
+    if (userProfile?.full_name) {
+      setEcotabCards(initialEcotabCardsData.map(card => ({
+        ...card,
+        cardHolder: userProfile.full_name || 'Eco User',
+      })));
+    } else if (!profileLoading) { // if not loading and no full_name, use a default
+        setEcotabCards(initialEcotabCardsData.map(card => ({
+            ...card,
+            cardHolder: 'Eco User',
+        })));
+    }
+  }, [userProfile, profileLoading]);
 
   const handleCardClick = (card: EcotabCardData) => {
     setDialogCard(card);
@@ -166,34 +174,53 @@ const RewardsPage: React.FC = () => {
     setRedeemAmount('');
   };
 
-  const primaryCard = sampleEcotabCardsData.find(card => card.isPrimary) || sampleEcotabCardsData[0];
+  const primaryCard = ecotabCards.find(card => card.isPrimary) || ecotabCards[0];
 
-  const handleEcotabRedemption = () => {
+  const handleEcotabRedemption = async () => { // Made async
     const amount = parseInt(redeemAmount, 10);
     if (isNaN(amount) || amount <= 0) {
       toast.error("Please enter a valid amount of points to redeem.");
       return;
     }
     if (dialogCard) {
-      if (redeemPoints(amount, `Redeemed to Ecotab Card ${dialogCard.cardNumberSuffix}`)) {
+      // redeemPoints now returns a promise, so we should await it.
+      const success = await redeemPoints(amount, `Redeemed to Ecotab Card ${dialogCard.cardNumberSuffix}`);
+      if (success) {
         toast.success(`${amount} EcoPoints successfully redeemed to Ecotab Card ${dialogCard.cardNumberSuffix}!`);
         setDialogCard(null);
         setShowRedeemInput(false);
         setRedeemAmount('');
       } else {
-        toast.error(`Not enough EcoPoints. You have ${userEcoPoints.toLocaleString()}, tried to redeem ${amount.toLocaleString()}.`);
+        // Error/warning toast is handled within redeemPoints or if balance is insufficient.
+        // If redeemPoints returns false explicitly for other reasons, a generic error can be shown.
+        // Or rely on toasts from useEcoCoins context.
+        // For insufficient balance, redeemPoints might show a toast or we can check here.
+         if (userEcoPoints < amount) {
+           toast.error(`Not enough EcoPoints. You have ${userEcoPoints.toLocaleString()}, tried to redeem ${amount.toLocaleString()}.`);
+         } else {
+           toast.error("Redemption failed. Please try again.");
+         }
       }
     }
   };
 
   const displayedTransactions = transactionHistory.slice(0, 4).map(tx => ({
-    id: tx.date + tx.label + tx.value + tx.type,
+    id: tx.id || tx.date + tx.label + tx.value + tx.type, // Use tx.id if available
     icon: getIconForTransactionType(tx.type),
     title: tx.label,
     descriptionType: tx.type,
-    amount: tx.type === 'income' ? tx.value : -tx.value,
+    amount: (tx.type === 'income' || tx.type === 'ecotab') ? tx.value : -tx.value, // Ecotab might be earnings
     date: tx.date,
   }));
+
+  if (profileLoading || ecoCoinsLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center">
+        <Loader2 className="h-12 w-12 animate-spin text-eco-accent" />
+        <p className="mt-4 text-lg">Loading your rewards...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
@@ -210,14 +237,14 @@ const RewardsPage: React.FC = () => {
         <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-eco-light">My Ecotab Cards</h2>
-            {sampleEcotabCardsData.length > 1 && (
+            {ecotabCards.length > 1 && (
               <Button 
                 variant="outline" 
                 size="sm" 
                 className="border-eco-accent text-eco-accent hover:bg-eco-accent hover:text-eco-dark transition-colors" 
                 onClick={() => setShowAllEcotabCards(!showAllEcotabCards)}
               >
-                {showAllEcotabCards ? 'Show Primary' : `Show All (${sampleEcotabCardsData.length})`}
+                {showAllEcotabCards ? 'Show Primary' : `Show All (${ecotabCards.length})`}
               </Button>
             )}
           </div>
@@ -228,20 +255,20 @@ const RewardsPage: React.FC = () => {
                 className="cursor-pointer hover:shadow-eco-accent/30 hover:shadow-lg transition-shadow rounded-xl"
                 title="Click to view card details"
             >
-              <GradientDebitCard {...primaryCard} />
-              {sampleEcotabCardsData.length > 1 && <p className="text-center text-eco-gray mt-3 text-xs">View all cards by clicking "Show All"</p>}
+              <GradientDebitCard {...primaryCard} cardHolder={userProfile?.full_name || primaryCard.cardHolder} />
+              {ecotabCards.length > 1 && <p className="text-center text-eco-gray mt-3 text-xs">View all cards by clicking "Show All"</p>}
             </div>
           )}
 
           {showAllEcotabCards && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {sampleEcotabCardsData.map(card => (
+              {ecotabCards.map(card => (
                 <div 
                     key={card.id} 
                     onClick={() => handleCardClick(card)}
                     className={`cursor-pointer rounded-xl transition-all duration-300 hover:shadow-eco-accent/20 hover:shadow-lg ${dialogCard?.id === card.id ? 'ring-2 ring-eco-accent shadow-eco-accent/50 ' : 'ring-1 ring-transparent hover:ring-eco-gray/50'}`}
                 >
-                  <GradientDebitCard {...card} />
+                  <GradientDebitCard {...card} cardHolder={userProfile?.full_name || card.cardHolder} />
                 </div>
               ))}
             </div>
@@ -313,7 +340,8 @@ const RewardsPage: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="my-4 px-2">
-                <GradientDebitCard {...dialogCard} />
+                 {/* Pass updated cardHolder to GradientDebitCard in Dialog */}
+                <GradientDebitCard {...dialogCard} cardHolder={userProfile?.full_name || dialogCard.cardHolder} />
               </div>
 
               {!showRedeemInput ? (
