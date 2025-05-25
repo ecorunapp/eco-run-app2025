@@ -5,33 +5,28 @@ import { Button } from '@/components/ui/button';
 import { Settings, Play } from '@/components/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WeeklyActivityChart from '@/components/WeeklyActivityChart';
-import ActivityTracker from '@/components/ActivityTracker';
+import ActivityTracker, { ActivitySummary } from '@/components/ActivityTracker'; // Import ActivitySummary
+import LastActivityGraph from '@/components/LastActivityGraph'; // Import new graph component
 import { useToast } from "@/hooks/use-toast";
 
-interface ActivitySummary {
-  steps: number;
-  elapsedTime: number;
-  calories: number;
-  co2Saved: number;
-  coinsEarned: number;
-}
+// ActivitySummary interface is now imported from ActivityTracker
 
 const ActivitiesPage: React.FC = () => {
   console.log('ActivitiesPage: component mounted');
   const [isTracking, setIsTracking] = useState(false);
+  const [lastActivitySummary, setLastActivitySummary] = useState<ActivitySummary | null>(null); // New state
   const { toast } = useToast();
 
   const handleStartTracking = () => {
     setIsTracking(true);
+    setLastActivitySummary(null); // Clear previous summary when starting a new activity
   };
 
   const handleStopTracking = (activitySummary: ActivitySummary) => {
-    console.log('Activity Ended:', activitySummary);
-    // Don't immediately unmount - let the reward card handle the transition
-    if (activitySummary.steps === 0 && activitySummary.elapsedTime === 0) {
-      // Only unmount immediately if it's a manual exit (settings button)
-      setIsTracking(false);
-    }
+    console.log('ActivitiesPage: handleStopTracking called with summary:', activitySummary);
+    setLastActivitySummary(activitySummary);
+    setIsTracking(false); // This will hide the ActivityTracker and show the main page content
+    console.log('ActivitiesPage: isTracking set to false.');
   };
   
   // Helper function to format time, can be moved to utils if used elsewhere
@@ -81,6 +76,13 @@ const ActivitiesPage: React.FC = () => {
             <Play size={20} className="mr-2"/> Start New Activity
           </Button>
         </section>
+
+        {/* Display Last Activity Graph if available and meaningful */}
+        {lastActivitySummary && (lastActivitySummary.steps > 0 || lastActivitySummary.elapsedTime > 0 || lastActivitySummary.calories > 0) && (
+          <section className="animate-fade-in-up mb-6">
+            <LastActivityGraph summary={lastActivitySummary} />
+          </section>
+        )}
 
         <section className="animate-fade-in-up">
           <Tabs defaultValue="weekly" className="w-full">

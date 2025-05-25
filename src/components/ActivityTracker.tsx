@@ -6,7 +6,7 @@ import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from '
 import ActivityRewardCard from './ActivityRewardCard';
 import LiveActivityMap from './LiveActivityMap';
 
-interface ActivitySummary {
+export interface ActivitySummary {
   steps: number;
   elapsedTime: number;
   calories: number;
