@@ -1,5 +1,4 @@
-
-import { LucideIcon, Footprints, Award } from '@/components/icons'; // Using our icons.tsx
+import { LucideIcon, Footprints, Award, Lock } from '@/components/icons'; // Using our icons.tsx // Added Lock icon
 
 export interface Challenge {
   id: string;
@@ -14,6 +13,8 @@ export interface Challenge {
   textColor: string;
   buttonBgColor: string;
   buttonTextColor: string;
+  isLockedInitially?: boolean; // New property for initial lock state
+  unlockDescription?: string; // New property for unlock instructions
 }
 
 export const challenges: Challenge[] = [
@@ -34,12 +35,12 @@ export const challenges: Challenge[] = [
   {
     id: 'challenge_5k_steps',
     title: 'Daily 5K Grind',
-    description: 'Push yourself to 5,000 steps today & win a 10 AED Noon Card!', // Updated description
+    description: 'Push yourself to 5,000 steps today & win a 10 AED Noon Card!',
     stepsGoal: 5000,
-    rewardCoins: 75, // Adjusted rewardCoins due to card prize
+    rewardCoins: 75,
     icon: Footprints,
-    prizeImageUrl: '/noon-10aed-card-front.png', // Specific 10 AED card image
-    prizePromoCode: 'NOON10-DAILYGRIND', // Updated promo code
+    prizeImageUrl: '/noon-10aed-card-front.png',
+    prizePromoCode: 'NOON10-DAILYGRIND',
     primaryColor: 'bg-blue-500',
     textColor: 'text-white',
     buttonBgColor: 'bg-white',
@@ -80,16 +81,31 @@ export const challenges: Challenge[] = [
     stepsGoal: 10000,
     rewardCoins: 150,
     icon: Award,
-    prizeImageUrl: '/placeholder-noon-card-front.png',
-    prizePromoCode: 'NOON-MARATHON-PRO',
+    prizeImageUrl: '/placeholder-noon-card-front.png', // Assuming still placeholder
+    prizePromoCode: 'NOON-MARATHON-PRO', // Assuming still placeholder code
     primaryColor: 'bg-teal-500',
     textColor: 'text-white',
     buttonBgColor: 'bg-white',
     buttonTextColor: 'text-teal-600',
+  },
+  {
+    id: 'challenge_20k_ecotab_300aed',
+    title: 'Ultimate 20K Ecotab Challenge',
+    description: 'Conquer 20,000 steps & win a 300 AED Noon Card! Requires Ecotab activation.',
+    stepsGoal: 20000,
+    rewardCoins: 1500, // Significant reward for a big challenge + prize
+    icon: Award, // Or a new "epic" icon if available
+    prizeImageUrl: '/placeholder-noon-card-300aed.png', // You'll need to upload this image
+    prizePromoCode: 'NOON300-ULTIMATE',
+    primaryColor: 'bg-gray-700', // Distinct color for this special challenge
+    textColor: 'text-yellow-300',
+    buttonBgColor: 'bg-yellow-400',
+    buttonTextColor: 'text-gray-800',
+    isLockedInitially: true,
+    unlockDescription: 'Activate your Ecotab card to unlock this challenge.',
   },
 ];
 
 export const getChallengeById = (id: string): Challenge | undefined => {
   return challenges.find(challenge => challenge.id === id);
 };
-
