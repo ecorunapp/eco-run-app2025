@@ -28,6 +28,7 @@ const ActivitiesPage: React.FC = () => {
   
   const [showChallengeWonModal, setShowChallengeWonModal] = useState(false);
   const [completedChallengeDetails, setCompletedChallengeDetails] = useState<Challenge | null>(null);
+  const [currentUserGiftCardId, setCurrentUserGiftCardId] = useState<string | null>(null); // Added state for userGiftCardId
   
   const [activityStepCoinsReward, setActivityStepCoinsReward] = useState<number | null>(null);
   
@@ -43,6 +44,7 @@ const ActivitiesPage: React.FC = () => {
         setLastActivitySummary(null); 
         setShowChallengeWonModal(false);
         setCompletedChallengeDetails(null);
+        setCurrentUserGiftCardId(null); // Reset gift card ID when new challenge starts
         setLiveProgress({ currentSteps: 0, goalSteps: challenge.stepsGoal, elapsedTime: 0 }); // Initialize live progress for challenge
         navigate(location.pathname, { replace: true, state: {} });
         toast({
@@ -65,11 +67,12 @@ const ActivitiesPage: React.FC = () => {
     setLastActivitySummary(null);
     setShowChallengeWonModal(false);
     setCompletedChallengeDetails(null);
+    setCurrentUserGiftCardId(null); // Reset gift card ID
     setActivityStepCoinsReward(null);
     setLiveProgress({ currentSteps: 0, goalSteps: 10000, elapsedTime: 0 }); // Default goal for generic activity
   };
 
-  const handleStopTracking = (activitySummary: ActivitySummary, challengeCompleted?: boolean) => {
+  const handleStopTracking = async (activitySummary: ActivitySummary, challengeCompleted?: boolean) => {
     console.log('ActivitiesPage: handleStopTracking called with summary:', activitySummary, 'Challenge Completed:', challengeCompleted);
     setIsTracking(false); 
     setLastActivitySummary(activitySummary);
@@ -83,8 +86,13 @@ const ActivitiesPage: React.FC = () => {
       if (challengeCompleted) {
         console.log(`Challenge ${activeChallenge.title} completed!`);
         setCompletedChallengeDetails(activeChallenge); 
+        
+        // Call addEarnings and store the returned userGiftCardId
+        const newGiftCardId = await addEarnings(activeChallenge.rewardCoins, `Challenge: ${activeChallenge.title}`, activeChallenge);
+        setCurrentUserGiftCardId(newGiftCardId);
+        
         setShowChallengeWonModal(true); 
-        addEarnings(activeChallenge.rewardCoins, `Challenge: ${activeChallenge.title}`);
+        
         toast({
           title: "Challenge Complete!",
           description: `Awesome! You conquered ${activeChallenge.title} and earned ${activeChallenge.rewardCoins} EcoCoins! (Step coins, if any, shown separately)`,
@@ -126,6 +134,7 @@ const ActivitiesPage: React.FC = () => {
   const handleCloseChallengeWonModal = () => {
     setShowChallengeWonModal(false);
     setCompletedChallengeDetails(null); 
+    setCurrentUserGiftCardId(null); // Reset gift card ID when modal closes
     setActiveChallenge(null); 
   };
 
@@ -157,9 +166,6 @@ const ActivitiesPage: React.FC = () => {
             size="icon" 
             className="text-eco-gray hover:text-eco-accent" 
             onClick={() => {
-                // Call handleStopTracking with placeholder summary if user exits early
-                // The actual step count will be 0 or whatever ActivityTracker has internally before full stop.
-                // For simplicity, using 0 here as the primary effect is to stop tracking.
                 handleStopTracking({steps:liveProgress?.currentSteps || 0, elapsedTime:liveProgress?.elapsedTime || 0, calories:0, co2Saved:0, coinsEarned:0}, false)
             }}
           >
@@ -177,7 +183,6 @@ const ActivitiesPage: React.FC = () => {
           <MiniChallengeStatus
             currentSteps={liveProgress.currentSteps}
             goalSteps={liveProgress.goalSteps}
-            // streakDays and weeklyProgressPreview will use defaults in MiniChallengeStatus
           />
         )}
         <BottomNav />
@@ -259,6 +264,7 @@ const ActivitiesPage: React.FC = () => {
           isOpen={showChallengeWonModal}
           onClose={handleCloseChallengeWonModal}
           challenge={completedChallengeDetails}
+          userGiftCardId={currentUserGiftCardId} // Pass the userGiftCardId here
         />
       )}
     </div>

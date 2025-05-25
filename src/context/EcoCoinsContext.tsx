@@ -169,7 +169,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
               prize_promo_code: challengeDetails.prizePromoCode,
               prize_monetary_value_aed: masterCard.monetary_value_aed,
               prize_currency: masterCard.currency,
-              associated_eco_coins_value: amount,
+              associated_eco_coins_value: challengeDetails.rewardCoins || masterCard.value_coins, // Changed from amount to challengeDetails.rewardCoins or masterCard.value_coins
               status: 'assigned',
               assigned_at: new Date().toISOString(),
             })
@@ -212,7 +212,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
     if (balance < amount) {
-      toast.warn("Not enough balance to redeem.");
+      toast.warning("Not enough balance to redeem.");
       return false;
     }
     setIsLoading(true);
@@ -259,7 +259,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       return true;
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error in redeemPoints: ${error.message}`);
       setBalance(prev => prev + amount);
       setHistory(prev => prev.filter(tx => tx.id !== optimisticTransaction.id));
