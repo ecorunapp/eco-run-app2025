@@ -1,27 +1,57 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import EcoRunLogo from '@/components/EcoRunLogo';
-import { LayoutDashboard, Users, Gift, UserCog, LogOut, ShieldCheck, AlertTriangle } from '@/components/icons'; // Added ShieldCheck
+import { LayoutDashboard, Users, Gift, UserCog, LogOut, ShieldCheck, AlertTriangle, Loader2 } from '@/components/icons'; // Added Loader2
 
 const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile, roles, isLoading: profileLoading } = useUserProfile();
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!profileLoading && (!user || !roles.includes('admin'))) {
-      toast.error("Access denied. You are not an admin.");
-      navigate('/login');
-    }
-    if (!profileLoading && profile?.is_banned) {
-        toast.error("Your account has been banned.");
-        supabase.auth.signOut(); // Ensure signout if somehow a banned admin reaches here
+    const checkAuthorization = async () => {
+      // Wait for profile data to load
+      if (profileLoading) return;
+      
+      // Check if user is logged in
+      if (!user) {
+        console.log("Admin dashboard: No user found");
+        toast.error("Please log in to access the admin dashboard.");
         navigate('/login');
-    }
+        setIsAuthorized(false);
+        return;
+      }
+      
+      // Check if user is admin
+      if (!roles.includes('admin')) {
+        console.log("Admin dashboard: User is not admin", roles);
+        toast.error("Access denied. You are not an admin.");
+        navigate('/dashboard');
+        setIsAuthorized(false);
+        return;
+      }
+      
+      // Check if user is banned
+      if (profile?.is_banned) {
+        console.log("Admin dashboard: User is banned");
+        toast.error("Your account has been banned.");
+        supabase.auth.signOut();
+        navigate('/login');
+        setIsAuthorized(false);
+        return;
+      }
+      
+      // User is authorized
+      console.log("Admin dashboard: Access granted");
+      setIsAuthorized(true);
+    };
+
+    checkAuthorization();
   }, [user, roles, profile, profileLoading, navigate]);
 
   const handleLogout = async () => {
@@ -34,17 +64,19 @@ const AdminDashboardPage: React.FC = () => {
     }
   };
 
-  if (profileLoading) {
-    return <div className="flex items-center justify-center min-h-screen bg-eco-dark text-eco-light"><LayoutDashboard className="h-8 w-8 animate-spin text-eco-accent" /> Loading Admin Dashboard...</div>;
+  // Show loading while checking authorization
+  if (profileLoading || isAuthorized === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-eco-dark text-eco-light">
+        <Loader2 className="h-8 w-8 animate-spin text-eco-accent mr-2" /> 
+        Loading Admin Dashboard...
+      </div>
+    );
   }
   
-  if (!roles.includes('admin')) {
-     return <div className="flex flex-col items-center justify-center min-h-screen bg-eco-dark text-eco-light p-4">
-        <AlertTriangle size={48} className="text-destructive mb-4" />
-        <h1 className="text-2xl font-semibold mb-2">Access Denied</h1>
-        <p className="text-eco-gray mb-6">You do not have permission to view this page.</p>
-        <Button onClick={() => navigate('/dashboard')} className="bg-eco-accent text-eco-dark">Go to User Dashboard</Button>
-     </div>;
+  // Show access denied if not authorized
+  if (isAuthorized === false) {
+    return null; // Will redirect anyway
   }
 
   return (
