@@ -42,10 +42,10 @@
     --background: 18 18 26; /* eco-dark: #12121A */
     --foreground: 240 0% 94%; /* eco-light: #F0F0F0 */
 
-    --card: 28 30 45; /* eco-dark-secondary: #1C1E2D */
+    --card: 220 25% 20%; /* Dark Navy Blue: #262B3D */
     --card-foreground: 240 0% 94%; /* eco-light */
 
-    --popover: 28 30 45; /* eco-dark-secondary */
+    --popover: 28 30 45; /* eco-dark-secondary */ /* Kept original popover color or could be themed too */
     --popover-foreground: 240 0% 94%; /* eco-light */
 
     /* Primary, Secondary, Accent, Ring can remain the same as they are accent colors */
