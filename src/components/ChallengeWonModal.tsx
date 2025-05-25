@@ -84,7 +84,7 @@ const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, 
           ) : (
             <div className="animate-scale-in w-full">
               <GiftCardDisplay 
-                frontImageUrl={challenge.prizeImageUrl || '/placeholder-noon-card-front.png'} 
+                frontImageUrl={challenge.prizeImageUrl || '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png'} 
                 backImageUrl="/placeholder-noon-card-back.png" 
                 promoCode={challenge.prizePromoCode || "NOON-XXX-XXX"}
                 activationMessage={activationMessage}
