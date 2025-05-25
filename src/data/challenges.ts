@@ -1,3 +1,4 @@
+
 import { LucideIcon, Footprints, Award, Lock } from '@/components/icons';
 
 export interface Challenge {
@@ -42,7 +43,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 2000,
     rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/noon-10aed-card-front.png',
+    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Updated image
     prizePromoCode: 'NOON10-SPRINT',
     primaryColor: 'bg-orange-500',
     textColor: 'text-white',
@@ -57,7 +58,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 5000,
     rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/noon-10aed-card-front.png',
+    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Updated image
     prizePromoCode: 'NOON10-DAILYGRIND',
     primaryColor: 'bg-blue-500',
     textColor: 'text-white',
@@ -72,7 +73,7 @@ export const challenges: Challenge[] = [
     stepsGoal: 5000,
     rewardCoins: 50, // 10 AED card = 50 EcoCoins
     icon: Footprints,
-    prizeImageUrl: '/noon-10aed-card-front.png',
+    prizeImageUrl: '/lovable-uploads/32e6c504-08cb-4a94-9cef-b68a4b9f65bb.png', // Updated image
     prizePromoCode: 'NOON10-5KSTEP',
     primaryColor: 'bg-green-500',
     textColor: 'text-white',
@@ -132,3 +133,4 @@ export const challenges: Challenge[] = [
 export const getChallengeById = (id: string): Challenge | undefined => {
   return challenges.find(challenge => challenge.id === id);
 };
+
