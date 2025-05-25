@@ -4,10 +4,10 @@ import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Settings, User, LogOut, Edit3, CreditCard, Bell, ShieldCheck, Palette, Mail, ChevronRight, Weight, Zap as HeightIcon, Loader2, TrendingUp, Star, MapPin, Coins } from '@/components/icons'; // Added Coins
+import { Settings, User, LogOut, Edit3, CreditCard, Bell, ShieldCheck, Palette, Mail, ChevronRight, Weight, Zap as HeightIcon, Loader2, TrendingUp, Star, MapPin, Coins, ShoppingBag } from '@/components/icons'; // Added Coins and ShoppingBag
 import { useNavigate } from 'react-router-dom';
-import { useUserProfile } from '@/hooks/useUserProfile'; // Import the hook
-import { supabase } from '@/integrations/supabase/client'; // For logout
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const ProfilePage: React.FC = () => {
@@ -33,7 +33,6 @@ const ProfilePage: React.FC = () => {
     height: profile.height_cm,
   } : placeholderUser;
 
-
   const handleLogout = async () => {
     console.log("User logging out...");
     const { error } = await supabase.auth.signOut();
@@ -47,10 +46,10 @@ const ProfilePage: React.FC = () => {
 
   const profileMenuItems = [
     { title: 'Edit Profile', icon: Edit3, action: () => navigate('/edit-profile') }, // TODO: Create EditProfilePage
-    { title: 'Payment Methods', icon: CreditCard, action: () => console.log('Payment Methods clicked') },
-    { title: 'Notification Settings', icon: Bell, action: () => console.log('Notifications clicked') },
-    { title: 'Privacy & Security', icon: ShieldCheck, action: () => console.log('Privacy clicked') },
-    { title: 'Appearance', icon: Palette, action: () => console.log('Appearance clicked (Note: Dark mode is default)') },
+    { title: 'Order Ecotab Card', icon: ShoppingBag, action: () => navigate('/order-ecotab') }, // Changed
+    { title: 'Notification Settings', icon: Bell, action: () => navigate('/notification-settings') }, // Action updated
+    { title: 'Privacy & Security', icon: ShieldCheck, action: () => console.log('Privacy clicked') }, // Kept as is for now
+    { title: 'Appearance', icon: Palette, action: () => navigate('/appearance-settings') }, // Action updated
   ];
 
   // Placeholder stats - to be implemented later

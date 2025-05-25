@@ -13,10 +13,14 @@ import ProfilePage from "./pages/ProfilePage";
 import EcotabDetailsPage from "./pages/EcotabDetailsPage";
 import GoalSelectionPage from "./pages/GoalSelectionPage";
 import SplashScreenPage from "./pages/SplashScreenPage";
-import LoginPage from "./pages/LoginPage"; // Import LoginPage
-import SignupPage from "./pages/SignupPage"; // Import SignupPage
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import NotFound from "./pages/NotFound";
 import GiftCards from './pages/GiftCards';
+import EditProfilePage from './pages/EditProfilePage'; // New import
+import OrderEcotabPage from './pages/OrderEcotabPage'; // New import
+import NotificationSettingsPage from './pages/NotificationSettingsPage'; // New import
+import AppearanceSettingsPage from './pages/AppearanceSettingsPage'; // New import
 
 const queryClient = new QueryClient();
 
@@ -31,14 +35,18 @@ const App = () => (
             <Route path="/" element={<Navigate replace to="/splash" />} />
             <Route path="/splash" element={<SplashScreenPage />} />
             <Route path="/welcome" element={<WelcomeScreen />} />
-            <Route path="/signup" element={<SignupPage />} /> {/* Add SignupPage route */}
-            <Route path="/login" element={<LoginPage />} /> {/* Add LoginPage route */}
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/goal-selection" element={<GoalSelectionPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/activities" element={<ActivitiesPage />} />
             <Route path="/rewards" element={<RewardsPage />} />
             <Route path="/ecotab-details" element={<EcotabDetailsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/edit-profile" element={<EditProfilePage />} /> {/* New route */}
+            <Route path="/order-ecotab" element={<OrderEcotabPage />} /> {/* New route */}
+            <Route path="/notification-settings" element={<NotificationSettingsPage />} /> {/* New route */}
+            <Route path="/appearance-settings" element={<AppearanceSettingsPage />} /> {/* New route */}
             <Route path="/gift-cards" element={<GiftCards />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
@@ -51,4 +59,3 @@ const App = () => (
 );
 
 export default App;
-
