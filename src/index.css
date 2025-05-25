@@ -5,8 +5,41 @@
 
 @layer base {
   :root {
-    /* Overriding shadcn defaults for our dark theme */
-    --background: 12 12 26; /* eco-dark: #12121A */
+    /* Light Theme (default) */
+    --background: 240 5% 96%; /* #F5F5F5 */
+    --foreground: 240 10% 3.9%; /* #0A0A0A */
+
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 240 10% 3.9%; /* #0A0A0A */
+
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 240 10% 3.9%; /* #0A0A0A */
+
+    --primary: 170 100% 48%; /* eco-accent: #00F5D4 */
+    --primary-foreground: 18 20 30; /* Very dark text for on-accent */
+
+    --secondary: 170 100% 40%; /* eco-accent-secondary: #00CEC9 */
+    --secondary-foreground: 18 20 30; /* Very dark text */
+
+    --muted: 240 4.8% 95.9%; /* #F4F4F5 */
+    --muted-foreground: 240 3.8% 46.1%; /* #707070 */
+
+    --accent: 170 100% 48%; /* eco-accent */
+    --accent-foreground: 18 20 30; /* Very dark text */
+
+    --destructive: 0 84.2% 60.2%; /* #FF3B30 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --border: 240 5.9% 90%; /* #E4E4E7 */
+    --input: 240 5.9% 90%; /* #E4E4E7 */
+    --ring: 170 100% 48%; /* eco-accent */
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Dark Theme */
+    --background: 18 18 26; /* eco-dark: #12121A */
     --foreground: 240 0% 94%; /* eco-light: #F0F0F0 */
 
     --card: 28 30 45; /* eco-dark-secondary: #1C1E2D */
@@ -15,64 +48,28 @@
     --popover: 28 30 45; /* eco-dark-secondary */
     --popover-foreground: 240 0% 94%; /* eco-light */
 
-    --primary: 170 100% 48%; /* eco-accent: #00F5D4 */
-    --primary-foreground: 18 20 30; /* Very dark text for on-accent */
-
-    --secondary: 170 100% 40%; /* eco-accent-secondary: #00CEC9 */
+    /* Primary, Secondary, Accent, Ring can remain the same as they are accent colors */
+    --primary: 170 100% 48%; 
+    --primary-foreground: 18 20 30; 
+    --secondary: 170 100% 40%;
     --secondary-foreground: 18 20 30;
-
-    --muted: 142 145 150; /* eco-gray: #8E9196 */
-    --muted-foreground: 200 200 200; /* Lighter gray for muted text */
-
-    --accent: 170 100% 48%; /* eco-accent */
+    --accent: 170 100% 48%;
     --accent-foreground: 18 20 30;
+    --ring: 170 100% 48%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 40 42 58; /* Darker border */
-    --input: 40 42 58;
-    --ring: 170 100% 48%; /* eco-accent */
-
-    --radius: 0.75rem; /* Slightly larger default radius */
-  }
-
-  /* Forcing dark theme */
-  .dark {
-    --background: 18 18 26; /* eco-dark */
-    --foreground: 240 0% 94%; /* eco-light */
-
-    --card: 28 30 45; /* eco-dark-secondary */
-    --card-foreground: 240 0% 94%; /* eco-light */
-
-    --popover: 28 30 45; /* eco-dark-secondary */
-    --popover-foreground: 240 0% 94%; /* eco-light */
-
-    --primary: 170 100% 48%; /* eco-accent */
-    --primary-foreground: 18 20 30;
-
-    --secondary: 170 100% 40%; /* eco-accent-secondary */
-    --secondary-foreground: 18 20 30;
-
-    --muted: 142 145 150; /* eco-gray */
-    --muted-foreground: 200 200 200;
-
-    --accent: 170 100% 48%; /* eco-accent */
-    --accent-foreground: 18 20 30;
-
-    --destructive: 0 62.8% 30.6%;
+    --muted: 40 42 58; /* A darker muted for dark theme */
+    --muted-foreground: 142 145 150; /* eco-gray #8E9196 */
+    
+    --destructive: 0 62.8% 40%; /* A bit darker red for dark theme */
     --destructive-foreground: 0 0% 98%;
 
     --border: 40 42 58; /* Darker border */
-    --input: 40 42 58;
-    --ring: 212.7 26.8% 83.9%;
+    --input: 40 42 58; /* Darker input */
   }
 }
 
 @layer base {
-  html {
-    @apply dark; /* Force dark mode */
-  }
+  /* html { @apply dark; } REMOVED: next-themes will handle this */
   * {
     @apply border-border;
   }
