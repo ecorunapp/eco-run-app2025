@@ -66,9 +66,11 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     setIsLoading(true);
     setIsLoadingHistory(true);
+    console.log("EcoCoinsContext: Attempting to fetch balance and history for user:", userToFetch.id);
 
     try {
       // Fetch balance
+      console.log("EcoCoinsContext: Fetching balance...");
       const { data: balanceData, error: balanceError } = await supabase
         .from('user_eco_balances')
         .select('balance')
@@ -79,10 +81,12 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
         console.error('Error fetching balance:', balanceError);
         toast.error("Error fetching your EcoPoints balance.");
       } else {
+        console.log("EcoCoinsContext: Balance data:", balanceData);
         setBalance(balanceData?.balance || 0);
       }
 
       // Fetch transaction history
+      console.log("EcoCoinsContext: Fetching history...");
       const { data: historyData, error: historyError } = await supabase
         .from('user_eco_transactions')
         .select('*')
@@ -93,6 +97,7 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
         console.error('Error fetching history:', historyError);
         toast.error("Error fetching your transaction history.");
       } else {
+        console.log("EcoCoinsContext: History data:", historyData);
         setHistory(historyData.map(tx => ({
           id: tx.id,
           value: tx.value,
@@ -107,6 +112,7 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
     } finally {
       setIsLoading(false);
       setIsLoadingHistory(false);
+      console.log("EcoCoinsContext: Finished fetching balance and history.");
     }
   }, [user]);
 
@@ -118,6 +124,7 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
 
     setIsLoadingClaimedGiftCards(true);
+    console.log("EcoCoinsContext: Attempting to fetch claimed gift cards for user:", userToFetch.id);
     try {
       const { data, error } = await supabase
         .from('user_gift_cards')
@@ -130,6 +137,7 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
         toast.error("Could not load your claimed gift cards.");
         setClaimedGiftCards([]);
       } else {
+        console.log("EcoCoinsContext: Claimed gift cards data:", data);
         setClaimedGiftCards(data as ClaimedGiftCard[]);
       }
     } catch (e) {
@@ -138,17 +146,26 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
       setClaimedGiftCards([]);
     } finally {
       setIsLoadingClaimedGiftCards(false);
+      console.log("EcoCoinsContext: Finished fetching claimed gift cards.");
     }
   }, [user]);
   
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log("EcoCoinsContext: getSession called");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("EcoCoinsContext: Error getting session:", sessionError);
+        toast.error("Error initializing session.");
+      }
+      console.log("EcoCoinsContext: Session data:", session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        console.log("EcoCoinsContext: User found in session, fetching data...");
         await fetchBalanceAndHistory(session.user);
         await fetchClaimedGiftCards(session.user);
       } else {
+        console.log("EcoCoinsContext: No user in session, setting defaults.");
         setIsLoading(false);
         setIsLoadingHistory(false);
         setIsLoadingClaimedGiftCards(false);
@@ -157,11 +174,14 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
     getSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log("EcoCoinsContext: Auth state changed. New session:", session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        console.log("EcoCoinsContext: User found in auth change, fetching data...");
         await fetchBalanceAndHistory(session.user);
         await fetchClaimedGiftCards(session.user);
       } else {
+        console.log("EcoCoinsContext: No user in auth change, resetting state.");
         setBalance(0);
         setHistory([]);
         setClaimedGiftCards([]);
@@ -172,6 +192,7 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
     });
 
     return () => {
+      console.log("EcoCoinsContext: Unsubscribing auth listener.");
       authListener.subscription.unsubscribe();
     };
   }, [fetchBalanceAndHistory, fetchClaimedGiftCards]);
@@ -185,10 +206,11 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
       toast.error("Amount must be positive.");
       return false;
     }
+    console.log(`EcoCoinsContext: Attempting to add ${amount} EcoCoins for user ${user.id}, label: ${label}, type: ${type}`);
 
     try {
       // Start a Supabase transaction
-      const { error: functionError } = await supabase.rpc('add_eco_coins_and_log_transaction', {
+      const { error: functionError } = await supabase.rpc('add_eco_coins_and_log_transaction' as any, { // Type assertion
         p_user_id: user.id,
         p_amount: amount,
         p_label: label,
@@ -222,24 +244,22 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
       return false;
     }
     
-    // Check current balance locally first for quick feedback, though DB will enforce
     if (balance < amount) {
         toast.error(`Not enough EcoPoints. You have ${balance.toLocaleString()}, tried to redeem ${amount.toLocaleString()}.`);
         return false;
     }
+    console.log(`EcoCoinsContext: Attempting to redeem ${amount} points for user ${user.id}, label: ${label}`);
 
     try {
-      // Use the Supabase function for redeeming points
-      const { error: functionError } = await supabase.rpc('redeem_eco_coins_and_log_transaction', {
+      const { error: functionError } = await supabase.rpc('redeem_eco_coins_and_log_transaction' as any, { // Type assertion
         p_user_id: user.id,
         p_amount_to_redeem: amount,
         p_label: label,
-        p_type: 'redemption', // Or a more specific type if needed, e.g., 'ecotab_redemption'
+        p_type: 'redemption', 
       });
 
       if (functionError) {
         console.error('Error in redeem_eco_coins_and_log_transaction:', functionError);
-         // Specific error handling for insufficient balance from DB function if possible
         if (functionError.message.includes("Insufficient balance")) {
              toast.error(`Redemption failed: Insufficient EcoPoints.`);
         } else {
@@ -248,8 +268,7 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
         return false;
       }
       
-      // toast.success(`${amount} EcoPoints redeemed for: ${label}`); // This toast is usually handled by the calling component with more context
-      await fetchBalanceAndHistory(); // Refresh balance and history
+      await fetchBalanceAndHistory(); 
       return true;
 
     } catch (error) {
@@ -264,6 +283,7 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
         toast.error("This challenge does not award a specific gift card.");
         return null;
     }
+    console.log(`EcoCoinsContext: Assigning gift card for challenge ${challenge.id} (key: ${challenge.giftCardKey}) to user ${userId}`);
 
     // Fetch the master gift card details using giftCardKey
     const { data: masterCard, error: masterCardError } = await supabase
@@ -277,23 +297,22 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
         toast.error(`Could not find details for gift card key: ${challenge.giftCardKey}.`);
         return null;
     }
+    console.log("EcoCoinsContext: Master gift card details:", masterCard);
 
-    // Now, assign this to the user in user_gift_cards
-    // The actual promo code generation/assignment might happen here or be pre-stocked
-    // For now, let's assume prizePromoCode from challenge is sufficient for display if no specific unique code is available from masterCard
     const userCardData = {
         user_id: userId,
-        gift_card_id: masterCard.id, // Link to the master gift_cards table
+        gift_card_id: masterCard.id, 
         challenge_id_won_from: challenge.id,
-        prize_title: masterCard.title || challenge.title, // Prefer master card title
-        prize_promo_code: challenge.prizePromoCode || `NOON-CODE-${Date.now().toString().slice(-4)}`, // Use challenge promo or generate placeholder
+        prize_title: masterCard.title || challenge.title, 
+        prize_promo_code: challenge.prizePromoCode || `NOON-CODE-${Date.now().toString().slice(-4)}`, 
         prize_image_url: challenge.prizeImageUrl || masterCard.image_url || '/placeholder.svg',
         assigned_at: new Date().toISOString(),
-        status: 'assigned', // Initial status
-        associated_eco_coins_value: challenge.rewardCoins, // Cost to user in EcoCoins
+        status: 'assigned', 
+        associated_eco_coins_value: challenge.rewardCoins, 
         prize_monetary_value_aed: masterCard.monetary_value_aed,
         prize_currency: masterCard.currency,
     };
+    console.log("EcoCoinsContext: User card data to insert:", userCardData);
 
     const { data: assignedCard, error: assignError } = await supabase
         .from('user_gift_cards')
@@ -308,13 +327,13 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
 
     toast.success(`"${challenge.title}" prize assigned! Check your rewards.`);
-    await fetchClaimedGiftCards(); // Refresh claimed gift cards list
-    return assignedCard.id; // Return the ID of the entry in user_gift_cards
+    console.log("EcoCoinsContext: Gift card assigned successfully:", assignedCard);
+    await fetchClaimedGiftCards(); 
+    return assignedCard.id; 
   }, [fetchClaimedGiftCards]);
   
   const claimGiftCardPrize = useCallback(async (userGiftCardId: string): Promise<boolean> => {
-    // This function marks a gift card as 'used' or 'claimed_in_app'
-    // It doesn't interact with Noon's system, just updates our DB record
+    console.log(`EcoCoinsContext: Attempting to mark gift card ${userGiftCardId} as used.`);
     const { data, error } = await supabase
         .from('user_gift_cards')
         .update({ status: 'used', used_at: new Date().toISOString() })
@@ -329,7 +348,8 @@ export const EcoCoinsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
 
     toast.success(`Gift card "${data.prize_title}" marked as used!`);
-    await fetchClaimedGiftCards(); // Refresh the list
+    console.log("EcoCoinsContext: Gift card status updated successfully:", data);
+    await fetchClaimedGiftCards(); 
     return true;
   }, [fetchClaimedGiftCards]);
 

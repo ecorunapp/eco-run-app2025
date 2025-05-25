@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, History } from '@/components/icons';
+import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon } from '@/components/icons';
+import { History } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
@@ -19,7 +20,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useEcoCoins, ClaimedGiftCard } from '@/context/EcoCoinsContext';
+import { useEcoCoins, ClaimedGiftCard, EcoTransactionType } from '@/context/EcoCoinsContext';
 import { TransactionHistoryModal } from '@/components/TransactionHistoryModal';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { challenges as allChallenges, Challenge } from '@/data/challenges';
@@ -152,8 +153,8 @@ const RewardsPage: React.FC = () => {
     history: transactionHistory, 
     redeemPoints, 
     isLoading: ecoCoinsLoading,
-    claimedGiftCards, // New
-    isLoadingClaimedGiftCards // New
+    claimedGiftCards, 
+    isLoadingClaimedGiftCards 
   } = useEcoCoins();
   const { profile: userProfile, isLoading: profileLoading } = useUserProfile();
 
@@ -171,7 +172,7 @@ const RewardsPage: React.FC = () => {
         ...card,
         cardHolder: userProfile.full_name || 'Eco User',
       })));
-    } else if (!profileLoading) { // if not loading and no full_name, use a default
+    } else if (!profileLoading) { 
         setEcotabCards(initialEcotabCardsData.map(card => ({
             ...card,
             cardHolder: 'Eco User',
@@ -187,14 +188,13 @@ const RewardsPage: React.FC = () => {
 
   const primaryCard = ecotabCards.find(card => card.isPrimary) || ecotabCards[0];
 
-  const handleEcotabRedemption = async () => { // Made async
+  const handleEcotabRedemption = async () => { 
     const amount = parseInt(redeemAmount, 10);
     if (isNaN(amount) || amount <= 0) {
       toast.error("Please enter a valid amount of points to redeem.");
       return;
     }
     if (dialogCard) {
-      // redeemPoints now returns a promise, so we should await it.
       const success = await redeemPoints(amount, `Redeemed to Ecotab Card ${dialogCard.cardNumberSuffix}`);
       if (success) {
         toast.success(`${amount} EcoPoints successfully redeemed to Ecotab Card ${dialogCard.cardNumberSuffix}!`);
@@ -205,20 +205,29 @@ const RewardsPage: React.FC = () => {
          if (userEcoPoints < amount) {
            toast.error(`Not enough EcoPoints. You have ${userEcoPoints.toLocaleString()}, tried to redeem ${amount.toLocaleString()}.`);
          } else {
-           toast.error("Redemption failed. Please try again.");
+           // The redeemPoints function already shows a more specific error from the RPC call or a generic one.
+           // No need for another generic toast here unless the function didn't show one.
          }
       }
     }
   };
 
-  const displayedTransactions = transactionHistory.slice(0, 4).map(tx => ({
-    id: tx.id || tx.date + tx.label + tx.value + tx.type, // Use tx.id if available
-    icon: getIconForTransactionType(tx.type),
-    title: tx.label,
-    descriptionType: tx.type,
-    amount: (tx.type === 'income' || tx.type === 'ecotab') ? tx.value : -tx.value, // Ecotab might be earnings
-    date: tx.date,
-  }));
+  const displayedTransactions = transactionHistory.slice(0, 4).map(tx => {
+    // Ensure descriptionType is one of the allowed values for TransactionHistoryItem
+    let descriptionType: EcoTransactionType | string = tx.type;
+    if (!['income', 'expense', 'redemption', 'ecotab'].includes(tx.type)) {
+        descriptionType = 'transaction'; // Fallback generic description
+    }
+
+    return {
+        id: tx.id || tx.date + tx.label + tx.value + tx.type,
+        icon: getIconForTransactionType(tx.type),
+        title: tx.label,
+        descriptionType: descriptionType as EcoTransactionType, // cast after validation
+        amount: (tx.type === 'income') ? tx.value : -tx.value, // Simplified: income is positive, others negative
+        date: new Date(tx.date).toLocaleDateString(), // Format date for display
+    };
+  });
 
   // Filter for 10 AED Noon Gift Cards from challenges
   const noon10AedChallenges = allChallenges.filter(
@@ -229,30 +238,34 @@ const RewardsPage: React.FC = () => {
     id: challenge.id,
     title: challenge.title,
     category: "Digital Gift Card",
-    imageUrl: challenge.prizeImageUrl || '/placeholder.svg', // Fallback image
+    imageUrl: challenge.prizeImageUrl || '/placeholder.svg', 
     points: challenge.rewardCoins,
     description: challenge.description,
-    isNew: false, // Or some logic to determine if it's new
+    isNew: false, 
     actionText: "Claim for"
   }));
 
   const handleRedeemOffer = (points: number, offerTitle: string) => {
-    // This is a placeholder. Implement actual redemption logic,
-    // possibly by integrating with useEcoCoins or a new context/hook.
     console.log(`Attempting to redeem ${offerTitle} for ${points} points.`);
-    toast.info(`Redeeming ${offerTitle} for ${points} EcoPoints... (Feature coming soon!)`);
+    // This is where you'd call redeemPoints if it's a direct points redemption
+    // For specific gift card offers from challenges, it might involve assignGiftCardToUser
+    toast.info(`Redeeming ${offerTitle} for ${points} EcoPoints... (Logic to be fully implemented)`);
+    // Example:
+    // if (userEcoPoints >= points) {
+    //   const success = await redeemPoints(points, `Redeemed offer: ${offerTitle}`);
+    //   if (success) {
+    //     toast.success(`Successfully redeemed ${offerTitle}!`);
+    //   }
+    // } else {
+    //   toast.error("Not enough points to redeem this offer.");
+    // }
   };
   
   const handleViewClaimedCardDetails = (card: ClaimedGiftCard) => {
     setShowClaimedCardDetailsModal(card);
-    // Here you would typically open a modal to show card.prize_promo_code etc.
-    // For now, just a toast.
-    toast.info(`Viewing details for: ${card.prize_title}`, {
-      description: `Promo Code: ${card.prize_promo_code || 'N/A'}. Status: ${card.status}`,
-    });
   };
 
-  if (profileLoading || ecoCoinsLoading || isLoadingClaimedGiftCards) { // Added isLoadingClaimedGiftCards
+  if (profileLoading || ecoCoinsLoading || isLoadingClaimedGiftCards) { 
     return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center">
         <Loader2 className="h-12 w-12 animate-spin text-eco-accent" />
@@ -328,11 +341,11 @@ const RewardsPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* My Claimed Rewards Section - New Section */}
+        {/* My Claimed Rewards Section */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-eco-light flex items-center">
-              <History size={26} className="mr-2 text-eco-accent" /> {/* Using History Icon */}
+              <History size={26} className="mr-2 text-eco-accent" /> {/* Using History Icon from lucide-react */}
               My Claimed Rewards
             </h2>
           </div>
@@ -348,17 +361,10 @@ const RewardsPage: React.FC = () => {
                   id={card.id}
                   title={card.prize_title || 'Claimed Reward'}
                   category="Gift Card"
-                  imageUrl={card.prize_image_url || '/placeholder.svg'} // Use placeholder if no image
-                  points={card.associated_eco_coins_value || 0} // Original value if available
+                  imageUrl={card.prize_image_url || '/placeholder.svg'}
+                  points={0} // Claimed cards don't have a "cost" to view details, set to 0 or remove if RewardOfferCard handles it
                   description={`Status: ${card.status || 'N/A'}. Claimed on: ${new Date(card.assigned_at).toLocaleDateString()}`}
                   actionText="View Details"
-                  // Pass a handler to the card's button if RewardOfferCard supports it
-                  // For now, clicking the card itself or its button might do nothing or be handled inside RewardOfferCard
-                  // Let's add an onClick to the card wrapper for now.
-                  // The button on RewardOfferCard will say "View Details X Zap"
-                  // Ideally, RewardOfferCard's button itself would trigger this.
-                  // As a quick solution, the "View Details" button on RewardOfferCard could have its own onClick if we modify it
-                  // For now, clicking anywhere on the card would do this:
                   customButtonAction={() => handleViewClaimedCardDetails(card)}
                 />
               ))}
@@ -369,7 +375,7 @@ const RewardsPage: React.FC = () => {
         </section>
         
         {/* Transaction History Section */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}> {/* Adjusted delay */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-eco-light">Recent Activity</h2>
             <Button
@@ -386,7 +392,7 @@ const RewardsPage: React.FC = () => {
                 key={transaction.id}
                 icon={transaction.icon}
                 title={transaction.title}
-                descriptionType={transaction.descriptionType}
+                descriptionType={transaction.descriptionType} // Already cast to EcoTransactionType
                 amount={transaction.amount}
                 date={transaction.date}
               />
@@ -394,8 +400,8 @@ const RewardsPage: React.FC = () => {
           </div>
         </section>
         
-        {/* Featured Offers Section - Now displaying Noon 10 AED cards */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}> {/* Adjusted delay */}
+        {/* Featured Offers Section */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Featured Offers</h2>
           {featuredNoonOffers.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -415,7 +421,7 @@ const RewardsPage: React.FC = () => {
       </main>
       <BottomNav />
 
-      {/* Ecotab Card Dialog with Redemption */}
+      {/* Ecotab Card Dialog */}
       <Dialog open={!!dialogCard} onOpenChange={(isOpen) => { if (!isOpen) { setDialogCard(null); setShowRedeemInput(false); setRedeemAmount(''); } }}>
         <DialogContent className="bg-eco-dark-secondary text-eco-light border-eco-accent/50 max-w-md rounded-xl">
           {dialogCard && (
@@ -516,7 +522,7 @@ const RewardsPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Placeholder for Claimed Card Details Modal - TODO: Implement this modal */}
+      {/* Claimed Card Details Modal */}
       {showClaimedCardDetailsModal && (
          <Dialog open={!!showClaimedCardDetailsModal} onOpenChange={(isOpen) => { if (!isOpen) setShowClaimedCardDetailsModal(null); }}>
             <DialogContent className="bg-eco-dark-secondary text-eco-light border-eco-accent/50 max-w-md rounded-xl">
@@ -525,9 +531,9 @@ const RewardsPage: React.FC = () => {
                     <DialogDescription>Status: {showClaimedCardDetailsModal.status}</DialogDescription>
                 </DialogHeader>
                 <div className="p-4 space-y-2">
-                    <img src={showClaimedCardDetailsModal.prize_image_url || '/placeholder.svg'} alt={showClaimedCardDetailsModal.prize_title} className="w-full h-auto object-contain rounded-md max-h-48" />
+                    <img src={showClaimedCardDetailsModal.prize_image_url || '/placeholder.svg'} alt={showClaimedCardDetailsModal.prize_title || 'Prize Image'} className="w-full h-auto object-contain rounded-md max-h-48" />
                     <p><strong>Promo Code:</strong> {showClaimedCardDetailsModal.prize_promo_code || 'N/A'}</p>
-                    <p><strong>Value:</strong> {showClaimedCardDetailsModal.associated_eco_coins_value} EcoPoints</p>
+                    <p><strong>Value:</strong> {showClaimedCardDetailsModal.associated_eco_coins_value ? `${showClaimedCardDetailsModal.associated_eco_coins_value.toLocaleString()} EcoPoints` : 'N/A'}</p>
                     {showClaimedCardDetailsModal.prize_monetary_value_aed && (
                         <p><strong>Monetary Value:</strong> {showClaimedCardDetailsModal.prize_monetary_value_aed} {showClaimedCardDetailsModal.prize_currency || 'AED'}</p>
                     )}
@@ -537,12 +543,11 @@ const RewardsPage: React.FC = () => {
                     )}
                 </div>
                 <DialogFooter>
-                    <Button onClick={() => setShowClaimedCardDetailsModal(null)} variant="outline">Close</Button>
+                    <Button onClick={() => setShowClaimedCardDetailsModal(null)} variant="outline" className="border-eco-gray text-eco-gray hover:bg-eco-gray/20 hover:text-eco-light">Close</Button>
                 </DialogFooter>
             </DialogContent>
          </Dialog>
       )}
-
 
       <TransactionHistoryModal open={showTxModal} onClose={() => setShowTxModal(false)} />
     </div>
