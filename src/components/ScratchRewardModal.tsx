@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Gift, X, Copy as CopyIcon, PartyPopper } from '@/components/icons'; // Using PartyPopper for confetti effect
+import { Gift, X, Copy as CopyIcon, Confetti } from '@/components/icons'; // Changed PartyPopper to Confetti
 import { toast as sonnerToast } from "sonner";
 
 interface ScratchRewardModalProps {
@@ -24,7 +24,7 @@ const ScratchRewardModal: React.FC<ScratchRewardModalProps> = ({ isOpen, onClose
   const handleReveal = () => {
     setIsRevealed(true);
     // Optional: Add a small confetti effect
-    sonnerToast.success("Prize Revealed!", { icon: <PartyPopper className="text-yellow-400" /> });
+    sonnerToast.success("Prize Revealed!", { icon: <Confetti className="text-yellow-400" /> }); // Changed PartyPopper to Confetti
   };
 
   const handleFlip = () => {
@@ -111,3 +111,4 @@ const ScratchRewardModal: React.FC<ScratchRewardModalProps> = ({ isOpen, onClose
 };
 
 export default ScratchRewardModal;
+
