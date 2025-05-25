@@ -32,27 +32,27 @@ export const challenges: Challenge[] = [
     buttonTextColor: 'text-orange-600',
   },
   {
-    id: 'challenge_5k_steps', // This ID is reused for the "replaced" challenge
-    title: 'Daily 5K Grind', // Replaced "Steady Pace"
-    description: 'Push yourself to 5,000 steps today!',
+    id: 'challenge_5k_steps',
+    title: 'Daily 5K Grind',
+    description: 'Push yourself to 5,000 steps today & win a 10 AED Noon Card!', // Updated description
     stepsGoal: 5000,
-    rewardCoins: 100, // Standard coin reward
+    rewardCoins: 75, // Adjusted rewardCoins due to card prize
     icon: Footprints,
-    prizeImageUrl: '/placeholder-noon-card-front.png', // Generic placeholder
-    prizePromoCode: 'NOON-GRIND-5K',
-    primaryColor: 'bg-blue-500', // New color scheme
+    prizeImageUrl: '/noon-10aed-card-front.png', // Specific 10 AED card image
+    prizePromoCode: 'NOON10-DAILYGRIND', // Updated promo code
+    primaryColor: 'bg-blue-500',
     textColor: 'text-white',
     buttonBgColor: 'bg-white',
     buttonTextColor: 'text-blue-600',
   },
   {
-    id: 'challenge_5k_noon_10aed', // New challenge
+    id: 'challenge_5k_noon_10aed', 
     title: '5K Steps for 10 AED',
     description: 'Achieve 5,000 steps and get a 10 AED Noon Card!',
     stepsGoal: 5000,
-    rewardCoins: 75, // Adjusted coins due to card prize
+    rewardCoins: 75, 
     icon: Footprints,
-    prizeImageUrl: '/noon-10aed-card-front.png', // Specific 10 AED card image
+    prizeImageUrl: '/noon-10aed-card-front.png', 
     prizePromoCode: 'NOON10-5KSTEP',
     primaryColor: 'bg-green-500',
     textColor: 'text-white',
@@ -60,13 +60,13 @@ export const challenges: Challenge[] = [
     buttonTextColor: 'text-green-600',
   },
   {
-    id: 'challenge_7.5k_noon_20aed', // New challenge
+    id: 'challenge_7.5k_noon_20aed', 
     title: 'Power Walk for 20 AED',
     description: 'Complete 7,500 steps for a 20 AED Noon Card!',
     stepsGoal: 7500,
-    rewardCoins: 120, // Higher reward for more steps & bigger prize
-    icon: Award, // Using Award icon for a tougher challenge
-    prizeImageUrl: '/placeholder-noon-card-front.png', // Placeholder, user can upload specific 20 AED card image
+    rewardCoins: 120, 
+    icon: Award, 
+    prizeImageUrl: '/placeholder-noon-card-front.png', 
     prizePromoCode: 'NOON20-POWER',
     primaryColor: 'bg-purple-500',
     textColor: 'text-white',
@@ -78,7 +78,7 @@ export const challenges: Challenge[] = [
     title: 'Marathon Prep',
     description: 'Conquer 10,000 steps today!',
     stepsGoal: 10000,
-    rewardCoins: 150, // Slightly increased rewardCoins for 10k
+    rewardCoins: 150,
     icon: Award,
     prizeImageUrl: '/placeholder-noon-card-front.png',
     prizePromoCode: 'NOON-MARATHON-PRO',
@@ -92,3 +92,4 @@ export const challenges: Challenge[] = [
 export const getChallengeById = (id: string): Challenge | undefined => {
   return challenges.find(challenge => challenge.id === id);
 };
+
