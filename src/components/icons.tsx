@@ -50,6 +50,7 @@ import {
   Menu,
   MessageSquare,
   Minus,
+  Moon, // Added this
   Nfc,
   Package,
   Palette,
@@ -60,6 +61,7 @@ import {
   Plus,
   Pointer,
   RefreshCw,
+  Save, // Added this
   Search,
   Settings,
   ShieldCheck,
@@ -166,6 +168,7 @@ export {
   Menu,
   MessageSquare,
   Minus,
+  Moon, // Added this
   Nfc,
   Package,
   Palette,
@@ -176,6 +179,7 @@ export {
   Plus,
   Pointer,
   RefreshCw,
+  Save, // Added this
   Search,
   Settings,
   ShieldCheck,
