@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon } from '@/components/icons';
+import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, History } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
@@ -19,7 +19,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useEcoCoins } from '@/context/EcoCoinsContext';
+import { useEcoCoins, ClaimedGiftCard } from '@/context/EcoCoinsContext';
 import { TransactionHistoryModal } from '@/components/TransactionHistoryModal';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { challenges as allChallenges, Challenge } from '@/data/challenges';
@@ -147,7 +147,14 @@ const initialEcotabCardsData: EcotabCardData[] = [
 
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
-  const { balance: userEcoPoints, history: transactionHistory, redeemPoints, isLoading: ecoCoinsLoading } = useEcoCoins();
+  const { 
+    balance: userEcoPoints, 
+    history: transactionHistory, 
+    redeemPoints, 
+    isLoading: ecoCoinsLoading,
+    claimedGiftCards, // New
+    isLoadingClaimedGiftCards // New
+  } = useEcoCoins();
   const { profile: userProfile, isLoading: profileLoading } = useUserProfile();
 
   const [ecotabCards, setEcotabCards] = useState<EcotabCardData[]>(initialEcotabCardsData);
@@ -156,6 +163,7 @@ const RewardsPage: React.FC = () => {
   const [showRedeemInput, setShowRedeemInput] = useState(false);
   const [redeemAmount, setRedeemAmount] = useState('');
   const [showTxModal, setShowTxModal] = useState(false);
+  const [showClaimedCardDetailsModal, setShowClaimedCardDetailsModal] = useState<ClaimedGiftCard | null>(null);
 
   useEffect(() => {
     if (userProfile?.full_name) {
@@ -233,16 +241,18 @@ const RewardsPage: React.FC = () => {
     // possibly by integrating with useEcoCoins or a new context/hook.
     console.log(`Attempting to redeem ${offerTitle} for ${points} points.`);
     toast.info(`Redeeming ${offerTitle} for ${points} EcoPoints... (Feature coming soon!)`);
-    // Example:
-    // if (userEcoPoints >= points) {
-    //   redeemPoints(points, `Redeemed: ${offerTitle}`);
-    //   toast.success(`${offerTitle} redeemed successfully!`);
-    // } else {
-    //   toast.error(`Not enough EcoPoints to redeem ${offerTitle}.`);
-    // }
+  };
+  
+  const handleViewClaimedCardDetails = (card: ClaimedGiftCard) => {
+    setShowClaimedCardDetailsModal(card);
+    // Here you would typically open a modal to show card.prize_promo_code etc.
+    // For now, just a toast.
+    toast.info(`Viewing details for: ${card.prize_title}`, {
+      description: `Promo Code: ${card.prize_promo_code || 'N/A'}. Status: ${card.status}`,
+    });
   };
 
-  if (profileLoading || ecoCoinsLoading) {
+  if (profileLoading || ecoCoinsLoading || isLoadingClaimedGiftCards) { // Added isLoadingClaimedGiftCards
     return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center">
         <Loader2 className="h-12 w-12 animate-spin text-eco-accent" />
@@ -318,8 +328,48 @@ const RewardsPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Transaction History Section */}
+        {/* My Claimed Rewards Section - New Section */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-eco-light flex items-center">
+              <History size={26} className="mr-2 text-eco-accent" /> {/* Using History Icon */}
+              My Claimed Rewards
+            </h2>
+          </div>
+          {isLoadingClaimedGiftCards ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-eco-accent" />
+            </div>
+          ) : claimedGiftCards.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {claimedGiftCards.map(card => (
+                <RewardOfferCard
+                  key={card.id}
+                  id={card.id}
+                  title={card.prize_title || 'Claimed Reward'}
+                  category="Gift Card"
+                  imageUrl={card.prize_image_url || '/placeholder.svg'} // Use placeholder if no image
+                  points={card.associated_eco_coins_value || 0} // Original value if available
+                  description={`Status: ${card.status || 'N/A'}. Claimed on: ${new Date(card.assigned_at).toLocaleDateString()}`}
+                  actionText="View Details"
+                  // Pass a handler to the card's button if RewardOfferCard supports it
+                  // For now, clicking the card itself or its button might do nothing or be handled inside RewardOfferCard
+                  // Let's add an onClick to the card wrapper for now.
+                  // The button on RewardOfferCard will say "View Details X Zap"
+                  // Ideally, RewardOfferCard's button itself would trigger this.
+                  // As a quick solution, the "View Details" button on RewardOfferCard could have its own onClick if we modify it
+                  // For now, clicking anywhere on the card would do this:
+                  customButtonAction={() => handleViewClaimedCardDetails(card)}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-eco-gray text-center py-4">You haven't claimed any gift card rewards yet.</p>
+          )}
+        </section>
+        
+        {/* Transaction History Section */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}> {/* Adjusted delay */}
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-eco-light">Recent Activity</h2>
             <Button
@@ -345,21 +395,15 @@ const RewardsPage: React.FC = () => {
         </section>
         
         {/* Featured Offers Section - Now displaying Noon 10 AED cards */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}> {/* Adjusted delay */}
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Featured Offers</h2>
           {featuredNoonOffers.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Increased gap */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {featuredNoonOffers.map(offer => (
                 <RewardOfferCard 
                   key={offer.id} 
-                  {...offer} 
-                  // The RewardOfferCard itself has a button that says "Claim for X points"
-                  // If you want that button to do something, you'd pass an onRedeem or similar prop here.
-                  // For now, the button is part of RewardOfferCard's internal structure.
-                  // We can add an onClick handler to the button *inside* RewardOfferCard if needed,
-                  // or pass a callback from here if RewardOfferCard supports it.
-                  // Let's assume RewardOfferCard's button will eventually trigger a redemption.
-                  // We've added handleRedeemOffer above as an example if RewardOfferCard needs an external handler.
+                  {...offer}
+                  customButtonAction={() => handleRedeemOffer(offer.points, offer.title)}
                 />
               ))}
             </div>
@@ -383,7 +427,6 @@ const RewardsPage: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="my-4 px-2">
-                 {/* Pass updated cardHolder to GradientDebitCard in Dialog */}
                 <GradientDebitCard {...dialogCard} cardHolder={userProfile?.full_name || dialogCard.cardHolder} />
               </div>
 
@@ -472,6 +515,34 @@ const RewardsPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Placeholder for Claimed Card Details Modal - TODO: Implement this modal */}
+      {showClaimedCardDetailsModal && (
+         <Dialog open={!!showClaimedCardDetailsModal} onOpenChange={(isOpen) => { if (!isOpen) setShowClaimedCardDetailsModal(null); }}>
+            <DialogContent className="bg-eco-dark-secondary text-eco-light border-eco-accent/50 max-w-md rounded-xl">
+                <DialogHeader>
+                    <DialogTitle>{showClaimedCardDetailsModal.prize_title}</DialogTitle>
+                    <DialogDescription>Status: {showClaimedCardDetailsModal.status}</DialogDescription>
+                </DialogHeader>
+                <div className="p-4 space-y-2">
+                    <img src={showClaimedCardDetailsModal.prize_image_url || '/placeholder.svg'} alt={showClaimedCardDetailsModal.prize_title} className="w-full h-auto object-contain rounded-md max-h-48" />
+                    <p><strong>Promo Code:</strong> {showClaimedCardDetailsModal.prize_promo_code || 'N/A'}</p>
+                    <p><strong>Value:</strong> {showClaimedCardDetailsModal.associated_eco_coins_value} EcoPoints</p>
+                    {showClaimedCardDetailsModal.prize_monetary_value_aed && (
+                        <p><strong>Monetary Value:</strong> {showClaimedCardDetailsModal.prize_monetary_value_aed} {showClaimedCardDetailsModal.prize_currency || 'AED'}</p>
+                    )}
+                    <p><strong>Claimed On:</strong> {new Date(showClaimedCardDetailsModal.assigned_at).toLocaleDateString()}</p>
+                    {showClaimedCardDetailsModal.used_at && (
+                        <p><strong>Used On:</strong> {new Date(showClaimedCardDetailsModal.used_at).toLocaleDateString()}</p>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button onClick={() => setShowClaimedCardDetailsModal(null)} variant="outline">Close</Button>
+                </DialogFooter>
+            </DialogContent>
+         </Dialog>
+      )}
+
 
       <TransactionHistoryModal open={showTxModal} onClose={() => setShowTxModal(false)} />
     </div>

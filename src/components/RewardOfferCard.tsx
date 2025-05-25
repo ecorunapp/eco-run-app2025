@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ interface RewardOfferCardProps {
   claimedBy?: string; // e.g., "9.6K people claimed this"
   isNew?: boolean;
   actionText?: string;
+  customButtonAction?: () => void; // New prop for custom button action
 }
 
 const RewardOfferCard: React.FC<RewardOfferCardProps> = ({
@@ -25,8 +25,18 @@ const RewardOfferCard: React.FC<RewardOfferCardProps> = ({
   description,
   claimedBy,
   isNew,
-  actionText = "Claim for"
+  actionText = "Claim for",
+  customButtonAction,
 }) => {
+  const handleButtonClick = () => {
+    if (customButtonAction) {
+      customButtonAction();
+    } else {
+      // Default action or log if no custom action provided for a "Claim for" button
+      console.log(`Default button action for: ${title}, ${points} points.`);
+    }
+  };
+
   return (
     <Card className="bg-eco-dark-secondary border-transparent shadow-lg overflow-hidden flex flex-col h-full hover:shadow-eco-accent/30 transition-shadow duration-300">
       <CardHeader className="p-0 relative">
@@ -48,9 +58,17 @@ const RewardOfferCard: React.FC<RewardOfferCardProps> = ({
       </CardContent>
       <CardFooter className="p-4 flex flex-col items-start space-y-3 bg-eco-dark-secondary/50">
         {claimedBy && <p className="text-xs text-eco-gray">{claimedBy}</p>}
-        <Button className="w-full bg-eco-accent text-eco-dark hover:bg-eco-accent-secondary font-semibold">
+        <Button 
+          className="w-full bg-eco-accent text-eco-dark hover:bg-eco-accent-secondary font-semibold"
+          onClick={handleButtonClick} // Use the new handler
+        >
           <Gift size={18} className="mr-2" />
-          {actionText} {points.toLocaleString()} <Zap size={18} className="ml-1 text-yellow-400" />
+          {actionText}{' '}
+          {points > 0 && ( // Only show points if they are greater than 0
+            <>
+              {points.toLocaleString()} <Zap size={18} className="ml-1 text-yellow-400" />
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>
