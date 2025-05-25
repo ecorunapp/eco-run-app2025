@@ -25,7 +25,7 @@ import {
   ShoppingCart,
   Zap,
   Gift,
-  Award, // Added Award
+  Award,
   Leaf,
   Coins,
   Clock,
@@ -38,11 +38,11 @@ import {
   Eye,
   EyeOff,
   Sun,
-  Moon, // Keep Moon
+  Moon,
   LogOut,
   Edit3,
-  Save, // Keep Save
-  UploadCloud, // Keep UploadCloud
+  Save,
+  UploadCloud,
   Camera,
   ShieldCheck,
   Bell,
@@ -54,10 +54,11 @@ import {
   Target,
   BarChart,
   CheckCircle,
-  AlertTriangle,
+  AlertTriangle, // Keep AlertTriangle if used elsewhere
+  AlertCircle,   // Add AlertCircle
   Info,
   Users,
-  CalendarDays,
+  CalendarDays,  // Keep CalendarDays
   Search,
   Filter,
   Trophy,
@@ -66,6 +67,9 @@ import {
   Mail,
   Lock,
   ArrowRight,
+  ArrowLeft,     // Add ArrowLeft
+  ArrowUpRight,  // Add ArrowUpRight
+  ArrowDownLeft, // Add ArrowDownLeft
   FileText,
   Download,
   Share2,
@@ -75,7 +79,7 @@ import {
   SlidersHorizontal,
   HelpCircle,
   ExternalLink,
-  Image as ImageIcon, // Renamed to avoid conflict if there's a general Image component
+  Image as ImageIcon,
   Volume2,
   VolumeX,
   Maximize,
@@ -108,11 +112,17 @@ import {
   Timer,
   Goal,
   Medal,
-  BikeIcon, // Assuming this is different from Bike
-  Run,      // Added Run
-  Walk,     // Added Walk
-  Confetti, // Keep Confetti
-  Weight,    // Keep Weight
+  BikeIcon,
+  Run,
+  Walk,
+  Confetti,
+  Weight,
+  Footprints,    // Add Footprints
+  Loader2,       // Add Loader2
+  Nfc,           // Add Nfc
+  SunMedium,     // Add SunMedium
+  Check,         // Add Check
+  ShoppingBag,   // Add ShoppingBag
 } from 'lucide-react';
 
 export {
@@ -138,10 +148,10 @@ export {
   MapPin,
   Star,
   TrendingUp,
-  ShoppingCart,
+  ShoppingCart, // Keep ShoppingCart if used
   Zap,
   Gift,
-  Award, // Export Award
+  Award,
   Leaf,
   Coins,
   Clock,
@@ -154,11 +164,11 @@ export {
   Eye,
   EyeOff,
   Sun,
-  Moon, // Export Moon
+  Moon,
   LogOut,
   Edit3,
-  Save, // Export Save
-  UploadCloud, // Export UploadCloud
+  Save,
+  UploadCloud,
   Camera,
   ShieldCheck,
   Bell,
@@ -170,10 +180,12 @@ export {
   Target,
   BarChart,
   CheckCircle,
-  AlertTriangle,
+  AlertTriangle, // Keep AlertTriangle if used
+  AlertCircle,   // Export AlertCircle
   Info,
   Users,
   CalendarDays,
+  CalendarDays as Calendar, // Export CalendarDays as Calendar
   Search,
   Filter,
   Trophy,
@@ -182,6 +194,9 @@ export {
   Mail,
   Lock,
   ArrowRight,
+  ArrowLeft,     // Export ArrowLeft
+  ArrowUpRight,  // Export ArrowUpRight
+  ArrowDownLeft, // Export ArrowDownLeft
   FileText,
   Download,
   Share2,
@@ -225,10 +240,16 @@ export {
   Goal,
   Medal,
   BikeIcon,
-  Run,      // Export Run
-  Walk,     // Export Walk
-  Confetti, // Export Confetti
-  Weight,   // Export Weight
+  Run,
+  Walk,
+  Confetti,
+  Weight,
+  Footprints,    // Export Footprints
+  Loader2,       // Export Loader2
+  Nfc,           // Export Nfc
+  SunMedium,     // Export SunMedium
+  Check,         // Export Check
+  ShoppingBag,   // Export ShoppingBag
 };
 
 export type IconName = keyof typeof import('lucide-react');
