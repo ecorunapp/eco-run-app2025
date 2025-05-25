@@ -31,7 +31,6 @@ export function useUserProfile() {
       if (profileError) {
         if (profileError.code === 'PGRST116') { // Not found
           console.warn('Profile not found for user:', userId);
-          // Potentially create a default profile or handle as needed
           setProfile(null);
         } else {
           throw profileError;
@@ -50,14 +49,14 @@ export function useUserProfile() {
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => { // Made non-async
         const currentUser = session?.user ?? null;
         setUser(currentUser);
         if (currentUser) {
-          // Use setTimeout to ensure this runs after the auth state has fully settled
-          // and to avoid potential issues if fetchProfile itself causes state changes
-          // that might interact with the onAuthStateChange lifecycle.
-          setTimeout(() => fetchProfile(currentUser.id), 0);
+          // Defer Supabase calls with setTimeout
+          setTimeout(() => {
+            fetchProfile(currentUser.id);
+          }, 0);
         } else {
           setProfile(null);
           setIsLoading(false);
@@ -70,7 +69,10 @@ export function useUserProfile() {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
-        fetchProfile(currentUser.id);
+        // Defer Supabase calls with setTimeout
+        setTimeout(() => {
+            fetchProfile(currentUser.id);
+        }, 0);
       } else {
         setIsLoading(false);
       }
@@ -99,8 +101,11 @@ export function useUserProfile() {
     } catch (err) {
       console.error('Error updating profile:', err);
       setError(err);
-      // Optionally refetch or revert optimistic updates if any
-      if (user) await fetchProfile(user.id); // Refetch to ensure consistency
+      if (user) {
+        // Defer Supabase calls with setTimeout if called from an async context that might interact with auth state changes
+        // For simplicity here, direct call, but if issues persist, consider setTimeout
+        await fetchProfile(user.id); // Refetch to ensure consistency
+      }
       throw err; 
     } finally {
       setIsLoading(false);
@@ -110,3 +115,4 @@ export function useUserProfile() {
 
   return { user, profile, isLoading, error, fetchProfile, updateProfile };
 }
+

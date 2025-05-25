@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
-import { Session, User, Subscription } from '@supabase/supabase-js'; // Added Subscription type
+import { Session, User } from '@supabase/supabase-js'; // Added Subscription type, Session was already there
 
 interface Transaction {
   id?: string; // Optional: if we want to use DB id as key
@@ -70,26 +69,29 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const getSession = async () => {
+    const getSessionAndData = async () => { // Renamed for clarity, still async
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       if (currentSession?.user) {
-        await fetchUserEcoData(currentSession.user.id);
+        // Defer Supabase calls with setTimeout
+        setTimeout(() => {
+            fetchUserEcoData(currentSession.user.id);
+        }, 0);
       } else {
         setIsLoading(false); // No user, not loading data
         setBalance(0);
         setHistory([]);
       }
     };
-    getSession();
+    getSessionAndData();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      (_event, newSession) => { // Made non-async
         setSession(newSession);
         setUser(newSession?.user ?? null);
         if (newSession?.user) {
-          // Use setTimeout to avoid potential deadlocks with Supabase calls inside onAuthStateChange
+          // Defer Supabase calls with setTimeout
           setTimeout(() => {
             fetchUserEcoData(newSession.user.id);
           }, 0);
@@ -102,7 +104,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => {
-      authListener?.subscription?.unsubscribe(); // Corrected: access .subscription before calling unsubscribe
+      authListener?.subscription?.unsubscribe();
     };
   }, [fetchUserEcoData]);
 
@@ -117,7 +119,7 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
 
     // Optimistic update for UI
     const optimisticTransaction: Transaction = {
-        id: `optimistic-${Date.now()}`, // Add a temporary ID for optimistic update
+        id: `optimistic-${Date.now()}`, 
         label,
         value: amount,
         date: new Date().toLocaleDateString(),
@@ -156,20 +158,18 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
       
       if (balanceError) {
         console.error('Error updating balance:', balanceError);
-        // Potentially revert transaction insert if balance update fails critically
-        // For now, we'll rely on the finally block to refetch consistent data
       } else {
         // console.log('Balance upserted:', upsertData);
       }
     } catch (error) {
       console.error("Error in addEarnings:", error);
-       // Revert optimistic updates fully if an unexpected error occurs
        setBalance(prev => prev - amount);
        setHistory(prev => prev.filter(tx => tx.id !== optimisticTransaction.id));
     } finally {
-        // Fetch data again to ensure sync, especially after optimistic updates or errors
         if (user) {
-          await fetchUserEcoData(user.id); // Refetch to ensure consistency
+          // Defer Supabase calls with setTimeout if issues arise
+          // For now, direct call as it's in a finally block of an operation
+          await fetchUserEcoData(user.id); 
         }
         setIsLoading(false);
     }
@@ -182,7 +182,6 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
     }
     if (balance < amount) {
       console.warn("Not enough balance to redeem.");
-      // Potentially show a toast message to the user
       return false;
     }
     setIsLoading(true);
@@ -191,9 +190,9 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
 
     // Optimistic update
     const optimisticTransaction: Transaction = {
-        id: `optimistic-${Date.now()}`, // Add a temporary ID
+        id: `optimistic-${Date.now()}`,
         label,
-        value: amount, // UI shows positive value for redeem, DB stores negative if needed
+        value: amount, 
         date: new Date().toLocaleDateString(),
         type: transactionType,
     };
@@ -221,7 +220,6 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Update balance
-      // Ensure the record exists before updating, or use upsert if creating new is possible here (though unlikely for redeem)
       const { error: balanceError } = await supabase
         .from('user_eco_balances')
         .update({ balance: newBalance, updated_at: new Date().toISOString() })
@@ -229,8 +227,6 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
 
       if (balanceError) {
         console.error('Error updating balance after redeem:', balanceError);
-        // Consider reverting transaction insert or other compensation logic
-        // For now, the finally block will refetch data.
         setIsLoading(false);
         return false;
       }
@@ -241,9 +237,10 @@ export function EcoCoinsProvider({ children }: { children: React.ReactNode }) {
       setHistory(prev => prev.filter(tx => tx.id !== optimisticTransaction.id)); // Revert
       return false;
     } finally {
-        // Fetch data again to ensure sync
         if (user) {
-          await fetchUserEcoData(user.id); // Refetch to ensure consistency
+            // Defer Supabase calls with setTimeout if issues arise
+            // For now, direct call as it's in a finally block of an operation
+          await fetchUserEcoData(user.id);
         }
         setIsLoading(false);
     }
