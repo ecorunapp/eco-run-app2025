@@ -173,11 +173,13 @@ const ActivitiesPage: React.FC = () => {
             onLiveProgressUpdate={handleLiveProgressUpdate}
           />
         </main>
-        <MiniChallengeStatus
-          currentSteps={liveProgress?.currentSteps}
-          goalSteps={liveProgress?.goalSteps}
-          // streakDays and weeklyProgressPreview will use defaults in MiniChallengeStatus
-        />
+        {activeChallenge && liveProgress && (
+          <MiniChallengeStatus
+            currentSteps={liveProgress.currentSteps}
+            goalSteps={liveProgress.goalSteps}
+            // streakDays and weeklyProgressPreview will use defaults in MiniChallengeStatus
+          />
+        )}
         <BottomNav />
       </div>
     );
