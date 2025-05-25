@@ -54,11 +54,11 @@ import {
   Target,
   BarChart,
   CheckCircle,
-  AlertTriangle, // Keep AlertTriangle if used elsewhere
-  AlertCircle,   // Add AlertCircle
+  AlertTriangle,
+  AlertCircle,
   Info,
   Users,
-  CalendarDays,  // Keep CalendarDays
+  CalendarDays,
   Search,
   Filter,
   Trophy,
@@ -67,9 +67,9 @@ import {
   Mail,
   Lock,
   ArrowRight,
-  ArrowLeft,     // Add ArrowLeft
-  ArrowUpRight,  // Add ArrowUpRight
-  ArrowDownLeft, // Add ArrowDownLeft
+  ArrowLeft,
+  ArrowUpRight,
+  ArrowDownLeft,
   FileText,
   Download,
   Share2,
@@ -113,16 +113,16 @@ import {
   Goal,
   Medal,
   BikeIcon,
-  Run,
-  Walk,
-  Confetti,
+  // Run, Walk, Confetti were incorrectly added here before, they are removed.
   Weight,
-  Footprints,    // Add Footprints
-  Loader2,       // Add Loader2
-  Nfc,           // Add Nfc
-  SunMedium,     // Add SunMedium
-  Check,         // Add Check
-  ShoppingBag,   // Add ShoppingBag
+  Footprints,
+  Loader2,
+  Nfc,
+  SunMedium,
+  Check,
+  ShoppingBag,
+  PartyPopper, // Added for Confetti
+  PersonStanding, // Added for Run
 } from 'lucide-react';
 
 export {
@@ -148,7 +148,7 @@ export {
   MapPin,
   Star,
   TrendingUp,
-  ShoppingCart, // Keep ShoppingCart if used
+  ShoppingCart,
   Zap,
   Gift,
   Award,
@@ -180,12 +180,12 @@ export {
   Target,
   BarChart,
   CheckCircle,
-  AlertTriangle, // Keep AlertTriangle if used
-  AlertCircle,   // Export AlertCircle
+  AlertTriangle,
+  AlertCircle,
   Info,
   Users,
   CalendarDays,
-  CalendarDays as Calendar, // Export CalendarDays as Calendar
+  CalendarDays as Calendar,
   Search,
   Filter,
   Trophy,
@@ -194,9 +194,9 @@ export {
   Mail,
   Lock,
   ArrowRight,
-  ArrowLeft,     // Export ArrowLeft
-  ArrowUpRight,  // Export ArrowUpRight
-  ArrowDownLeft, // Export ArrowDownLeft
+  ArrowLeft,
+  ArrowUpRight,
+  ArrowDownLeft,
   FileText,
   Download,
   Share2,
@@ -240,16 +240,16 @@ export {
   Goal,
   Medal,
   BikeIcon,
-  Run,
-  Walk,
-  Confetti,
   Weight,
-  Footprints,    // Export Footprints
-  Loader2,       // Export Loader2
-  Nfc,           // Export Nfc
-  SunMedium,     // Export SunMedium
-  Check,         // Export Check
-  ShoppingBag,   // Export ShoppingBag
+  Footprints, // Footprints itself is exported
+  Footprints as Walk, // Alias Footprints as Walk
+  Loader2,
+  Nfc,
+  SunMedium,
+  Check,
+  ShoppingBag,
+  PartyPopper as Confetti, // Alias PartyPopper as Confetti
+  PersonStanding as Run, // Alias PersonStanding as Run
 };
 
 export type IconName = keyof typeof import('lucide-react');
