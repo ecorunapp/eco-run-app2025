@@ -10,7 +10,7 @@ import type { Challenge as ActiveChallengeType } from '@/types/Challenge';
 import { useEcoCoins } from '@/context/EcoCoinsContext'; 
 import { useChallenges } from '@/context/ChallengesContext'; 
 import { toast as sonnerToast } from "sonner"; 
-import ScratchRewardModal from './ScratchRewardModal'; // Import the new modal
+import ScratchRewardModal from './ScratchRewardModal';
 
 export interface ActivitySummary {
   steps: number;
@@ -30,7 +30,6 @@ const GOAL_STEPS = 10000;
 const CO2_MILESTONES = [20, 50, 100, 200, 300, 400, 500, 700, 800, 900, 1000];
 const AVERAGE_STEP_LENGTH_KM = 0.0007; 
 const NOON_GIFT_CARD_IMAGE_URL = '/lovable-uploads/70f5737d-2168-4475-9f8c-fcbe0c580657.png';
-
 
 const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activeChallenge }) => {
   const [isTracking, setIsTracking] = useState(false);
@@ -245,8 +244,8 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({ onStopTracking, activ
             >
               <defs>
                 <linearGradient id="activityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="var(--color-eco-accent, #00F5D4)" />
-                  <stop offset="100%" stopColor="var(--color-eco-purple, #8A4FFF)" />
+                  <stop offset="0%" stopColor="hsl(var(--primary))" />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" />
                 </linearGradient>
               </defs>
               <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
