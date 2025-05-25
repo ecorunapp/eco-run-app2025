@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Challenge } from '@/data/challenges';
@@ -27,18 +28,18 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
 
   if (isLocked) {
     if (isUltimateEcotabChallenge) {
-      // Golden theme for the special locked "Ultimate Ecotab Challenge"
+      // Golden theme for the special "Ultimate Ecotab Challenge"
+      // This card is "locked" in terms of rewards but its button is active for Ecotab activation
       cardBgClass = 'bg-gradient-to-br from-yellow-400 to-amber-600';
       cardTextColorClass = 'text-black'; // Override text color for better contrast on gold
-      buttonClass = 'bg-yellow-400 text-amber-900 hover:bg-yellow-500 cursor-not-allowed'; // Golden button
+      buttonClass = 'bg-yellow-400 text-amber-900 hover:bg-yellow-500'; // Golden button (no cursor-not-allowed)
       titleIconClass = 'text-black'; // Lock icon next to title on golden background
       unlockDescBgClass = 'bg-black/40'; // Slightly darker overlay for readability on gold
       unlockDescTextClass = 'text-yellow-200'; // Adjusted text color for unlock description
     } else {
       // Default style for other locked cards
       cardBgClass = 'bg-gray-500 opacity-70';
-      // cardTextColorClass remains challenge.textColor, applied over the semi-transparent gray
-      buttonClass = 'bg-gray-600 text-white cursor-not-allowed'; // Default locked button
+      buttonClass = 'bg-gray-600 text-white'; // Default locked button (disabled prop will handle cursor)
       titleIconClass = 'text-yellow-400'; // Default Lock icon color for locked cards
     }
   } else {
@@ -46,15 +47,16 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
     cardBgClass = challenge.primaryColor;
     cardTextColorClass = challenge.textColor;
     buttonClass = `${challenge.buttonBgColor} ${challenge.buttonTextColor} hover:${challenge.buttonBgColor}/90`;
-    // No titleIconClass needed for unlocked cards as the Lock icon isn't shown
   }
 
   const handleJoinChallenge = () => {
-    if (isUltimateEcotabChallenge && !isLocked) {
+    if (isUltimateEcotabChallenge) {
       setShowEcotabModal(true);
-    } else {
+    } else if (!isLocked) {
+      // For other challenges, only navigate if they are not locked
       navigate('/activities', { state: { challengeId: challenge.id } });
     }
+    // If a non-Ecotab challenge is locked, the button is disabled, so this function isn't called.
   };
 
   return (
@@ -74,7 +76,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
             </div>
           )}
 
-          {!isLocked && (
+          {!isLocked && ( // Show reward coins only if the challenge is generally unlocked
             <div className="flex items-center text-sm font-semibold mb-4">
               <Coins size={18} className="mr-2 opacity-90" />
               <span>Reward: {challenge.rewardCoins} EcoCoins</span>
@@ -83,18 +85,19 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
         </div>
         <Button
           onClick={handleJoinChallenge}
-          disabled={isLocked}
+          // Disable button if challenge is locked AND it's NOT the Ultimate Ecotab Challenge
+          disabled={isLocked && !isUltimateEcotabChallenge}
           className={`${buttonClass} w-full font-semibold`}
         >
-          {isLocked ? (
-            <>
-              <Lock size={20} className="mr-2" />
-              Challenge Locked
-            </>
-          ) : isUltimateEcotabChallenge ? (
+          {isUltimateEcotabChallenge ? (
             <>
              Activate Your EcoTab Card
               <ArrowRight size={20} className="ml-2" />
+            </>
+          ) : isLocked ? (
+            <>
+              <Lock size={20} className="mr-2" />
+              Challenge Locked
             </>
           )
           : (
@@ -117,3 +120,4 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
 };
 
 export default ChallengeCard;
+
