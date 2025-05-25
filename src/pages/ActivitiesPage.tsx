@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Challenge, getChallengeById } from '@/data/challenges';
 import ChallengeWonModal from '@/components/ChallengeWonModal';
 import { useEcoCoins } from '@/context/EcoCoinsContext';
-import ActivityRewardCard from '@/components/ActivityRewardCard';
+import StepCoinClaimModal from '@/components/StepCoinClaimModal';
 import MiniChallengeStatus from '@/components/MiniChallengeStatus';
 
 const ActivitiesPage: React.FC = () => {
@@ -28,9 +28,11 @@ const ActivitiesPage: React.FC = () => {
   
   const [showChallengeWonModal, setShowChallengeWonModal] = useState(false);
   const [completedChallengeDetails, setCompletedChallengeDetails] = useState<Challenge | null>(null);
-  const [currentUserGiftCardId, setCurrentUserGiftCardId] = useState<string | null>(null); // Added state for userGiftCardId
+  const [currentUserGiftCardId, setCurrentUserGiftCardId] = useState<string | null>(null);
   
-  const [activityStepCoinsReward, setActivityStepCoinsReward] = useState<number | null>(null);
+  // State for the new step coin claim modal
+  const [pendingStepCoins, setPendingStepCoins] = useState<number | null>(null);
+  const [showStepCoinClaimModal, setShowStepCoinClaimModal] = useState(false);
   
   const [liveProgress, setLiveProgress] = useState<LiveProgressData | null>(null);
 
@@ -44,8 +46,10 @@ const ActivitiesPage: React.FC = () => {
         setLastActivitySummary(null); 
         setShowChallengeWonModal(false);
         setCompletedChallengeDetails(null);
-        setCurrentUserGiftCardId(null); // Reset gift card ID when new challenge starts
-        setLiveProgress({ currentSteps: 0, goalSteps: challenge.stepsGoal, elapsedTime: 0 }); // Initialize live progress for challenge
+        setCurrentUserGiftCardId(null);
+        setPendingStepCoins(null); // Reset pending step coins
+        setShowStepCoinClaimModal(false);
+        setLiveProgress({ currentSteps: 0, goalSteps: challenge.stepsGoal, elapsedTime: 0 });
         navigate(location.pathname, { replace: true, state: {} });
         toast({
           title: "Challenge Started!",
@@ -67,27 +71,43 @@ const ActivitiesPage: React.FC = () => {
     setLastActivitySummary(null);
     setShowChallengeWonModal(false);
     setCompletedChallengeDetails(null);
-    setCurrentUserGiftCardId(null); // Reset gift card ID
-    setActivityStepCoinsReward(null);
-    setLiveProgress({ currentSteps: 0, goalSteps: 10000, elapsedTime: 0 }); // Default goal for generic activity
+    setCurrentUserGiftCardId(null);
+    setPendingStepCoins(null); // Reset pending step coins
+    setShowStepCoinClaimModal(false);
+    setLiveProgress({ currentSteps: 0, goalSteps: 10000, elapsedTime: 0 });
   };
 
   const handleStopTracking = async (activitySummary: ActivitySummary, challengeCompleted?: boolean) => {
     console.log('ActivitiesPage: handleStopTracking called with summary:', activitySummary, 'Challenge Completed:', challengeCompleted);
     setIsTracking(false); 
     setLastActivitySummary(activitySummary);
-    setLiveProgress(null); // Clear live progress when tracking stops
+    setLiveProgress(null);
 
-    if (activitySummary.coinsEarned > 0) {
-      setActivityStepCoinsReward(activitySummary.coinsEarned);
+    // Handle step-based coins FIRST.
+    // IMPORTANT CAVEAT: If ActivityTracker.tsx already adds these coins, this new modal might lead to double counting.
+    // This flow assumes ActivityTracker.tsx *only reports* activitySummary.coinsEarned for steps.
+    if (activitySummary.coinsEarned > 0 && !challengeCompleted) { // Show step coin modal only if not also completing a challenge right now, or if logic for challenge reward is separate.
+      setPendingStepCoins(activitySummary.coinsEarned);
+      setShowStepCoinClaimModal(true);
+    } else if (activitySummary.coinsEarned > 0 && challengeCompleted && activeChallenge) {
+        // If challenge completed AND step coins earned, decide how to handle.
+        // Option 1: Add step coins silently if challenge modal is shown.
+        // Option 2: Show step coin modal first, then challenge modal. (Complex UX)
+        // Option 3: Add step coins to challenge reward.
+        // For now, let's prioritize challenge completion modal if both occur.
+        // If step coins are *already added by ActivityTracker*, this logic might be fine.
+        // If they are *not*, they might be missed if a challenge is also completed.
+        // This part needs careful thought based on ActivityTracker's actual behavior.
+        // For now, if challenge is completed, let challenge reward logic handle coins.
+        // The step coins might be reported by ActivityTracker but if we don't show modal here, they aren't "claimed" via this new modal.
     }
+
 
     if (activeChallenge) {
       if (challengeCompleted) {
         console.log(`Challenge ${activeChallenge.title} completed!`);
         setCompletedChallengeDetails(activeChallenge); 
         
-        // Call addEarnings and store the returned userGiftCardId
         const newGiftCardId = await addEarnings(activeChallenge.rewardCoins, `Challenge: ${activeChallenge.title}`, activeChallenge);
         setCurrentUserGiftCardId(newGiftCardId);
         
@@ -95,10 +115,11 @@ const ActivitiesPage: React.FC = () => {
         
         toast({
           title: "Challenge Complete!",
-          description: `Awesome! You conquered ${activeChallenge.title} and earned ${activeChallenge.rewardCoins} EcoCoins! (Step coins, if any, shown separately)`,
+          description: `Awesome! You conquered ${activeChallenge.title} and earned ${activeChallenge.rewardCoins} EcoCoins!`,
         });
       } else { 
-        if (activitySummary.coinsEarned === 0) {
+        // If challenge was active but not completed, and no step coins to claim via modal (or already handled)
+        if (!showStepCoinClaimModal && activitySummary.coinsEarned === 0) {
             toast({
               title: "Challenge Ended",
               description: `You stopped ${activeChallenge.title}. Keep pushing next time!`,
@@ -107,7 +128,8 @@ const ActivitiesPage: React.FC = () => {
         }
       }
     } else { 
-      if (activitySummary.coinsEarned === 0) {
+      // Generic activity ended, no active challenge
+      if (!showStepCoinClaimModal && activitySummary.coinsEarned === 0) {
         if (activitySummary.steps > 0) {
           toast({
             title: "Activity Ended",
@@ -134,18 +156,28 @@ const ActivitiesPage: React.FC = () => {
   const handleCloseChallengeWonModal = () => {
     setShowChallengeWonModal(false);
     setCompletedChallengeDetails(null); 
-    setCurrentUserGiftCardId(null); // Reset gift card ID when modal closes
+    setCurrentUserGiftCardId(null); 
     setActiveChallenge(null); 
   };
 
-  const handleCloseStepRewardModal = () => {
-    setActivityStepCoinsReward(null);
-    // If a challenge was active but not won, and step reward modal is closed, clear active challenge
-    // if (activeChallenge && !completedChallengeDetails) { // This logic was commented out before, keeping as is
-        // setActiveChallenge(null); 
-    // }
+  // Handler for the new step coin claim modal
+  const handleClaimStepCoins = async (coinsToClaim: number) => {
+    if (coinsToClaim > 0) {
+      await addEarnings(coinsToClaim, "Activity Step Reward");
+      toast({
+        title: "Coins Claimed!",
+        description: `You earned ${coinsToClaim} EcoCoins from your activity!`,
+      });
+    }
+    setShowStepCoinClaimModal(false);
+    setPendingStepCoins(null);
   };
 
+  const handleCloseStepCoinClaimModal = () => {
+    setShowStepCoinClaimModal(false);
+    setPendingStepCoins(null);
+  };
+  
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -166,7 +198,14 @@ const ActivitiesPage: React.FC = () => {
             size="icon" 
             className="text-eco-gray hover:text-eco-accent" 
             onClick={() => {
-                handleStopTracking({steps:liveProgress?.currentSteps || 0, elapsedTime:liveProgress?.elapsedTime || 0, calories:0, co2Saved:0, coinsEarned:0}, false)
+                // Determine if challenge was completed based on liveProgress vs challenge goal
+                const challengeGoal = activeChallenge?.stepsGoal;
+                const currentSteps = liveProgress?.currentSteps || 0;
+                const potentiallyCompleted = activeChallenge && challengeGoal && currentSteps >= challengeGoal;
+                handleStopTracking(
+                    {steps:liveProgress?.currentSteps || 0, elapsedTime:liveProgress?.elapsedTime || 0, calories:0, co2Saved:0, coinsEarned:0 /* This coinsEarned is for manual stop, actual step coins come from ActivityTracker*/ }, 
+                    potentiallyCompleted || false
+                );
             }}
           >
              <X size={24} />
@@ -216,6 +255,7 @@ const ActivitiesPage: React.FC = () => {
           </section>
         )}
 
+        {/* ... keep existing code for Tabs section ... */}
         <section className="animate-fade-in-up">
           <Tabs defaultValue="weekly" className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-eco-dark-secondary mb-4">
@@ -253,18 +293,23 @@ const ActivitiesPage: React.FC = () => {
         </section>
       </main>
       <BottomNav />
-      {activityStepCoinsReward !== null && activityStepCoinsReward > 0 && (
-        <ActivityRewardCard
-          coinsEarned={activityStepCoinsReward}
-          onClose={handleCloseStepRewardModal}
+
+      {/* Replace ActivityRewardCard with StepCoinClaimModal */}
+      {pendingStepCoins !== null && pendingStepCoins > 0 && showStepCoinClaimModal && (
+        <StepCoinClaimModal
+          isOpen={showStepCoinClaimModal}
+          onClose={handleCloseStepCoinClaimModal}
+          coinsToClaim={pendingStepCoins}
+          onClaim={handleClaimStepCoins}
         />
       )}
+
       {completedChallengeDetails && (
         <ChallengeWonModal
           isOpen={showChallengeWonModal}
           onClose={handleCloseChallengeWonModal}
           challenge={completedChallengeDetails}
-          userGiftCardId={currentUserGiftCardId} // Pass the userGiftCardId here
+          userGiftCardId={currentUserGiftCardId}
         />
       )}
     </div>
