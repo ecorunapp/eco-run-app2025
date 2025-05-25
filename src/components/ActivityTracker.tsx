@@ -94,9 +94,12 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
           return newTime;
         });
       }, 1000);
+
       stepInterval = setInterval(() => {
         setSteps(prevSteps => {
-          const newSteps = prevSteps + Math.floor(Math.random() * 10) + 5;
+          const stepsToAdd = Math.random() < 0.6 ? 1 : 2; // Adds 1 step 60% of the time, 2 steps 40% of time
+          const newSteps = prevSteps + stepsToAdd;
+          
           const newCo2Saved = parseFloat((newSteps * 0.0008).toFixed(2));
           setCalories(Math.floor(newSteps * 0.04));
           setCo2Saved(newCo2Saved);
@@ -116,7 +119,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
           }
           return newSteps;
         });
-      }, 2000);
+      }, 400); // Update steps every 400 milliseconds (2.5 times per second)
     }
     return () => {
       if (timerInterval) clearInterval(timerInterval);
