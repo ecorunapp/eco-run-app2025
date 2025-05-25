@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Flame, CheckCircle2, Circle } from '@/components/icons'; // Using Circle for pending days
+import { Flame, CheckCircle, Circle } from '@/components/icons'; // Changed CheckCircle2 to CheckCircle
 import { Progress } from '@/components/ui/progress';
 
 interface MiniChallengeStatusProps {
@@ -44,7 +44,7 @@ const MiniChallengeStatus: React.FC<MiniChallengeStatusProps> = ({
             {daysOfWeek.map((day, index) => (
               <div key={index} className="flex flex-col items-center">
                 {weeklyProgressPreview[index] ? (
-                  <CheckCircle2 size={16} className="text-pink-500" />
+                  <CheckCircle size={16} className="text-pink-500" /> // Changed CheckCircle2 to CheckCircle
                 ) : (
                   <Circle size={16} className="text-slate-600" />
                 )}
