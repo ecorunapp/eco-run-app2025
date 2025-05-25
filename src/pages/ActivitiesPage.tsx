@@ -12,8 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Challenge, getChallengeById } from '@/data/challenges';
 import ChallengeWonModal from '@/components/ChallengeWonModal';
 import { useEcoCoins } from '@/context/EcoCoinsContext';
-
-// ActivitySummary interface is now imported from ActivityTracker
+import ActivityRewardCard from '@/components/ActivityRewardCard';
 
 const ActivitiesPage: React.FC = () => {
   console.log('ActivitiesPage: component mounted');
@@ -25,8 +24,12 @@ const ActivitiesPage: React.FC = () => {
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [isTracking, setIsTracking] = useState(false);
   const [lastActivitySummary, setLastActivitySummary] = useState<ActivitySummary | null>(null);
+  
   const [showChallengeWonModal, setShowChallengeWonModal] = useState(false);
   const [completedChallengeDetails, setCompletedChallengeDetails] = useState<Challenge | null>(null);
+  
+  // New state to manage the reward card for step-based coins
+  const [activityStepCoinsReward, setActivityStepCoinsReward] = useState<number | null>(null);
 
   useEffect(() => {
     // Check if a challengeId was passed in route state (from ChallengeCard)
@@ -62,6 +65,7 @@ const ActivitiesPage: React.FC = () => {
     setLastActivitySummary(null);
     setShowChallengeWonModal(false);
     setCompletedChallengeDetails(null);
+    setActivityStepCoinsReward(null); // Reset step coins reward
   };
 
   const handleStopTracking = (activitySummary: ActivitySummary, challengeCompleted?: boolean) => {
@@ -69,15 +73,12 @@ const ActivitiesPage: React.FC = () => {
     setIsTracking(false); 
     setLastActivitySummary(activitySummary);
 
-    // 1. Handle coins earned from steps during the activity
+    // 1. Handle coins earned from steps - Show ActivityRewardCard if coins were earned
+    // The ActivityRewardCard itself will call addEarnings.
     if (activitySummary.coinsEarned > 0) {
-      const stepCoinLabel = activeChallenge ? `Steps during ${activeChallenge.title}` : "General Activity Steps";
-      addEarnings(activitySummary.coinsEarned, stepCoinLabel);
-      toast({
-        title: "Congratulations!",
-        description: `You earned ${activitySummary.coinsEarned} EcoCoins from your steps.`,
-        variant: "default",
-      });
+      setActivityStepCoinsReward(activitySummary.coinsEarned);
+      // The toast for step coins is now implicitly handled by the card.
+      // No direct addEarnings call here for step coins; ActivityRewardCard handles it.
     }
 
     // 2. Handle challenge-specific outcomes
@@ -90,43 +91,54 @@ const ActivitiesPage: React.FC = () => {
         addEarnings(activeChallenge.rewardCoins, `Challenge: ${activeChallenge.title}`);
         toast({
           title: "Challenge Complete!",
-          description: `Awesome! You conquered ${activeChallenge.title} and earned ${activeChallenge.rewardCoins} EcoCoins!`,
+          description: `Awesome! You conquered ${activeChallenge.title} and earned ${activeChallenge.rewardCoins} EcoCoins! (Step coins, if any, shown separately)`,
         });
       } else { // Challenge was active but not completed
-        toast({
-          title: "Challenge Ended",
-          description: `You stopped ${activeChallenge.title}. Keep pushing next time! ${activitySummary.coinsEarned > 0 ? 'Your step coins were added.' : ''}`,
-          variant: "default"
-        });
+        // Only show this toast if no step coins were earned (otherwise ActivityRewardCard shows first)
+        if (activitySummary.coinsEarned === 0) {
+            toast({
+              title: "Challenge Ended",
+              description: `You stopped ${activeChallenge.title}. Keep pushing next time!`,
+              variant: "default"
+            });
+        }
       }
     } else { // Generic activity (not a challenge)
-      if (activitySummary.steps > 0 && activitySummary.coinsEarned === 0) {
-        // Generic activity with some effort but no step coins yet (e.g., < 100 steps)
-        toast({
-          title: "Activity Ended",
-          description: "Great effort! Keep going to earn EcoCoins.",
-          variant: "default"
-        });
-      } else if (activitySummary.steps === 0 && activitySummary.coinsEarned === 0 && !activitySummary.elapsedTime) {
-        // Generic activity stopped with no effort and no time passed (likely immediate stop)
-        // No toast needed, or a very mild one if preferred. For now, no toast.
-      } else if (activitySummary.steps === 0 && activitySummary.coinsEarned === 0 && activitySummary.elapsedTime > 0) {
-        // Generic activity stopped with some time but no steps/coins
-         toast({
-          title: "Tracking Stopped",
-          description: "Ready when you are for the next activity!",
-          variant: "default"
-        });
+      // If activitySummary.coinsEarned > 0, ActivityRewardCard will show.
+      // These toasts are for generic activities with NO step coins.
+      if (activitySummary.coinsEarned === 0) {
+        if (activitySummary.steps > 0) {
+          toast({
+            title: "Activity Ended",
+            description: "Great effort! Keep going to earn EcoCoins.",
+            variant: "default"
+          });
+        } else if (activitySummary.steps === 0 && !activitySummary.elapsedTime) {
+          // No toast for immediate stop with no effort.
+        } else if (activitySummary.steps === 0 && activitySummary.elapsedTime > 0) {
+           toast({
+            title: "Tracking Stopped",
+            description: "Ready when you are for the next activity!",
+            variant: "default"
+          });
+        }
       }
-      // If activitySummary.coinsEarned > 0 for a generic activity, the first "Congratulations!" toast already covered it.
     }
-    // setActiveChallenge(null); // Reset active challenge after stopping
+    // setActiveChallenge(null); // Reset active challenge should happen after modals are closed
   };
   
   const handleCloseChallengeWonModal = () => {
     setShowChallengeWonModal(false);
     setCompletedChallengeDetails(null); // Clear details after modal is closed
     setActiveChallenge(null); // Also clear the active challenge from the page state
+  };
+
+  const handleCloseStepRewardModal = () => {
+    setActivityStepCoinsReward(null);
+    // If a challenge was active but not won, and step reward modal is closed, clear active challenge
+    if (activeChallenge && !completedChallengeDetails) {
+        // setActiveChallenge(null); // Consider if this is the right place
+    }
   };
 
   // Helper function to format time, can be moved to utils if used elsewhere
@@ -229,6 +241,14 @@ const ActivitiesPage: React.FC = () => {
         </section>
       </main>
       <BottomNav />
+      {/* Modal for step-based coins earned */}
+      {activityStepCoinsReward !== null && activityStepCoinsReward > 0 && (
+        <ActivityRewardCard
+          coinsEarned={activityStepCoinsReward}
+          onClose={handleCloseStepRewardModal}
+        />
+      )}
+      {/* Modal for completed challenge */}
       {completedChallengeDetails && (
         <ChallengeWonModal
           isOpen={showChallengeWonModal}
