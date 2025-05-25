@@ -1,11 +1,10 @@
-
 import React from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Settings, User, LogOut, Edit3, CreditCard, Bell, ShieldCheck, Palette, Mail, ChevronRight, Weight, Zap as HeightIcon, Loader2, TrendingUp, Star, MapPin } from '@/components/icons'; // Added more icons
+import { Settings, User, LogOut, Edit3, CreditCard, Bell, ShieldCheck, Palette, Mail, ChevronRight, Weight, Zap as HeightIcon, Loader2, TrendingUp, Star, MapPin, Coins } from '@/components/icons'; // Added Coins
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile'; // Import the hook
 import { supabase } from '@/integrations/supabase/client'; // For logout
@@ -138,7 +137,6 @@ const ProfilePage: React.FC = () => {
             {/* Add more stats later like "Interests" if applicable */}
           </CardContent>
         </Card>
-
 
         {/* Menu Items Card */}
         <Card className="bg-eco-dark-secondary border-transparent shadow-lg">

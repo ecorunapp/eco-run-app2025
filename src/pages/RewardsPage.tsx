@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, Info, User } from '@/components/icons';
+import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, Info, User, Loader2 } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
 import GradientDebitCard from '@/components/GradientDebitCard';

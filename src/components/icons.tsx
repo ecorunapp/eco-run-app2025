@@ -21,7 +21,7 @@ import {
   Circle,
   Clock,
   CreditCard,
-  Coins,
+  Coins, // Already here
   DollarSign,
   Dot,
   Download,
@@ -42,7 +42,7 @@ import {
   Leaf,
   LifeBuoy,
   Link2,
-  Loader2,
+  Loader2, // Already here
   LogIn,
   LogOut,
   Mail,
@@ -78,8 +78,11 @@ import {
   X,
   Zap,
   Lock,
-  type LucideProps, // Ensure this is type LucideProps
-  type LucideIcon  // Ensure this is type LucideIcon
+  Weight, // Added
+  TrendingUp, // Added
+  UploadCloud, // Added
+  type LucideProps,
+  type LucideIcon
 } from "lucide-react";
 
 // Create a custom Confetti icon
@@ -112,7 +115,6 @@ export const Confetti: React.FC<LucideProps> = ({ size = 24, color = "currentCol
 };
 
 // Export all imported icons so they can be used throughout the app
-// The Confetti icon is already exported above when it's defined, so it's removed from this block.
 export {
   Award,
   AlertCircle,
@@ -135,7 +137,7 @@ export {
   Circle,
   Clock,
   CreditCard,
-  Coins,
+  Coins, // Already here
   DollarSign,
   Dot,
   Download,
@@ -156,7 +158,7 @@ export {
   Leaf,
   LifeBuoy,
   Link2,
-  Loader2,
+  Loader2, // Already here
   LogIn,
   LogOut,
   Mail,
@@ -192,8 +194,10 @@ export {
   X,
   Zap,
   Lock,
+  Weight, // Added
+  TrendingUp, // Added
+  UploadCloud, // Added
   type LucideIcon,
   type LucideProps
-  // Confetti removed from here as it's exported at definition
+  // Confetti is exported at definition
 };
-
