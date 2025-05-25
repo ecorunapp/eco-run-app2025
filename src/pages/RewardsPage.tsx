@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, Info, User, Loader2 } from '@/components/icons';
+import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
 import GradientDebitCard from '@/components/GradientDebitCard';
@@ -21,6 +21,8 @@ import { Input } from "@/components/ui/input";
 import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { TransactionHistoryModal } from '@/components/TransactionHistoryModal';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { challenges as allChallenges, Challenge } from '@/data/challenges';
+import RewardOfferCard from '@/components/RewardOfferCard';
 
 // Sample data for featured offers
 const featuredOffers = [
@@ -191,10 +193,6 @@ const RewardsPage: React.FC = () => {
         setShowRedeemInput(false);
         setRedeemAmount('');
       } else {
-        // Error/warning toast is handled within redeemPoints or if balance is insufficient.
-        // If redeemPoints returns false explicitly for other reasons, a generic error can be shown.
-        // Or rely on toasts from useEcoCoins context.
-        // For insufficient balance, redeemPoints might show a toast or we can check here.
          if (userEcoPoints < amount) {
            toast.error(`Not enough EcoPoints. You have ${userEcoPoints.toLocaleString()}, tried to redeem ${amount.toLocaleString()}.`);
          } else {
@@ -212,6 +210,36 @@ const RewardsPage: React.FC = () => {
     amount: (tx.type === 'income' || tx.type === 'ecotab') ? tx.value : -tx.value, // Ecotab might be earnings
     date: tx.date,
   }));
+
+  // Filter for 10 AED Noon Gift Cards from challenges
+  const noon10AedChallenges = allChallenges.filter(
+    challenge => challenge.giftCardKey?.includes('NOON_10_AED') && challenge.rewardCoins === 50
+  );
+
+  const featuredNoonOffers = noon10AedChallenges.map(challenge => ({
+    id: challenge.id,
+    title: challenge.title,
+    category: "Digital Gift Card",
+    imageUrl: challenge.prizeImageUrl || '/placeholder.svg', // Fallback image
+    points: challenge.rewardCoins,
+    description: challenge.description,
+    isNew: false, // Or some logic to determine if it's new
+    actionText: "Claim for"
+  }));
+
+  const handleRedeemOffer = (points: number, offerTitle: string) => {
+    // This is a placeholder. Implement actual redemption logic,
+    // possibly by integrating with useEcoCoins or a new context/hook.
+    console.log(`Attempting to redeem ${offerTitle} for ${points} points.`);
+    toast.info(`Redeeming ${offerTitle} for ${points} EcoPoints... (Feature coming soon!)`);
+    // Example:
+    // if (userEcoPoints >= points) {
+    //   redeemPoints(points, `Redeemed: ${offerTitle}`);
+    //   toast.success(`${offerTitle} redeemed successfully!`);
+    // } else {
+    //   toast.error(`Not enough EcoPoints to redeem ${offerTitle}.`);
+    // }
+  };
 
   if (profileLoading || ecoCoinsLoading) {
     return (
@@ -315,15 +343,29 @@ const RewardsPage: React.FC = () => {
           </div>
         </section>
         
-        {/* Featured Offers Section - Placeholder for where RewardOfferCard might go */}
-        {/* <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+        {/* Featured Offers Section - Now displaying Noon 10 AED cards */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Featured Offers</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {featuredOffers.map(offer => ( // Assuming featuredOffers is defined
-              <RewardOfferCard key={offer.id} {...offer} onRedeem={() => handleRedeemOffer(offer.points, offer.title)} />
-            ))}
-          </div>
-        </section> */}
+          {featuredNoonOffers.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Increased gap */}
+              {featuredNoonOffers.map(offer => (
+                <RewardOfferCard 
+                  key={offer.id} 
+                  {...offer} 
+                  // The RewardOfferCard itself has a button that says "Claim for X points"
+                  // If you want that button to do something, you'd pass an onRedeem or similar prop here.
+                  // For now, the button is part of RewardOfferCard's internal structure.
+                  // We can add an onClick handler to the button *inside* RewardOfferCard if needed,
+                  // or pass a callback from here if RewardOfferCard supports it.
+                  // Let's assume RewardOfferCard's button will eventually trigger a redemption.
+                  // We've added handleRedeemOffer above as an example if RewardOfferCard needs an external handler.
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-eco-gray text-center py-4">No featured Noon offers available at the moment.</p>
+          )}
+        </section>
 
       </main>
       <BottomNav />
