@@ -58,7 +58,7 @@
     --ring: 170 100% 48%;
 
     --muted: 40 42 58; /* A darker muted for dark theme */
-    --muted-foreground: 142 145 150; /* eco-gray #8E9196 */
+    --muted-foreground: 220 25% 55%; /* Changed from eco-gray to a dark navy blue: #697596 */
     
     --destructive: 0 62.8% 40%; /* A bit darker red for dark theme */
     --destructive-foreground: 0 0% 98%;
@@ -84,3 +84,4 @@
     @apply flex flex-col min-h-screen;
   }
 }
+
