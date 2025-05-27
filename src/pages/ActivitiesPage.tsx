@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Button } from '@/components/ui/button';
-import { Settings, Play, X } from '@/components/icons';
+import { Settings, Play, X, Footprints, Zap } from '@/components/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WeeklyActivityChart from '@/components/WeeklyActivityChart';
 import ActivityTracker, { ActivitySummary, LiveProgressData } from '@/components/ActivityTracker';
@@ -30,30 +30,34 @@ const ActivitiesPage: React.FC = () => {
   const [completedChallengeDetails, setCompletedChallengeDetails] = useState<Challenge | null>(null);
   const [currentUserGiftCardId, setCurrentUserGiftCardId] = useState<string | null>(null);
   
-  // State for the new step coin claim modal
   const [pendingStepCoins, setPendingStepCoins] = useState<number | null>(null);
   const [showStepCoinClaimModal, setShowStepCoinClaimModal] = useState(false);
   
   const [liveProgress, setLiveProgress] = useState<LiveProgressData | null>(null);
 
+  // New states for mode selection
+  const [activityStartOptions, setActivityStartOptions] = useState<{ challenge: Challenge | null, isGeneric: boolean } | null>(null);
+  const [selectedActivityMode, setSelectedActivityMode] = useState<'walk' | 'run' | null>(null);
+
   useEffect(() => {
-    if (location.state && location.state.challengeId) {
+    if (location.state && location.state.challengeId && !activityStartOptions && !isTracking) {
       const challengeId = location.state.challengeId as string;
       const challenge = getChallengeById(challengeId);
       if (challenge) {
         setActiveChallenge(challenge);
-        setIsTracking(true); 
-        setLastActivitySummary(null); 
+        setActivityStartOptions({ challenge, isGeneric: false });
+        // Clear other states that might persist from a previous activity
+        setLastActivitySummary(null);
         setShowChallengeWonModal(false);
         setCompletedChallengeDetails(null);
         setCurrentUserGiftCardId(null);
-        setPendingStepCoins(null); // Reset pending step coins
+        setPendingStepCoins(null);
         setShowStepCoinClaimModal(false);
-        setLiveProgress({ currentSteps: 0, goalSteps: challenge.stepsGoal, elapsedTime: 0 });
-        navigate(location.pathname, { replace: true, state: {} });
+        // Don't set liveProgress here yet, do it after mode selection
+        navigate(location.pathname, { replace: true, state: {} }); // Clear location state
         toast({
-          title: "Challenge Started!",
-          description: `Tracking for: ${challenge.title}`,
+          title: "Challenge Ready!",
+          description: `Select mode for: ${challenge.title}`,
         });
       } else {
         toast({
@@ -63,23 +67,34 @@ const ActivitiesPage: React.FC = () => {
         });
       }
     }
-  }, [location.state, navigate, toast]);
+  }, [location.state, navigate, toast, activityStartOptions, isTracking]);
 
   const handleStartGenericActivity = () => {
     setActiveChallenge(null);
-    setIsTracking(true);
+    setActivityStartOptions({ challenge: null, isGeneric: true });
+    // Clear other states
     setLastActivitySummary(null);
     setShowChallengeWonModal(false);
     setCompletedChallengeDetails(null);
     setCurrentUserGiftCardId(null);
-    setPendingStepCoins(null); // Reset pending step coins
+    setPendingStepCoins(null);
     setShowStepCoinClaimModal(false);
-    setLiveProgress({ currentSteps: 0, goalSteps: 10000, elapsedTime: 0 });
+  };
+
+  const handleModeSelected = (mode: 'walk' | 'run') => {
+    setSelectedActivityMode(mode);
+    setIsTracking(true);
+    
+    const goalSteps = activityStartOptions?.challenge?.stepsGoal || 10000;
+    setLiveProgress({ currentSteps: 0, goalSteps, elapsedTime: 0 });
+    
+    setActivityStartOptions(null); // Clear options, activity is starting
   };
 
   const handleStopTracking = async (activitySummary: ActivitySummary, challengeCompleted?: boolean) => {
     console.log('ActivitiesPage: handleStopTracking called with summary:', activitySummary, 'Challenge Completed:', challengeCompleted);
     setIsTracking(false); 
+    setSelectedActivityMode(null); // Reset mode
     setLastActivitySummary(activitySummary);
     setLiveProgress(null);
 
@@ -160,7 +175,6 @@ const ActivitiesPage: React.FC = () => {
     setActiveChallenge(null); 
   };
 
-  // Handler for the new step coin claim modal
   const handleClaimStepCoins = async (coinsToClaim: number) => {
     if (coinsToClaim > 0) {
       await addEarnings(coinsToClaim, "Activity Step Reward");
@@ -185,25 +199,64 @@ const ActivitiesPage: React.FC = () => {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
 
-  if (isTracking) {
+  if (activityStartOptions) {
+    return (
+      <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center p-4">
+        <EcoRunLogo size="large" />
+        <h2 className="text-2xl font-semibold text-center my-6">
+          Starting: {activityStartOptions.challenge?.title || "New Activity"}
+        </h2>
+        <p className="text-eco-gray mb-8 text-center">How would you like to track this activity?</p>
+        <div className="space-y-4 w-full max-w-xs">
+          <Button 
+            size="lg" 
+            className="w-full bg-eco-accent text-eco-dark hover:bg-eco-accent/90 py-6 text-lg" 
+            onClick={() => handleModeSelected('walk')}
+          >
+            <Footprints size={24} className="mr-3" /> Start Walking
+          </Button>
+          <Button 
+            size="lg" 
+            className="w-full bg-eco-purple text-white hover:bg-eco-purple/90 py-6 text-lg" 
+            onClick={() => handleModeSelected('run')}
+          >
+            <Zap size={24} className="mr-3" /> Start Running
+          </Button>
+        </div>
+         <Button 
+            variant="ghost" 
+            className="mt-8 text-eco-gray hover:text-eco-light"
+            onClick={() => {
+              setActivityStartOptions(null);
+              setActiveChallenge(null); // Also clear active challenge if cancelling
+            }}
+          >
+            Cancel
+          </Button>
+      </div>
+    );
+  }
+
+  if (isTracking && selectedActivityMode) {
     return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
         <header className="p-4 flex justify-between items-center sticky top-0 bg-eco-dark z-40 shadow-sm">
           <EcoRunLogo size="small" />
           <h1 className="text-xl font-semibold text-eco-light">
-            {activeChallenge ? activeChallenge.title : 'Activity Tracker'}
+            {activeChallenge ? activeChallenge.title : 'Activity Tracker'} ({selectedActivityMode === 'walk' ? 'Walking' : 'Running'})
           </h1>
           <Button 
             variant="ghost" 
             size="icon" 
             className="text-eco-gray hover:text-eco-accent" 
             onClick={() => {
-                // Determine if challenge was completed based on liveProgress vs challenge goal
                 const challengeGoal = activeChallenge?.stepsGoal;
                 const currentSteps = liveProgress?.currentSteps || 0;
                 const potentiallyCompleted = activeChallenge && challengeGoal && currentSteps >= challengeGoal;
+                // Provide a default for coinsEarned if not available from liveProgress
+                const coinsFromTracker = liveProgress && (liveProgress as any).coinsEarned !== undefined ? (liveProgress as any).coinsEarned : 0;
                 handleStopTracking(
-                    {steps:liveProgress?.currentSteps || 0, elapsedTime:liveProgress?.elapsedTime || 0, calories:0, co2Saved:0, coinsEarned:0 /* This coinsEarned is for manual stop, actual step coins come from ActivityTracker*/ }, 
+                    {steps:liveProgress?.currentSteps || 0, elapsedTime:liveProgress?.elapsedTime || 0, calories:0, co2Saved:0, coinsEarned:coinsFromTracker }, 
                     potentiallyCompleted || false
                 );
             }}
@@ -216,6 +269,7 @@ const ActivitiesPage: React.FC = () => {
             onStopTracking={handleStopTracking} 
             challengeGoalSteps={activeChallenge?.stepsGoal}
             onLiveProgressUpdate={handleLiveProgressUpdate}
+            activityMode={selectedActivityMode} // Pass the selected mode
           />
         </main>
         {activeChallenge && liveProgress && (

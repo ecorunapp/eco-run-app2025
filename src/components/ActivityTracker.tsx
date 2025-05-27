@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Leaf, Coins, Clock, Flame, Play, Pause, StopCircle, MapPin, RefreshCw, Trophy } from '@/components/icons';
-import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
-import LiveActivityMap from './LiveActivityMap';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Keep Card for challenge goal
+import { Trophy } from '@/components/icons';
 import Co2SavedPopup from './Co2SavedPopup';
 import { useToast } from "@/hooks/use-toast";
+import WalkModeDisplay from './WalkModeDisplay';
+import RunModeDisplay from './RunModeDisplay';
 
 export interface ActivitySummary {
   steps: number;
@@ -13,28 +12,35 @@ export interface ActivitySummary {
   calories: number;
   co2Saved: number;
   coinsEarned: number;
+  distanceKm?: number; // Added for run mode summary
+  avgPaceMinPerKm?: string; // Added for run mode summary
 }
 
 export interface LiveProgressData {
   currentSteps: number;
   goalSteps: number;
   elapsedTime: number;
+  // Potentially add run-specific live data if needed by MiniChallengeStatus for running
 }
 
 interface ActivityTrackerProps {
   onStopTracking: (activitySummary: ActivitySummary, challengeCompleted?: boolean) => void;
   challengeGoalSteps?: number;
-  onLiveProgressUpdate?: (progress: LiveProgressData) => void; // New prop
+  onLiveProgressUpdate?: (progress: LiveProgressData) => void;
+  activityMode: 'walk' | 'run'; // New prop
 }
 const DEFAULT_GOAL_STEPS = 10000;
 const CO2_MILESTONES = [20, 50, 100, 200, 300, 400, 500, 700, 800, 900, 1000];
+const METERS_PER_WALKING_STEP = 0.762; // Average for walking
+const METERS_PER_RUNNING_STEP = 1.2;   // Simplified average for running
 
 const ActivityTracker: React.FC<ActivityTrackerProps> = ({
   onStopTracking,
   challengeGoalSteps,
-  onLiveProgressUpdate
+  onLiveProgressUpdate,
+  activityMode,
 }) => {
-  const { toast } = useToast();
+  const { toast } = useToast(); // Keep toast if it's used by this component, or remove if fully handled by ActivitiesPage
   const [isTracking, setIsTracking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
@@ -43,6 +49,12 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
   const [calories, setCalories] = useState(0);
   const [co2Saved, setCo2Saved] = useState(0);
   const [coinsEarned, setCoinsEarned] = useState(0);
+
+  // Run mode specific state
+  const [distanceDisplay, setDistanceDisplay] = useState("0.00"); // km
+  const [avgPaceDisplay, setAvgPaceDisplay] = useState("00:00"); // min/km
+  const [currentDistanceKm, setCurrentDistanceKm] = useState(0);
+
 
   const [activityCompleted, setActivityCompleted] = useState(false);
 
@@ -63,6 +75,9 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     setCalories(0);
     setCo2Saved(0);
     setCoinsEarned(0);
+    setDistanceDisplay("0.00");
+    setAvgPaceDisplay("00:00");
+    setCurrentDistanceKm(0);
     achievedCo2MilestonesRef.current.clear();
     setShowCo2Popup(false);
     setCurrentCo2Milestone(null);
@@ -71,17 +86,35 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     }
   }, [onLiveProgressUpdate, currentGoalSteps]);
 
-  useEffect(() => {
-    if (challengeGoalSteps && !isTracking && !activityCompleted) {
-      handleStart();
+  // Auto-start tracking when component mounts if mode is set (e.g. via challenge)
+   useEffect(() => {
+    // This auto-start logic should ideally be tied to isTracking prop from parent,
+    // or a specific prop like `startImmediately`.
+    // For now, if activityMode is present, we assume parent wants to start.
+    // The parent (ActivitiesPage) now controls `isTracking` via mode selection.
+    // This effect might need adjustment based on how `ActivitiesPage` sets `isTracking`.
+    // Let's simplify: if `isTracking` is true (controlled by parent), then start internal logic.
+    // The initial `handleStart` call logic is moved to parent `ActivitiesPage` `handleModeSelected`.
+    // This component just reacts to `isTracking` prop.
+    
+    // If parent set isTracking to true, and we are not internally tracking, start.
+    // This is tricky. Let's manage `isTracking` purely internally for the step/timer intervals.
+    // The `handleStart` is now the primary way to begin.
+    // Let's call handleStart if component mounts with challengeGoalSteps and not already tracking.
+    // This means `ActivitiesPage` should set `isTracking` true when it calls this component.
+    // The logic below for `handleStart` effectively sets `isTracking` to true here.
+    // Let's assume this component is only rendered when tracking should actually begin.
+    if (!isTracking && !activityCompleted) { // if not already tracking and not completed
+       handleStart(); // Start internal tracking
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [challengeGoalSteps]);
+  }, []); // Run once on mount to initiate tracking if conditions are met
 
   useEffect(() => {
     let timerInterval: NodeJS.Timeout | undefined;
     let stepInterval: NodeJS.Timeout | undefined;
-    if (isTracking && !isPaused && !activityCompleted) { // Added !activityCompleted here
+
+    if (isTracking && !isPaused && !activityCompleted) {
       if (!startTime) {
         setStartTime(new Date());
       }
@@ -91,25 +124,47 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
           if (onLiveProgressUpdate) {
             onLiveProgressUpdate({ currentSteps: steps, goalSteps: currentGoalSteps, elapsedTime: newTime });
           }
+          // Update avgPaceDisplay for run mode as time changes
+          if (activityMode === 'run' && currentDistanceKm > 0 && newTime > 0) {
+            const paceDecimal = (newTime / 60) / currentDistanceKm;
+            const paceMinutes = Math.floor(paceDecimal);
+            const paceSeconds = Math.round((paceDecimal - paceMinutes) * 60);
+            setAvgPaceDisplay(`${String(paceMinutes).padStart(2, '0')}:${String(paceSeconds).padStart(2, '0')}`);
+          }
           return newTime;
         });
       }, 1000);
 
       stepInterval = setInterval(() => {
         setSteps(prevSteps => {
-          // If activity is now marked as completed by another effect (e.g. goal met), stop generating steps.
           if (activityCompleted) { 
             clearInterval(stepInterval);
             return prevSteps;
           }
 
-          const stepsToAdd = Math.random() < 0.6 ? 1 : 2; 
+          const stepsToAdd = Math.random() < 0.6 ? (activityMode === 'run' ? 2 : 1) : (activityMode === 'run' ? 3 : 2); // Slightly more steps for running
           const newSteps = prevSteps + stepsToAdd;
           
-          const newCo2Saved = parseFloat((newSteps * 0.0008).toFixed(2));
-          setCalories(Math.floor(newSteps * 0.04));
+          const metersPerStep = activityMode === 'run' ? METERS_PER_RUNNING_STEP : METERS_PER_WALKING_STEP;
+          const newDistanceKm = parseFloat((newSteps * metersPerStep / 1000).toFixed(2));
+          setCurrentDistanceKm(newDistanceKm);
+
+          if (activityMode === 'run') {
+            setDistanceDisplay(newDistanceKm.toFixed(2));
+            if (newDistanceKm > 0 && elapsedTime > 0) { // elapsedTime from state
+              const paceDecimal = (elapsedTime / 60) / newDistanceKm;
+              const paceMinutes = Math.floor(paceDecimal);
+              const paceSeconds = Math.round((paceDecimal - paceMinutes) * 60);
+              setAvgPaceDisplay(`${String(paceMinutes).padStart(2, '0')}:${String(paceSeconds).padStart(2, '0')}`);
+            } else {
+              setAvgPaceDisplay("00:00");
+            }
+          }
+          
+          const newCo2Saved = parseFloat((newSteps * 0.0008).toFixed(2)); // CO2 calc can be refined per mode
+          setCalories(Math.floor(newSteps * (activityMode === 'run' ? 0.05 : 0.04))); // Slightly more calories for running
           setCo2Saved(newCo2Saved);
-          setCoinsEarned(Math.floor(newSteps / 100));
+          setCoinsEarned(Math.floor(newSteps / (activityMode === 'run' ? 80 : 100))); // Earn coins faster for running
 
           if (onLiveProgressUpdate) {
             onLiveProgressUpdate({ currentSteps: newSteps, goalSteps: currentGoalSteps, elapsedTime: elapsedTime });
@@ -125,17 +180,18 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
           }
           return newSteps;
         });
-      }, 400); 
+      }, activityMode === 'run' ? 300 : 400); // Faster step interval for running
     }
     return () => {
       if (timerInterval) clearInterval(timerInterval);
       if (stepInterval) clearInterval(stepInterval);
     };
-  }, [isTracking, isPaused, startTime, onLiveProgressUpdate, currentGoalSteps, steps, elapsedTime, activityCompleted]);
+  }, [isTracking, isPaused, startTime, onLiveProgressUpdate, currentGoalSteps, steps, elapsedTime, activityCompleted, activityMode, currentDistanceKm]);
 
-  const handleStart = useCallback(() => { // Added useCallback for handleStart
-    resetTrackerStates();
-    setIsTracking(true);
+  const handleStart = useCallback(() => {
+    resetTrackerStates(); // Reset all states
+    setIsTracking(true);   // Set internal tracking to true
+    setActivityCompleted(false); // Ensure activity not marked as completed
     if (onLiveProgressUpdate) {
       onLiveProgressUpdate({ currentSteps: 0, goalSteps: currentGoalSteps, elapsedTime: 0 });
     }
@@ -143,8 +199,8 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
 
   const handlePauseResume = () => {
     setIsPaused(!isPaused);
-    if (!isPaused && isTracking) {
-      if (!startTime) {
+    if (!isPaused && isTracking) { // Resuming
+      if (!startTime) { // If activity was paused right at the start
         setStartTime(new Date());
       }
     }
@@ -161,27 +217,19 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
       elapsedTime,
       calories,
       co2Saved,
-      coinsEarned
+      coinsEarned,
+      ...(activityMode === 'run' && { distanceKm: currentDistanceKm, avgPaceMinPerKm: avgPaceDisplay })
     };
     onStopTracking(summary, challengeWasCompleted);
-     if (challengeGoalSteps && !challengeWasCompleted && steps > 0) {
-        // This toast was commented out in original, keeping as is.
-        // toast({
-        //   title: "Challenge Incomplete",
-        //   description: `You stopped before reaching the goal of ${challengeGoalSteps} steps. Keep trying!`,
-        //   variant: "default",
-        // });
-    }
+    
     if (onLiveProgressUpdate) {
       onLiveProgressUpdate({ currentSteps: steps, goalSteps: currentGoalSteps, elapsedTime: elapsedTime });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onStopTracking, challengeGoalSteps, steps, elapsedTime, calories, co2Saved, coinsEarned, onLiveProgressUpdate, currentGoalSteps /* removed toast from deps as it's stable */]);
+  }, [onStopTracking, challengeGoalSteps, steps, elapsedTime, calories, co2Saved, coinsEarned, activityMode, currentDistanceKm, avgPaceDisplay, onLiveProgressUpdate, currentGoalSteps]);
 
-  // Effect to automatically stop tracking if challenge goal is met
   useEffect(() => {
     if (isTracking && !isPaused && !activityCompleted && challengeGoalSteps && steps >= challengeGoalSteps) {
-      handleStop();
+      handleStop(); // Auto-stop if goal met
     }
   }, [isTracking, isPaused, activityCompleted, challengeGoalSteps, steps, handleStop]);
 
@@ -191,125 +239,60 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     const seconds = totalSeconds % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
-  const percentage = currentGoalSteps > 0 ? Math.min(100, steps / currentGoalSteps * 100) : 0;
-  const radialData = [{
-    name: 'Steps',
-    value: percentage,
-    fill: 'url(#activityGradient)'
-  }];
-  const endAngle = 90 + percentage / 100 * 360;
-  const mapboxAccessToken = "pk.eyJ1IjoicGFyaXNhdXJhIiwiYSI6ImNtYXA3eHA1NzBmdHgya3M2YXBqdnhmOHAifQ.kYY2uhGtf6O2HGBDhvamIA";
+  
+  const mapboxAccessToken = "pk.eyJ1IjoicGFyaXNhdXJhIiwiYSI6ImNtYXA3eHA1NzBmdHgya3M2YXBqdnhmOHAifQ.kYY2uhGtf6O2HGBDhvamIA"; // Replace with your actual token or env var
 
-  return <>
-      <div className="flex flex-col items-center space-y-6 p-4 text-foreground animate-fade-in-up bg-slate-900">
-        {challengeGoalSteps && <Card className="w-full max-w-md bg-primary/10 border-primary mb-4">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center text-primary">
-                <Trophy size={20} className="mr-2" />
-                <p className="font-semibold">Challenge Goal: {challengeGoalSteps.toLocaleString()} steps</p>
-              </div>
-            </CardContent>
-          </Card>}
-        
-        <div className="relative w-60 h-60 sm:w-72 sm:h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <RadialBarChart cx="50%" cy="50%" innerRadius="70%" outerRadius="100%" barSize={20} data={radialData} startAngle={90}
-          endAngle={endAngle}
-          >
-              <defs>
-                <linearGradient id="activityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="var(--color-eco-accent, #00F5D4)" />
-                  <stop offset="100%" stopColor="var(--color-eco-purple, #8A4FFF)" />
-                </linearGradient>
-              </defs>
-              <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-              <RadialBar background dataKey="value" angleAxisId={0} fill="hsla(var(--muted) / 0.2)" cornerRadius={10} data={[{
-              value: 100
-            }]} />
-              <RadialBar dataKey="value" angleAxisId={0} cornerRadius={10} />
-            </RadialBarChart>
-          </ResponsiveContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <div className="text-5xl font-extrabold text-foreground">{steps.toLocaleString()}</div>
-            <div className="text-sm text-muted-foreground">Steps</div>
-          </div>
-        </div>
-
-        <div className="flex justify-around w-full max-w-md">
-          <div className="flex flex-col items-center text-center">
-            <Leaf size={24} className="text-green-400 mb-1" />
-            <span className="text-lg font-semibold text-foreground">{co2Saved.toLocaleString()} g</span>
-            <span className="text-xs text-muted-foreground">CO₂ Saved</span>
-          </div>
-          <div className="flex flex-col items-center text-center">
-            <Coins size={24} className="text-yellow-400 mb-1" />
-            <span className="text-lg font-semibold text-foreground">{coinsEarned.toLocaleString()}</span>
-            <span className="text-xs text-muted-foreground">Coins from Steps</span>
-          </div>
-        </div>
-
-        <Card className="w-full max-w-md bg-slate-900 border-primary">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-card-foreground text-lg flex justify-between items-center">
-              Activity Stats
-              <span className="text-xs text-muted-foreground">Goal: {Math.round(percentage)}%</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-2xl font-semibold text-primary">{steps.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Steps</p>
-            </div>
-            <div>
-              <p className="text-2xl font-semibold text-primary">{formatTime(elapsedTime)}</p>
-              <p className="text-xs text-muted-foreground">Time</p>
-            </div>
-            <div>
-              <p className="text-2xl font-semibold text-primary">{calories.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Calories</p>
+  return (
+    <>
+      {challengeGoalSteps && (
+        <Card className="w-full max-w-md bg-primary/10 border-primary mb-4 mx-auto mt-4">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center text-primary">
+              <Trophy size={20} className="mr-2" />
+              <p className="font-semibold">Challenge Goal: {challengeGoalSteps.toLocaleString()} {activityMode === 'walk' ? 'steps' : 'steps (approx)'}</p>
             </div>
           </CardContent>
         </Card>
+      )}
 
-        <div className="flex space-x-4 w-full max-w-md">
-          {!isTracking && !activityCompleted ?
-            <Button onClick={handleStart} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
-                      <Play size={20} className="mr-2" /> Start Tracking
-                  </Button> : (isTracking && !activityCompleted) ? // Added !activityCompleted condition for Pause/Resume
-            <Button onClick={handlePauseResume} variant="outline" className="flex-1 border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-primary-foreground">
-                      {isPaused ? <Play size={20} className="mr-2" /> : <Pause size={20} className="mr-2" />}
-                      {isPaused ? 'Resume' : 'Pause'}
-                  </Button> : null 
-          }
-          
-          {((isTracking && isPaused) || activityCompleted || (!isTracking && startTime)) && <Button onClick={handleStart} // Adjusted conditions for Restart button
-            variant="outline" className="flex-1 border-muted-foreground text-muted-foreground hover:bg-muted-foreground hover:text-background">
-                    <RefreshCw size={20} className="mr-2" /> Restart
-                </Button>}
-        </div>
-         <Button onClick={handleStop} variant="destructive" className="w-full max-w-md mt-2"
-            disabled={(!isTracking && !startTime) || activityCompleted } 
-            >
-           <StopCircle size={20} className="mr-2" /> Stop & End Activity
-         </Button>
-
-        <Card className="w-full max-w-md bg-card border-border overflow-hidden">
-           <CardHeader>
-            <CardTitle className="text-card-foreground text-lg flex items-center">
-              <MapPin size={20} className="mr-2 text-primary" /> Live Location Tracking
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {(isTracking || startTime) && !activityCompleted ? <LiveActivityMap accessToken={mapboxAccessToken} /> : <div className="h-64 bg-muted/20 rounded-md flex items-center justify-center p-4">
-                <p className="text-muted-foreground text-sm">
-                  {activityCompleted ? "Activity ended." : "Start tracking to see your live location."}
-                </p>
-              </div>}
-          </CardContent>
-        </Card>
-      </div>
+      {activityMode === 'walk' ? (
+        <WalkModeDisplay
+          steps={steps}
+          elapsedTime={elapsedTime}
+          calories={calories}
+          co2Saved={co2Saved}
+          coinsEarned={coinsEarned}
+          currentGoalSteps={currentGoalSteps}
+          isPaused={isPaused}
+          activityCompleted={activityCompleted}
+          startTime={startTime}
+          mapboxAccessToken={mapboxAccessToken}
+          formatTime={formatTime}
+          handlePauseResume={handlePauseResume}
+          handleStop={handleStop}
+          handleStart={handleStart}
+        />
+      ) : ( // activityMode === 'run'
+        <RunModeDisplay
+          elapsedTime={elapsedTime}
+          calories={calories}
+          co2Saved={co2Saved}
+          coinsEarned={coinsEarned}
+          isPaused={isPaused}
+          activityCompleted={activityCompleted}
+          startTime={startTime}
+          mapboxAccessToken={mapboxAccessToken}
+          formatTime={formatTime}
+          handlePauseResume={handlePauseResume}
+          handleStop={handleStop}
+          handleStart={handleStart}
+          distanceDisplay={distanceDisplay}
+          avgPaceDisplay={avgPaceDisplay}
+        />
+      )}
 
       {currentCo2Milestone !== null && <Co2SavedPopup isOpen={showCo2Popup} onClose={() => setShowCo2Popup(false)} co2Saved={currentCo2Milestone} />}
-    </>;
+    </>
+  );
 };
 export default ActivityTracker;
