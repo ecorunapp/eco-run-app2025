@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Challenge } from '@/data/challenges';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress'; // Added for progress bar
-import { ArrowRight, Coins, Lock, MapPin, Play } from '@/components/icons'; // Added MapPin and Play
+import { Progress } from '@/components/ui/progress';
+import { ArrowRight, Coins, Lock, MapPin, Play, CheckCircle } from '@/components/icons';
 import EcotabActivationModal from './EcotabActivationModal';
+import StaticChallengeMap from './StaticChallengeMap';
+import { LatLngTuple } from 'leaflet';
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -12,6 +14,8 @@ interface ChallengeCardProps {
   currentSteps?: number;
   pausedLocationName?: string;
   kilometersCoveredAtPause?: number;
+  completedLocationName?: string;
+  completedLocationCoords?: LatLngTuple;
 }
 
 const ECOTAB_CHALLENGE_ID = 'challenge_20k_ecotab_300aed';
@@ -22,12 +26,16 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   currentSteps = 0,
   pausedLocationName,
   kilometersCoveredAtPause,
+  completedLocationName,
+  completedLocationCoords,
 }) => {
   const navigate = useNavigate();
   const [showEcotabModal, setShowEcotabModal] = useState(false);
 
-  // isLocked definition already considers that active/paused challenges are not "locked" in the traditional sense
-  const isLocked = challenge.isLockedInitially && activityStatus !== 'paused' && activityStatus !== 'active';
+  const isLocked = challenge.isLockedInitially && 
+                   activityStatus !== 'paused' && 
+                   activityStatus !== 'active' && 
+                   activityStatus !== 'completed';
   const isUltimateEcotabChallenge = challenge.id === ECOTAB_CHALLENGE_ID;
 
   let cardBgClass = '';
@@ -50,6 +58,11 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
       buttonClass = 'bg-gray-600 text-white';
       titleIconClass = 'text-yellow-400';
     }
+  } else if (activityStatus === 'completed') {
+    cardBgClass = 'bg-green-600';
+    cardTextColorClass = 'text-white';
+    buttonClass = `bg-green-700 text-white hover:bg-green-800`;
+    titleIconClass = 'text-white';
   } else if (activityStatus === 'paused') {
     cardBgClass = challenge.primaryColor; 
     cardTextColorClass = challenge.textColor;
@@ -61,6 +74,10 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   }
 
   const handleChallengeAction = () => {
+    if (activityStatus === 'completed') {
+      console.log("Challenge already completed:", challenge.title);
+      return;
+    }
     if (isUltimateEcotabChallenge && activityStatus !== 'paused') {
       setShowEcotabModal(true);
     } else if (activityStatus === 'paused') {
@@ -78,14 +95,15 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
 
   const progressPercentage = challenge.stepsGoal > 0 && currentSteps > 0 && (activityStatus === 'paused' || activityStatus === 'active')
     ? Math.min(100, (currentSteps / challenge.stepsGoal) * 100)
-    : 0;
+    : (activityStatus === 'completed' ? 100 : 0);
 
   const remainingSteps = (activityStatus === 'paused' && challenge.stepsGoal > currentSteps)
     ? challenge.stepsGoal - currentSteps
     : 0;
-
-  const kilometersToGoal = remainingSteps > 0 ? parseFloat((remainingSteps * 0.000762).toFixed(2)) : 0;
-
+  
+  const kilometersToGoal = remainingSteps > 0 && activityStatus === 'paused' 
+    ? parseFloat((remainingSteps * 0.000762).toFixed(2)) 
+    : 0;
 
   return (
     <>
@@ -93,7 +111,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         <div>
           <div className="flex items-center mb-2">
             {isLocked && <Lock size={28} className={`mr-3 ${titleIconClass}`} />}
-            {!isLocked && challenge.icon && <challenge.icon size={28} className="mr-3" />}
+            {activityStatus === 'completed' && <CheckCircle size={28} className="mr-3" />}
+            {!isLocked && activityStatus !== 'completed' && challenge.icon && <challenge.icon size={28} className="mr-3" />}
             <h3 className="text-2xl font-bold">{challenge.title}</h3>
           </div>
           <p className="text-sm mb-4 opacity-90">{challenge.description}</p>
@@ -104,33 +123,54 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
             </div>
           )}
 
-          {activityStatus === 'paused' && (
+          {(activityStatus === 'paused' || activityStatus === 'active') && challenge.stepsGoal > 0 && (
             <div className="mb-4 space-y-3">
               <div>
                 <div className="flex justify-between text-xs mb-1 opacity-80">
                   <span>Progress</span>
                   <span>{currentSteps.toLocaleString()} / {challenge.stepsGoal.toLocaleString()} steps</span>
                 </div>
-                <Progress value={progressPercentage} className="h-2.5 [&>div]:bg-yellow-400 bg-white/30" />
-                {remainingSteps > 0 && (
+                <Progress value={progressPercentage} className={`h-2.5 ${activityStatus === 'paused' ? '[&>div]:bg-yellow-400 bg-white/30' : '[&>div]:bg-green-400 bg-white/30'}`} />
+                {remainingSteps > 0 && activityStatus === 'paused' && (
                    <p className="text-xs text-right mt-1 opacity-80">{remainingSteps.toLocaleString()} steps ({kilometersToGoal} km) to go</p>
                 )}
               </div>
-              {pausedLocationName && (
+              {activityStatus === 'paused' && pausedLocationName && (
                 <div className="flex items-center text-xs p-2 bg-black/20 rounded-md">
                   <MapPin size={16} className="mr-2 text-yellow-400" />
                   Paused near: {pausedLocationName}
                 </div>
               )}
-              {kilometersCoveredAtPause !== undefined && kilometersCoveredAtPause > 0 && (
+              {activityStatus === 'paused' && kilometersCoveredAtPause !== undefined && kilometersCoveredAtPause > 0 && (
                  <div className="text-xs opacity-80">
                   Distance covered: {kilometersCoveredAtPause.toLocaleString()} km
                 </div>
               )}
             </div>
           )}
+          
+          {activityStatus === 'completed' && (
+            <div className="mb-4 space-y-2">
+              <p className="text-lg font-semibold text-center">Challenge Completed!</p>
+              {completedLocationCoords && (
+                <div className="h-32 w-full rounded-lg overflow-hidden border border-white/20">
+                   <StaticChallengeMap 
+                    center={completedLocationCoords} 
+                    locationName={completedLocationName} 
+                    zoom={15} 
+                  />
+                </div>
+              )}
+              {completedLocationName && !completedLocationCoords && (
+                 <div className="flex items-center text-sm p-2 bg-black/20 rounded-md justify-center">
+                  <MapPin size={16} className="mr-2" />
+                  Completed at: {completedLocationName}
+                </div>
+              )}
+            </div>
+          )}
 
-          {!isLocked && activityStatus !== 'paused' && (
+          {!isLocked && activityStatus !== 'paused' && activityStatus !== 'completed' && (
             <div className="flex items-center text-sm font-semibold mb-4">
               <Coins size={18} className="mr-2 opacity-90" />
               <span>Reward: {challenge.rewardCoins} EcoCoins</span>
@@ -139,10 +179,15 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         </div>
         <Button
           onClick={handleChallengeAction}
-          disabled={isLocked && !isUltimateEcotabChallenge}
-          className={`${buttonClass} w-full font-semibold`}
+          disabled={(isLocked && !isUltimateEcotabChallenge) || activityStatus === 'completed'}
+          className={`${buttonClass} w-full font-semibold mt-auto`}
         >
-          {activityStatus === 'paused' ? (
+          {activityStatus === 'completed' ? (
+            <>
+              <CheckCircle size={20} className="mr-2" />
+              Completed
+            </>
+          ) : activityStatus === 'paused' ? (
             <>
               <Play size={20} className="mr-2" />
               Resume Challenge
@@ -166,7 +211,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
           )}
         </Button>
       </div>
-      {isUltimateEcotabChallenge && (
+      {isUltimateEcotabChallenge && activityStatus !== 'completed' && (
         <EcotabActivationModal
           isOpen={showEcotabModal}
           onClose={() => setShowEcotabModal(false)}
