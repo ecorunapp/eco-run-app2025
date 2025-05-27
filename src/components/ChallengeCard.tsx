@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Challenge } from '@/data/challenges';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowRight, Coins, Lock, MapPin, Play, CheckCircle } from '@/components/icons';
+import { ArrowRight, Coins, Lock, MapPin, Play, CheckCircle, Footprints } from '@/components/icons';
 import EcotabActivationModal from './EcotabActivationModal';
 import StaticChallengeMap from './StaticChallengeMap';
 import { LatLngTuple } from 'leaflet';
@@ -80,8 +80,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
       console.log("Challenge already completed:", challenge.title);
       return;
     }
-    if (isUltimateEcotabChallenge && activityStatus !== 'paused') {
-      navigate('/order-ecotab'); 
+    if (isUltimateEcotabChallenge && activityStatus !== 'paused' && !isLocked) {
+      navigate('/order-ecotab');
     } else if (activityStatus === 'paused') {
       navigate('/activities', {
         state: {
@@ -99,16 +99,15 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
     ? Math.min(100, (currentSteps / challenge.stepsGoal) * 100)
     : (activityStatus === 'completed' ? 100 : 0);
 
-  const remainingSteps = (activityStatus === 'paused' && challenge.stepsGoal > currentSteps)
+  const remainingSteps = (activityStatus === 'paused' || activityStatus === 'active') && challenge.stepsGoal > currentSteps
     ? challenge.stepsGoal - currentSteps
     : 0;
   
-  const kilometersToGoal = remainingSteps > 0 && activityStatus === 'paused' 
-    ? parseFloat((remainingSteps * 0.000762).toFixed(2)) 
+  const kilometersToGoal = remainingSteps > 0 && (activityStatus === 'paused' || activityStatus === 'active')
+    ? parseFloat((remainingSteps * 0.000762).toFixed(2))
     : 0;
 
-  // Debugging logs for paused challenge display
-  if (challenge.id) { // Log only if challenge.id is present, to avoid spamming for non-challenge items if any
+  if (challenge.id) { 
     console.log(`ChallengeCard Debug: ID=${challenge.id}, Title=${challenge.title}`);
     console.log(`  - activityStatus: ${activityStatus}`);
     console.log(`  - currentSteps: ${currentSteps}, stepsGoal: ${challenge.stepsGoal}`);
@@ -117,7 +116,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
     console.log(`  - pausedLocationName: ${pausedLocationName}`);
     console.log(`  - pausedLocationCoords:`, pausedLocationCoords);
     
-    const showRemainingStepsBlock = remainingSteps > 0 && activityStatus === 'paused';
+    const showRemainingStepsBlock = remainingSteps > 0 && (activityStatus === 'paused' || activityStatus === 'active');
     const showMapBlock = activityStatus === 'paused' && pausedLocationCoords;
     console.log(`  - Show Remaining Steps Block? ${showRemainingStepsBlock}`);
     console.log(`  - Show Map Block? ${showMapBlock}`);
@@ -149,7 +148,15 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
                   <span>{currentSteps.toLocaleString()} / {challenge.stepsGoal.toLocaleString()} steps</span>
                 </div>
                 <Progress value={progressPercentage} className={`h-2.5 ${activityStatus === 'paused' ? '[&>div]:bg-yellow-400 bg-white/30' : '[&>div]:bg-green-400 bg-white/30'}`} />
-                {remainingSteps > 0 && activityStatus === 'paused' && (
+                
+                {currentSteps > 0 && (
+                  <div className="flex items-center text-xs opacity-80 mt-1">
+                    <Footprints size={14} className="mr-1" /> 
+                    Steps completed: {currentSteps.toLocaleString()}
+                  </div>
+                )}
+
+                {remainingSteps > 0 && (
                    <p className="text-xs text-right mt-1 opacity-80">{remainingSteps.toLocaleString()} steps ({kilometersToGoal} km) to go</p>
                 )}
               </div>
@@ -219,7 +226,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
               <Play size={20} className="mr-2" />
               Resume Challenge
             </>
-          ) :isUltimateEcotabChallenge ? (
+          ) :isUltimateEcotabChallenge && !isLocked ? (
             <>
              Activate Your EcoTab Card
               <ArrowRight size={20} className="ml-2" />
