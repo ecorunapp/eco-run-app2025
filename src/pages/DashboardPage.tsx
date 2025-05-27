@@ -1,4 +1,3 @@
-
 import React from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
@@ -8,9 +7,9 @@ import WeeklyActivityChart from '@/components/WeeklyActivityChart';
 import StepCounter from '@/components/StepCounter';
 import { Button } from '@/components/ui/button';
 import ChallengeCard from '@/components/ChallengeCard';
-import { challenges } from '@/data/challenges';
-import { useEcoCoins } from '@/context/EcoCoinsContext'; // Import useEcoCoins
-import { useUserProfile } from '@/hooks/useUserProfile'; // Import useUserProfile
+import { challenges, Challenge } from '@/data/challenges'; // Import Challenge type
+import { useEcoCoins } from '@/context/EcoCoinsContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 
 const DashboardPage: React.FC = () => {
@@ -22,8 +21,21 @@ const DashboardPage: React.FC = () => {
   const currentSteps = userProfile?.total_steps || 0; // Example: Use total_steps from profile
   const goalSteps = 10000; // Example goal steps, could be dynamic
 
-  // Display only the first 3 challenges
-  const displayedChallenges = challenges.slice(0, 3);
+  // Display only the first 3 challenges and add example paused state to one
+  const displayedChallenges = challenges.slice(0, 3).map((challenge, index) => {
+    // Let's make the first non-locked challenge appear as "paused" for demonstration
+    // Assuming the first challenge 'Quick 5 AED Dash' (id: 'challenge_100_steps_5aed') is suitable
+    if (challenge.id === 'challenge_100_steps_5aed' && !challenge.isLockedInitially) {
+      return {
+        ...challenge,
+        activityStatus: 'paused' as 'paused', // Type assertion
+        currentSteps: 50, // Example current steps
+        pausedLocationName: 'Downtown Park', // Example location
+        kilometersCoveredAtPause: parseFloat((50 * 0.000762).toFixed(2)), // Example KMs
+      };
+    }
+    return challenge;
+  });
 
   if (ecoCoinsLoading || profileLoading) {
     // You can add a more sophisticated loading skeleton here
@@ -58,8 +70,15 @@ const DashboardPage: React.FC = () => {
         <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Daily Challenges</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayedChallenges.map((challenge) => (
-              <ChallengeCard key={challenge.id} challenge={challenge} />
+            {displayedChallenges.map((challengeData) => (
+              <ChallengeCard 
+                key={challengeData.id} 
+                challenge={challengeData}
+                activityStatus={challengeData.activityStatus as any} // Pass down the status
+                currentSteps={challengeData.currentSteps}
+                pausedLocationName={challengeData.pausedLocationName}
+                kilometersCoveredAtPause={challengeData.kilometersCoveredAtPause}
+              />
             ))}
           </div>
         </section>

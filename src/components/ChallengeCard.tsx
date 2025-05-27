@@ -3,61 +3,93 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Challenge } from '@/data/challenges';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Coins, Lock } from '@/components/icons';
+import { Progress } from '@/components/ui/progress'; // Added for progress bar
+import { ArrowRight, Coins, Lock, MapPin, Play } from '@/components/icons'; // Added MapPin and Play
 import EcotabActivationModal from './EcotabActivationModal';
 
 interface ChallengeCardProps {
   challenge: Challenge;
+  activityStatus?: 'active' | 'paused' | 'not_started' | 'completed';
+  currentSteps?: number;
+  pausedLocationName?: string;
+  kilometersCoveredAtPause?: number;
 }
 
 const ECOTAB_CHALLENGE_ID = 'challenge_20k_ecotab_300aed';
 
-const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
+const ChallengeCard: React.FC<ChallengeCardProps> = ({
+  challenge,
+  activityStatus = 'not_started',
+  currentSteps = 0,
+  pausedLocationName,
+  kilometersCoveredAtPause,
+}) => {
   const navigate = useNavigate();
   const [showEcotabModal, setShowEcotabModal] = useState(false);
 
-  const isLocked = challenge.isLockedInitially;
+  const isLocked = challenge.isLockedInitially && activityStatus !== 'paused' && activityStatus !== 'active'; // Paused/Active challenges aren't "locked" in the same way
   const isUltimateEcotabChallenge = challenge.id === ECOTAB_CHALLENGE_ID;
 
   let cardBgClass = '';
-  let cardTextColorClass = challenge.textColor; // Default text color from challenge data
+  let cardTextColorClass = challenge.textColor;
   let buttonClass = '';
-  let titleIconClass = ''; // For the Lock icon next to the title
-  let unlockDescBgClass = 'bg-black/30'; // Default for unlock description box
-  let unlockDescTextClass = 'text-yellow-300'; // Default for unlock description text
+  let titleIconClass = '';
+  let unlockDescBgClass = 'bg-black/30';
+  let unlockDescTextClass = 'text-yellow-300';
 
   if (isLocked) {
     if (isUltimateEcotabChallenge) {
-      // Golden theme for the special "Ultimate Ecotab Challenge"
-      // This card is "locked" in terms of rewards but its button is active for Ecotab activation
       cardBgClass = 'bg-gradient-to-br from-yellow-400 to-amber-600';
-      cardTextColorClass = 'text-black'; // Override text color for better contrast on gold
-      buttonClass = 'bg-yellow-400 text-amber-900 hover:bg-yellow-500'; // Golden button (no cursor-not-allowed)
-      titleIconClass = 'text-black'; // Lock icon next to title on golden background
-      unlockDescBgClass = 'bg-black/40'; // Slightly darker overlay for readability on gold
-      unlockDescTextClass = 'text-yellow-200'; // Adjusted text color for unlock description
+      cardTextColorClass = 'text-black';
+      buttonClass = 'bg-yellow-400 text-amber-900 hover:bg-yellow-500';
+      titleIconClass = 'text-black';
+      unlockDescBgClass = 'bg-black/40';
+      unlockDescTextClass = 'text-yellow-200';
     } else {
-      // Default style for other locked cards
       cardBgClass = 'bg-gray-500 opacity-70';
-      buttonClass = 'bg-gray-600 text-white'; // Default locked button (disabled prop will handle cursor)
-      titleIconClass = 'text-yellow-400'; // Default Lock icon color for locked cards
+      buttonClass = 'bg-gray-600 text-white';
+      titleIconClass = 'text-yellow-400';
     }
+  } else if (activityStatus === 'paused') {
+    // Specific styling for paused cards - can be same as unlocked or different
+    cardBgClass = challenge.primaryColor; // Use normal unlocked color
+    cardTextColorClass = challenge.textColor;
+    buttonClass = `bg-eco-accent text-eco-dark hover:bg-eco-accent/80`; // Resume button style
   } else {
-    // Style for unlocked cards (uses data from challenges.ts)
     cardBgClass = challenge.primaryColor;
     cardTextColorClass = challenge.textColor;
     buttonClass = `${challenge.buttonBgColor} ${challenge.buttonTextColor} hover:${challenge.buttonBgColor}/90`;
   }
 
-  const handleJoinChallenge = () => {
-    if (isUltimateEcotabChallenge) {
+  const handleChallengeAction = () => {
+    if (isUltimateEcotabChallenge && activityStatus !== 'paused') {
       setShowEcotabModal(true);
+    } else if (activityStatus === 'paused') {
+      // Navigate to activities page with resume state
+      navigate('/activities', { 
+        state: { 
+          challengeId: challenge.id, 
+          resume: true, 
+          initialSteps: currentSteps,
+          // Potentially pass pausedLocationName and kilometersCoveredAtPause if ActivityTracker can use them
+        } 
+      });
     } else if (!isLocked) {
-      // For other challenges, only navigate if they are not locked
       navigate('/activities', { state: { challengeId: challenge.id } });
     }
-    // If a non-Ecotab challenge is locked, the button is disabled, so this function isn't called.
   };
+
+  const progressPercentage = challenge.stepsGoal > 0 && currentSteps > 0 && (activityStatus === 'paused' || activityStatus === 'active')
+    ? Math.min(100, (currentSteps / challenge.stepsGoal) * 100)
+    : 0;
+  
+  const remainingSteps = (activityStatus === 'paused' && challenge.stepsGoal > currentSteps) 
+    ? challenge.stepsGoal - currentSteps 
+    : 0;
+
+  // Simple km conversion: 1 step = 0.000762 km (approx)
+  const kilometersToGoal = remainingSteps > 0 ? parseFloat((remainingSteps * 0.000762).toFixed(2)) : 0;
+
 
   return (
     <>
@@ -76,7 +108,34 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
             </div>
           )}
 
-          {!isLocked && ( // Show reward coins only if the challenge is generally unlocked
+          {activityStatus === 'paused' && (
+            <div className="mb-4 space-y-3">
+              <div>
+                <div className="flex justify-between text-xs mb-1 opacity-80">
+                  <span>Progress</span>
+                  <span>{currentSteps.toLocaleString()} / {challenge.stepsGoal.toLocaleString()} steps</span>
+                </div>
+                <Progress value={progressPercentage} className="h-2.5 [&>div]:bg-yellow-400 bg-white/30" />
+                {remainingSteps > 0 && (
+                   <p className="text-xs text-right mt-1 opacity-80">{remainingSteps.toLocaleString()} steps ({kilometersToGoal} km) to go</p>
+                )}
+              </div>
+              {pausedLocationName && (
+                <div className="flex items-center text-xs p-2 bg-black/20 rounded-md">
+                  <MapPin size={16} className="mr-2 text-yellow-400" />
+                  Paused near: {pausedLocationName}
+                </div>
+              )}
+              {kilometersCoveredAtPause !== undefined && kilometersCoveredAtPause > 0 && (
+                 <div className="text-xs opacity-80">
+                  Distance covered: {kilometersCoveredAtPause.toLocaleString()} km
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Show reward coins only if not locked and not paused (paused state shows progress instead) */}
+          {!isLocked && activityStatus !== 'paused' && (
             <div className="flex items-center text-sm font-semibold mb-4">
               <Coins size={18} className="mr-2 opacity-90" />
               <span>Reward: {challenge.rewardCoins} EcoCoins</span>
@@ -84,12 +143,16 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
           )}
         </div>
         <Button
-          onClick={handleJoinChallenge}
-          // Disable button if challenge is locked AND it's NOT the Ultimate Ecotab Challenge
-          disabled={isLocked && !isUltimateEcotabChallenge}
+          onClick={handleChallengeAction}
+          disabled={isLocked && !isUltimateEcotabChallenge && activityStatus !== 'paused'}
           className={`${buttonClass} w-full font-semibold`}
         >
-          {isUltimateEcotabChallenge ? (
+          {activityStatus === 'paused' ? (
+            <>
+              <Play size={20} className="mr-2" />
+              Resume Challenge
+            </>
+          ) :isUltimateEcotabChallenge ? (
             <>
              Activate Your EcoTab Card
               <ArrowRight size={20} className="ml-2" />
@@ -120,4 +183,3 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
 };
 
 export default ChallengeCard;
-
