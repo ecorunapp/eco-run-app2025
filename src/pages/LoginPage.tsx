@@ -30,7 +30,7 @@ const LoginPage: React.FC = () => {
         if (profileError) {
           toast.error(`Error fetching profile: ${profileError.message}`);
           await supabase.auth.signOut(); // Log out if profile fetch fails critically
-          navigate('/login');
+          navigate('/auth'); // Corrected from /login
           setIsLoading(false);
           return;
         }
@@ -38,7 +38,7 @@ const LoginPage: React.FC = () => {
         if (profileData?.is_banned) {
           toast.error('Your account has been banned.');
           await supabase.auth.signOut();
-          navigate('/login');
+          navigate('/auth'); // Corrected from /login
           setIsLoading(false);
           return;
         }
@@ -69,7 +69,7 @@ const LoginPage: React.FC = () => {
       } catch (e: any) {
         toast.error(`An unexpected error occurred during auth redirect: ${e.message}`);
         await supabase.auth.signOut();
-        navigate('/login');
+        navigate('/auth'); // Corrected from /login
       } finally {
         setIsLoading(false);
         setIsCheckingSession(false);
@@ -96,7 +96,7 @@ const LoginPage: React.FC = () => {
       } else if (event === 'SIGNED_OUT') {
         setEmail('');
         setPassword('');
-        navigate('/login');
+        navigate('/auth'); // Corrected from /login
         setIsCheckingSession(false); // Ensure loading state is cleared on sign out
       }
     });
