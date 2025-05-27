@@ -13,7 +13,7 @@ interface ChallengeCardProps {
   activityStatus?: 'active' | 'paused' | 'not_started' | 'completed';
   currentSteps?: number;
   pausedLocationName?: string;
-  pausedLocationCoords?: LatLngTuple; // Added for the map
+  pausedLocationCoords?: LatLngTuple;
   kilometersCoveredAtPause?: number;
   completedLocationName?: string;
   completedLocationCoords?: LatLngTuple;
@@ -26,7 +26,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   activityStatus = 'not_started',
   currentSteps = 0,
   pausedLocationName,
-  pausedLocationCoords, // Destructure new prop
+  pausedLocationCoords,
   kilometersCoveredAtPause,
   completedLocationName,
   completedLocationCoords,
@@ -106,6 +106,22 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   const kilometersToGoal = remainingSteps > 0 && activityStatus === 'paused' 
     ? parseFloat((remainingSteps * 0.000762).toFixed(2)) 
     : 0;
+
+  // Debugging logs for paused challenge display
+  if (challenge.id) { // Log only if challenge.id is present, to avoid spamming for non-challenge items if any
+    console.log(`ChallengeCard Debug: ID=${challenge.id}, Title=${challenge.title}`);
+    console.log(`  - activityStatus: ${activityStatus}`);
+    console.log(`  - currentSteps: ${currentSteps}, stepsGoal: ${challenge.stepsGoal}`);
+    console.log(`  - calculated remainingSteps: ${remainingSteps}`);
+    console.log(`  - calculated kilometersToGoal: ${kilometersToGoal}`);
+    console.log(`  - pausedLocationName: ${pausedLocationName}`);
+    console.log(`  - pausedLocationCoords:`, pausedLocationCoords);
+    
+    const showRemainingStepsBlock = remainingSteps > 0 && activityStatus === 'paused';
+    const showMapBlock = activityStatus === 'paused' && pausedLocationCoords;
+    console.log(`  - Show Remaining Steps Block? ${showRemainingStepsBlock}`);
+    console.log(`  - Show Map Block? ${showMapBlock}`);
+  }
 
   return (
     <>
