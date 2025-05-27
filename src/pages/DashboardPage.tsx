@@ -17,6 +17,7 @@ interface OperationalChallenge extends Challenge {
   activityStatus?: 'active' | 'paused' | 'not_started' | 'completed';
   currentSteps?: number;
   pausedLocationName?: string;
+  pausedLocationCoords?: LatLngTuple; // Added for the map if not already present
   kilometersCoveredAtPause?: number;
   completedLocationName?: string;
   completedLocationCoords?: LatLngTuple;
@@ -35,11 +36,19 @@ const DashboardPage: React.FC = () => {
   // Specific progress (currentSteps, completedLocation etc.) will be undefined
   // and ChallengeCard will use its defaults (0 steps, 'not_started').
   const displayedChallenges: OperationalChallenge[] = challenges.slice(0, 3).map((baseChallenge): OperationalChallenge => {
+    // Temporarily hardcode "Noon 10 AED Sprint" (challenge_2k_steps) to be paused for demonstration
+    if (baseChallenge.id === 'challenge_2k_steps') {
+      return {
+        ...baseChallenge,
+        activityStatus: 'paused',
+        currentSteps: 800, // Example current steps
+        pausedLocationName: 'Near Central Park', // Example location name
+        pausedLocationCoords: [40.7829, -73.9654], // Example coordinates (Central Park, NY)
+        kilometersCoveredAtPause: 0.6, // Example km covered
+      };
+    }
     return { 
         ...baseChallenge 
-        // By returning just baseChallenge spread, optional OperationalChallenge fields
-        // like activityStatus, currentSteps, etc., will be undefined.
-        // ChallengeCard component will use its default prop values for these.
     };
   });
 
@@ -81,6 +90,7 @@ const DashboardPage: React.FC = () => {
                 activityStatus={challengeData.activityStatus}
                 currentSteps={challengeData.currentSteps}
                 pausedLocationName={challengeData.pausedLocationName}
+                pausedLocationCoords={challengeData.pausedLocationCoords} // Pass this prop
                 kilometersCoveredAtPause={challengeData.kilometersCoveredAtPause}
                 completedLocationName={challengeData.completedLocationName}
                 completedLocationCoords={challengeData.completedLocationCoords}
