@@ -18,9 +18,8 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     const handleAuthRedirect = async (userId: string) => {
-      setIsLoading(true);
+      setIsLoading(true); // Keep loading true while we check roles etc.
       try {
-        // Fetch profile and roles directly for immediate redirection logic
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('is_banned, id')
@@ -29,17 +28,17 @@ const LoginPage: React.FC = () => {
 
         if (profileError) {
           toast.error(`Error fetching profile: ${profileError.message}`);
-          await supabase.auth.signOut(); // Log out if profile fetch fails critically
-          navigate('/auth'); // Corrected from /login
-          setIsLoading(false);
+          await supabase.auth.signOut(); 
+          navigate('/auth');
+          // setIsLoading(false); // Moved to finally
           return;
         }
 
         if (profileData?.is_banned) {
           toast.error('Your account has been banned.');
           await supabase.auth.signOut();
-          navigate('/auth'); // Corrected from /login
-          setIsLoading(false);
+          navigate('/auth');
+          // setIsLoading(false); // Moved to finally
           return;
         }
 
@@ -50,29 +49,28 @@ const LoginPage: React.FC = () => {
 
         if (rolesError) {
           toast.error(`Error fetching roles: ${rolesError.message}`);
-          // Decide if this is critical enough to log out
-          navigate('/dashboard'); // Default to dashboard if roles check fails but not banned
-          setIsLoading(false);
+          // Default to dashboard if roles check fails but not banned
+          // This allows non-admin users to proceed if roles table has issues but profile is fine.
+          navigate('/dashboard'); 
+          // setIsLoading(false); // Moved to finally
           return;
         }
 
         const roles = rolesData?.map(r => r.role as AppRole) || [];
         if (roles.includes('admin')) {
           toast.success('Admin login successful!');
-          navigate('/adashboard');
+          navigate('/adashboard'); // Redirect admins
         } else {
           toast.success('Logged in successfully!');
-          // Existing logic for non-admin users (e.g., onboarding or dashboard)
-          // For now, navigate to dashboard directly
-          navigate('/dashboard');
+          navigate('/dashboard'); // Regular users to dashboard
         }
       } catch (e: any) {
         toast.error(`An unexpected error occurred during auth redirect: ${e.message}`);
         await supabase.auth.signOut();
-        navigate('/auth'); // Corrected from /login
+        navigate('/auth');
       } finally {
-        setIsLoading(false);
-        setIsCheckingSession(false);
+        setIsLoading(false); // Set loading false in finally
+        setIsCheckingSession(false); // Also set checking session false
       }
     };
 
@@ -83,6 +81,7 @@ const LoginPage: React.FC = () => {
         await handleAuthRedirect(session.user.id);
       } else {
         setIsCheckingSession(false);
+        setIsLoading(false); // Ensure loading is false if no session
       }
     };
 
@@ -91,46 +90,59 @@ const LoginPage: React.FC = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
         if (session?.user?.id) {
-          await handleAuthRedirect(session.user.id);
+          // handleAuthRedirect will be called, which sets isLoading and isCheckingSession
         }
       } else if (event === 'SIGNED_OUT') {
         setEmail('');
         setPassword('');
-        navigate('/auth'); // Corrected from /login
-        setIsCheckingSession(false); // Ensure loading state is cleared on sign out
+        navigate('/auth'); 
+        setIsCheckingSession(false); 
+        setIsLoading(false); // Ensure loading state is cleared on sign out
       }
+      // For SIGNED_IN, handleAuthRedirect is called by checkSession or if user logs in manually
+      // No need to explicitly call it again here unless to re-verify, but that's covered
     });
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate]); // Removed handleAuthRedirect from dependencies as it's defined inside useEffect
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
         toast.error(error.message);
+        setIsLoading(false); // Stop loading on error
+      } else if (data.session?.user?.id) {
+        // onAuthStateChange will trigger handleAuthRedirect
+        // No explicit navigation here needed, it simplifies logic
+        // setIsCheckingSession(true); // Indicate we are now in auth flow
+      } else {
+        // Should not happen if no error and no session, but as a fallback:
+        toast.error("Login failed. Please try again.");
+        setIsLoading(false);
       }
-      // Successful login is handled by onAuthStateChange which calls handleAuthRedirect
     } catch (catchError: any) {
       toast.error(catchError.message || 'An unexpected error occurred.');
-    } finally {
-      setIsLoading(false);
-    }
+      setIsLoading(false); // Stop loading on error
+    } 
+    // setIsLoading(false) is handled by onAuthStateChange or error cases
   };
 
-  if (isCheckingSession) {
+  if (isCheckingSession || isLoading) { // Combined isLoading with isCheckingSession
     return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light p-6 justify-center items-center">
         <Loader2 className="h-12 w-12 animate-spin text-eco-accent" />
-        <p className="mt-4">Checking session...</p>
+        <p className="mt-4">
+          {isCheckingSession && !isLoading ? "Checking session..." : "Processing..."}
+        </p>
       </div>
     );
   }

@@ -14,6 +14,7 @@ import { supabase } from './integrations/supabase/client';
 import Auth from './pages/LoginPage';
 import { EcoCoinsProvider } from './context/EcoCoinsContext';
 import Dashboard from './pages/DashboardPage';
+import AdminDashboardPage from './pages/AdminDashboardPage'; // Added
 // MeetAndRunPage import removed
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -59,6 +60,7 @@ function App() {
               <Route path="/" element={session ? <Dashboard /> : <Home />} /> 
               <Route path="/welcome" element={<Home />} />
               <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/auth" />} />
+              <Route path="/adashboard" element={session ? <AdminDashboardPage /> : <Navigate to="/auth" />} /> {/* Added admin route */}
               <Route path="/activities" element={session ? <Activities /> : <Navigate to="/auth" />} />
               <Route path="/rewards" element={session ? <Rewards /> : <Navigate to="/auth" />} />
               <Route path="/profile" element={session ? <Profile /> : <Navigate to="/auth" />} />
@@ -74,3 +76,4 @@ function App() {
 }
 
 export default App;
+
