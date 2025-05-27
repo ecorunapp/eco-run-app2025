@@ -46,7 +46,7 @@ const WelcomeScreen: React.FC = () => {
           Sign Up
         </Button>
         <Button
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/auth')}
           variant="outline"
           className="w-full bg-eco-dark-secondary border-eco-dark-secondary hover:bg-eco-gray/20 text-eco-light font-bold py-4 text-lg rounded-xl shadow-lg transform transition-transform hover:scale-105 active:scale-95"
           size="lg"
@@ -60,4 +60,3 @@ const WelcomeScreen: React.FC = () => {
 };
 
 export default WelcomeScreen;
-
