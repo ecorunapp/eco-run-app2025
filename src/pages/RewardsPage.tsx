@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
@@ -23,6 +24,7 @@ import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { TransactionHistoryModal } from '@/components/TransactionHistoryModal';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
+import { subHours, addHours } from 'date-fns'; // Added this line
 
 // Default image URLs for gift cards
 const DEFAULT_FRONT_IMAGE_URL = '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png';
@@ -129,6 +131,7 @@ const sampleUserGiftCards = [
     promoCode: 'NOON-ABC-123',
     assignedAt: subHours(new Date(), 2).toISOString(), // Assigned 2 hours ago (locked)
     title: "Coffee Voucher", // Added for context
+    status: 'assigned', // Added status for sample data consistency
   },
   {
     id: 'user-gc-2',
@@ -137,6 +140,7 @@ const sampleUserGiftCards = [
     promoCode: 'SPAWEEKEND-XYZ',
     assignedAt: subHours(new Date(), 25).toISOString(), // Assigned 25 hours ago (unlocked)
     title: "Spa Day Pass", // Added for context
+    status: 'assigned', // Added status
   },
   {
     id: 'user-gc-3',
@@ -145,6 +149,7 @@ const sampleUserGiftCards = [
     promoCode: 'WINEFUN-789',
     assignedAt: addHours(new Date(), -12).toISOString(), // Assigned 12 hours ago (locked)
     title: "Wine Tasting Ticket", // Added for context
+    status: 'assigned', // Added status
   },
 ];
 
@@ -212,7 +217,11 @@ const RewardsPage: React.FC = () => {
   useEffect(() => {
     if (userProfile?.id) {
       fetchEarnedCards();
-    } else if (!profileLoading) { // if not loading and no full_name, use a default
+    } else if (!profileLoading) { 
+      // If not loading profile and no profile ID, means user is likely not logged in.
+      // For sample data display purposes or if you want to show locked state by default:
+      // setUserEarnedCards(sampleUserGiftCards); // Uncomment to show sample data if not logged in
+      setIsLoadingUserCards(false); // Stop loading as there's no user to fetch for
       setEcotabCards(initialEcotabCardsData.map(card => ({
         ...card,
         cardHolder: 'Eco User',
@@ -407,9 +416,6 @@ const RewardsPage: React.FC = () => {
                     promoCode={card.promoCode}
                     assignedAt={card.assignedAt}
                     onCodeCopied={async (copiedCode) => {
-                      // copiedCode is available if needed, card.promoCode is also available
-                      // card.id is the user_gift_card.id
-                      // card.title is the prize_title
                       if (card.status === 'used') {
                         toast.info(`Gift card "${card.title}" has already been claimed.`);
                         return;
@@ -419,9 +425,6 @@ const RewardsPage: React.FC = () => {
                         toast.success(`Prize "${card.title}" Claimed!`, { 
                           description: "The promo code has been copied and your prize claim initiated." 
                         });
-                        // To reflect the 'used' status immediately, you might want to refetch or update local state.
-                        // For now, GiftCardDisplay doesn't change appearance based on 'used' status beyond its own copied state.
-                        // Example: fetchEarnedCards(); // or update card.status in userEarnedCards locally
                         setUserEarnedCards(prevCards => 
                           prevCards.map(c => c.id === card.id ? { ...c, status: 'used' } : c)
                         );
