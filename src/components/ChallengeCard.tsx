@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowRight, Coins, Lock, MapPin, Play, CheckCircle, Footprints } from '@/components/icons';
 import EcotabActivationModal from './EcotabActivationModal';
 import StaticChallengeMap from './StaticChallengeMap';
+import AnimatedProgressIcon from './AnimatedProgressIcon'; // Import the new component
 import { LatLngTuple } from 'leaflet';
 
 interface ChallengeCardProps {
@@ -111,6 +112,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
     console.log(`ChallengeCard Debug: ID=${challenge.id}, Title=${challenge.title}`);
     console.log(`  - activityStatus: ${activityStatus}`);
     console.log(`  - currentSteps: ${currentSteps}, stepsGoal: ${challenge.stepsGoal}`);
+    console.log(`  - progressPercentage: ${progressPercentage}`);
     console.log(`  - calculated remainingSteps: ${remainingSteps}`);
     console.log(`  - calculated kilometersToGoal: ${kilometersToGoal}`);
     console.log(`  - pausedLocationName: ${pausedLocationName}`);
@@ -147,10 +149,15 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
                   <span>Progress</span>
                   <span>{currentSteps.toLocaleString()} / {challenge.stepsGoal.toLocaleString()} steps</span>
                 </div>
-                <Progress value={progressPercentage} className={`h-2.5 ${activityStatus === 'paused' ? '[&>div]:bg-yellow-400 bg-white/30' : '[&>div]:bg-green-400 bg-white/30'}`} />
+                <div className="relative w-full"> {/* Added relative container for icon positioning */}
+                  <Progress value={progressPercentage} className={`h-2.5 ${activityStatus === 'paused' ? '[&>div]:bg-yellow-400 bg-white/30' : '[&>div]:bg-green-400 bg-white/30'}`} />
+                  { (activityStatus === 'active' || activityStatus === 'paused') && progressPercentage > 0 && progressPercentage < 100 && (
+                    <AnimatedProgressIcon progressPercentage={progressPercentage} />
+                  )}
+                </div>
                 
                 {currentSteps > 0 && (
-                  <div className="flex items-center text-xs text-white mt-1">
+                  <div className="flex items-center text-xs text-white mt-1"> {/* Changed to text-white */}
                     <Footprints size={14} className="mr-1" /> 
                     Steps completed: {currentSteps.toLocaleString()}
                   </div>
