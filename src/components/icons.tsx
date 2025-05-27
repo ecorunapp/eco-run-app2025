@@ -1,4 +1,3 @@
-
 import {
   Award,
   AlertCircle,
@@ -20,7 +19,7 @@ import {
   ChevronUp,
   ChevronsUpDown,
   Circle,
-  Clock,
+  Clock, // Already exists
   CreditCard,
   Coins,
   Copy,
@@ -46,6 +45,7 @@ import {
   LifeBuoy,
   Link2,
   Loader2,
+  Lock, // Added Lock
   LogIn,
   LogOut,
   Mail,
@@ -83,7 +83,6 @@ import {
   Users,
   X,
   Zap,
-  Lock,
   Weight,
   TrendingUp,
   UploadCloud,
@@ -144,7 +143,7 @@ export {
   ChevronUp,
   ChevronsUpDown,
   Circle,
-  Clock,
+  Clock, // Already exists
   CreditCard,
   Coins,
   Copy,
@@ -170,6 +169,7 @@ export {
   LifeBuoy,
   Link2,
   Loader2,
+  Lock, // Added Lock to exports
   LogIn,
   LogOut,
   Mail,
@@ -207,7 +207,6 @@ export {
   Users,
   X,
   Zap,
-  Lock,
   Weight,
   TrendingUp,
   UploadCloud,
@@ -217,4 +216,3 @@ export {
   type LucideProps
   // Confetti is exported at definition
 };
-

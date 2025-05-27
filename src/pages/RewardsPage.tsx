@@ -6,6 +6,7 @@ import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, In
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
 import GradientDebitCard from '@/components/GradientDebitCard';
+import GiftCardDisplay from '@/components/GiftCardDisplay'; // Import GiftCardDisplay
 import { getIconForTransactionType } from '@/utils/iconHelper';
 import { toast } from 'sonner';
 import {
@@ -21,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { TransactionHistoryModal } from '@/components/TransactionHistoryModal';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { addHours, subHours } from 'date-fns'; // For sample data
 
 // Sample data for featured offers
 const featuredOffers = [
@@ -99,6 +101,34 @@ const sampleTransactions = [
     description: 'Milestone Reached',
     amount: 1000,
     date: 'May 5, 2025',
+  },
+];
+
+// Sample data for user's earned gift cards
+const sampleUserGiftCards = [
+  {
+    id: 'user-gc-1',
+    frontImageUrl: '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png', // Example image
+    backImageUrl: '/lovable-uploads/1c8416bb-42a2-4d8c-93f1-9345404ac7d5.png',  // Example image
+    promoCode: 'NOON-ABC-123',
+    assignedAt: subHours(new Date(), 2).toISOString(), // Assigned 2 hours ago (locked)
+    title: "Coffee Voucher", // Added for context
+  },
+  {
+    id: 'user-gc-2',
+    frontImageUrl: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874', // Example image
+    backImageUrl: '/lovable-uploads/1c8416bb-42a2-4d8c-93f1-9345404ac7d5.png',
+    promoCode: 'SPAWEEKEND-XYZ',
+    assignedAt: subHours(new Date(), 25).toISOString(), // Assigned 25 hours ago (unlocked)
+    title: "Spa Day Pass", // Added for context
+  },
+  {
+    id: 'user-gc-3',
+    frontImageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3', // Example image
+    backImageUrl: '/lovable-uploads/1c8416bb-42a2-4d8c-93f1-9345404ac7d5.png',
+    promoCode: 'WINEFUN-789',
+    assignedAt: addHours(new Date(), -12).toISOString(), // Assigned 12 hours ago (locked)
+    title: "Wine Tasting Ticket", // Added for context
   },
 ];
 
@@ -191,10 +221,6 @@ const RewardsPage: React.FC = () => {
         setShowRedeemInput(false);
         setRedeemAmount('');
       } else {
-        // Error/warning toast is handled within redeemPoints or if balance is insufficient.
-        // If redeemPoints returns false explicitly for other reasons, a generic error can be shown.
-        // Or rely on toasts from useEcoCoins context.
-        // For insufficient balance, redeemPoints might show a toast or we can check here.
          if (userEcoPoints < amount) {
            toast.error(`Not enough EcoPoints. You have ${userEcoPoints.toLocaleString()}, tried to redeem ${amount.toLocaleString()}.`);
          } else {
@@ -289,8 +315,35 @@ const RewardsPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Transaction History Section */}
+        {/* My Gift Cards Section - NEW */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+          <h2 className="text-2xl font-semibold text-eco-light mb-4">My Earned Gift Cards</h2>
+          {sampleUserGiftCards.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sampleUserGiftCards.map(card => (
+                <div key={card.id} className="flex flex-col items-center">
+                  <GiftCardDisplay
+                    frontImageUrl={card.frontImageUrl}
+                    backImageUrl={card.backImageUrl}
+                    promoCode={card.promoCode}
+                    assignedAt={card.assignedAt}
+                    onCodeCopied={async (copiedCode) => {
+                      // In a real app, you might mark this card as "claimed" or "copied" in the backend
+                      console.log(`User copied code: ${copiedCode} for card ID: ${card.id}`);
+                      toast.info(`Code for ${card.title} copied. Ready to use!`);
+                    }}
+                  />
+                   <p className="text-center text-eco-light mt-2 text-md font-semibold">{card.title}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-eco-gray text-center py-4">You haven't earned any gift cards yet. Complete challenges to win!</p>
+          )}
+        </section>
+        
+        {/* Transaction History Section */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-eco-light">Recent Activity</h2>
             <Button
