@@ -6,7 +6,7 @@ import { Settings, Zap, Gift, CreditCard, Coins, CheckCircle, Nfc as NfcIcon, In
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TransactionHistoryItem from '@/components/TransactionHistoryItem';
 import GradientDebitCard from '@/components/GradientDebitCard';
-import GiftCardDisplay from '@/components/GiftCardDisplay'; // Import GiftCardDisplay
+import GiftCardDisplay from '@/components/GiftCardDisplay';
 import { getIconForTransactionType } from '@/utils/iconHelper';
 import { toast } from 'sonner';
 import {
@@ -22,7 +22,23 @@ import { Input } from "@/components/ui/input";
 import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { TransactionHistoryModal } from '@/components/TransactionHistoryModal';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { addHours, subHours } from 'date-fns'; // For sample data
+import { supabase } from '@/integrations/supabase/client';
+
+// Default image URLs for gift cards
+const DEFAULT_FRONT_IMAGE_URL = '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png';
+const DEFAULT_BACK_IMAGE_URL = '/lovable-uploads/1c8416bb-42a2-4d8c-93f1-9345404ac7d5.png';
+
+// Type for user's earned gift cards
+interface UserEarnedGiftCard {
+  id: string; // user_gift_cards.id
+  frontImageUrl: string;
+  backImageUrl: string;
+  promoCode: string;
+  assignedAt: string; // ISO string
+  title: string;
+  status: string; // 'assigned', 'used', 'expired'
+  // Add any other properties from user_gift_cards if needed by GiftCardDisplay or logic
+}
 
 // Sample data for featured offers
 const featuredOffers = [
@@ -174,8 +190,17 @@ const initialEcotabCardsData: EcotabCardData[] = [
 
 const RewardsPage: React.FC = () => {
   console.log('RewardsPage: component mounted');
-  const { balance: userEcoPoints, history: transactionHistory, redeemPoints, isLoading: ecoCoinsLoading } = useEcoCoins();
+  const { 
+    balance: userEcoPoints, 
+    history: transactionHistory, 
+    redeemPoints, 
+    isLoading: ecoCoinsLoading,
+    claimGiftCardPrize // Destructure claimGiftCardPrize
+  } = useEcoCoins();
   const { profile: userProfile, isLoading: profileLoading } = useUserProfile();
+
+  const [userEarnedCards, setUserEarnedCards] = useState<UserEarnedGiftCard[]>([]);
+  const [isLoadingUserCards, setIsLoadingUserCards] = useState(true);
 
   const [ecotabCards, setEcotabCards] = useState<EcotabCardData[]>(initialEcotabCardsData);
   const [showAllEcotabCards, setShowAllEcotabCards] = useState(false);
@@ -183,6 +208,55 @@ const RewardsPage: React.FC = () => {
   const [showRedeemInput, setShowRedeemInput] = useState(false);
   const [redeemAmount, setRedeemAmount] = useState('');
   const [showTxModal, setShowTxModal] = useState(false);
+
+  useEffect(() => {
+    if (userProfile?.id) {
+      fetchEarnedCards();
+    } else if (!profileLoading) { // if not loading and no full_name, use a default
+      setEcotabCards(initialEcotabCardsData.map(card => ({
+        ...card,
+        cardHolder: 'Eco User',
+      })));
+    }
+  }, [userProfile?.id, profileLoading]);
+
+  const fetchEarnedCards = async () => {
+    if (!userProfile?.id) {
+      setIsLoadingUserCards(false); // Not logged in or profile not loaded
+      return;
+    }
+    setIsLoadingUserCards(true);
+    try {
+      const { data, error } = await supabase
+        .from('user_gift_cards')
+        .select('id, prize_image_url, prize_promo_code, assigned_at, prize_title, status')
+        .eq('user_id', userProfile.id)
+        .order('assigned_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching user earned gift cards:', error);
+        toast.error('Could not load your gift cards.');
+        setUserEarnedCards([]);
+      } else if (data) {
+        const mappedCards: UserEarnedGiftCard[] = data.map(card => ({
+          id: card.id,
+          frontImageUrl: card.prize_image_url || DEFAULT_FRONT_IMAGE_URL,
+          backImageUrl: DEFAULT_BACK_IMAGE_URL, // Using a default back image
+          promoCode: card.prize_promo_code || 'CODE-UNAVAILABLE', // Provide a fallback if null
+          assignedAt: card.assigned_at || new Date().toISOString(), // Fallback, though assigned_at should always exist
+          title: card.prize_title || 'Untitled Reward',
+          status: card.status || 'assigned',
+        }));
+        setUserEarnedCards(mappedCards);
+      }
+    } catch (e) {
+      console.error('Exception fetching user earned gift cards:', e);
+      toast.error('An error occurred while loading your gift cards.');
+      setUserEarnedCards([]);
+    } finally {
+      setIsLoadingUserCards(false);
+    }
+  };
 
   useEffect(() => {
     if (userProfile?.full_name) {
@@ -315,12 +389,17 @@ const RewardsPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* My Gift Cards Section - NEW */}
+        {/* My Gift Cards Section - UPDATED */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           <h2 className="text-2xl font-semibold text-eco-light mb-4">My Earned Gift Cards</h2>
-          {sampleUserGiftCards.length > 0 ? (
+          {isLoadingUserCards ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-eco-accent" />
+              <p className="ml-3 text-eco-gray">Loading your gift cards...</p>
+            </div>
+          ) : userEarnedCards.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sampleUserGiftCards.map(card => (
+              {userEarnedCards.map(card => (
                 <div key={card.id} className="flex flex-col items-center">
                   <GiftCardDisplay
                     frontImageUrl={card.frontImageUrl}
@@ -328,12 +407,33 @@ const RewardsPage: React.FC = () => {
                     promoCode={card.promoCode}
                     assignedAt={card.assignedAt}
                     onCodeCopied={async (copiedCode) => {
-                      // In a real app, you might mark this card as "claimed" or "copied" in the backend
-                      console.log(`User copied code: ${copiedCode} for card ID: ${card.id}`);
-                      toast.info(`Code for ${card.title} copied. Ready to use!`);
+                      // copiedCode is available if needed, card.promoCode is also available
+                      // card.id is the user_gift_card.id
+                      // card.title is the prize_title
+                      if (card.status === 'used') {
+                        toast.info(`Gift card "${card.title}" has already been claimed.`);
+                        return;
+                      }
+                      const claimedSuccessfully = await claimGiftCardPrize(card.id);
+                      if (claimedSuccessfully) {
+                        toast.success(`Prize "${card.title}" Claimed!`, { 
+                          description: "The promo code has been copied and your prize claim initiated." 
+                        });
+                        // To reflect the 'used' status immediately, you might want to refetch or update local state.
+                        // For now, GiftCardDisplay doesn't change appearance based on 'used' status beyond its own copied state.
+                        // Example: fetchEarnedCards(); // or update card.status in userEarnedCards locally
+                        setUserEarnedCards(prevCards => 
+                          prevCards.map(c => c.id === card.id ? { ...c, status: 'used' } : c)
+                        );
+                      } else {
+                        toast.error("Claim Error", { description: "Could not finalize prize claim for this card. Please try again." });
+                      }
                     }}
                   />
                    <p className="text-center text-eco-light mt-2 text-md font-semibold">{card.title}</p>
+                   {card.status === 'used' && (
+                     <p className="text-xs text-green-400">(Claimed)</p>
+                   )}
                 </div>
               ))}
             </div>
