@@ -13,6 +13,7 @@ interface ChallengeCardProps {
   activityStatus?: 'active' | 'paused' | 'not_started' | 'completed';
   currentSteps?: number;
   pausedLocationName?: string;
+  pausedLocationCoords?: LatLngTuple; // Added for the map
   kilometersCoveredAtPause?: number;
   completedLocationName?: string;
   completedLocationCoords?: LatLngTuple;
@@ -25,6 +26,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   activityStatus = 'not_started',
   currentSteps = 0,
   pausedLocationName,
+  pausedLocationCoords, // Destructure new prop
   kilometersCoveredAtPause,
   completedLocationName,
   completedLocationCoords,
@@ -142,8 +144,17 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 </div>
               )}
               {activityStatus === 'paused' && kilometersCoveredAtPause !== undefined && kilometersCoveredAtPause > 0 && (
-                 <div className="text-xs opacity-80">
+                 <div className="text-xs opacity-80 mt-1">
                   Distance covered: {kilometersCoveredAtPause.toLocaleString()} km
+                </div>
+              )}
+              {activityStatus === 'paused' && pausedLocationCoords && (
+                <div className="mt-3 h-32 w-full rounded-lg overflow-hidden border border-white/20">
+                  <StaticChallengeMap
+                    center={pausedLocationCoords}
+                    locationName={pausedLocationName}
+                    zoom={15}
+                  />
                 </div>
               )}
             </div>
@@ -213,7 +224,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
       </div>
       {isUltimateEcotabChallenge && activityStatus !== 'completed' && (
         <EcotabActivationModal
-          isOpen={showEcotabModal} // This will now likely always be false from this card's direct action.
+          isOpen={showEcotabModal} 
           onClose={() => setShowEcotabModal(false)}
           challengeTitle={challenge.title}
         />
