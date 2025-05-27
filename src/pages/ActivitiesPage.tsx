@@ -44,8 +44,6 @@ const ActivitiesPage: React.FC = () => {
     if (location.state && location.state.challengeId && !activityStartOptions && !isTracking) {
       const challengeId = location.state.challengeId as string;
       const shouldResume = location.state.resume as boolean | undefined;
-      // initialSteps from location.state.initialSteps is not reliable from Dashboard pause.
-      // We should fetch from DB if resuming.
       
       const challenge = getChallengeById(challengeId);
       if (challenge) {
@@ -65,7 +63,6 @@ const ActivitiesPage: React.FC = () => {
           resume: shouldResume,
           initialSteps: stepsForResume 
         });
-        // ... keep existing code (clearing other states)
         setLastActivitySummary(null);
         setShowChallengeWonModal(false);
         setCompletedChallengeDetails(null);
@@ -87,7 +84,6 @@ const ActivitiesPage: React.FC = () => {
     }
   }, [location.state, navigate, toast, activityStartOptions, isTracking, getProgressByChallengeId]);
 
-  // ... keep existing code (handleStartGenericActivity)
   const handleStartGenericActivity = () => {
     setActiveChallenge(null);
     setActivityStartOptions({ challenge: null, isGeneric: true });
@@ -100,40 +96,41 @@ const ActivitiesPage: React.FC = () => {
     setShowStepCoinClaimModal(false);
   };
 
-
   const handleModeSelected = async (mode: 'walk' | 'run') => {
     setSelectedActivityMode(mode);
-    setIsTracking(true);
     
-    let initialSteps = activityStartOptions?.initialSteps || 0;
+    let initialStepsForTracking = activityStartOptions?.initialSteps || 0;
     const currentChallenge = activityStartOptions?.challenge;
+    setActiveChallenge(currentChallenge); // Ensure activeChallenge is set here
 
     if (currentChallenge) {
       const existingProgress = getProgressByChallengeId(currentChallenge.id);
       if (activityStartOptions?.resume && existingProgress?.status === 'paused' && typeof existingProgress.current_steps === 'number') {
-        initialSteps = existingProgress.current_steps;
+        initialStepsForTracking = existingProgress.current_steps;
       }
       
       try {
         await upsertProgress({
           challenge_id: currentChallenge.id,
           status: 'active',
-          current_steps: initialSteps, // Save initial steps when starting/resuming
+          current_steps: initialStepsForTracking, 
         });
-        console.log(`ActivityPage: Challenge ${currentChallenge.id} status set to active with ${initialSteps} steps.`);
+        console.log(`ActivityPage: Challenge ${currentChallenge.id} status set to active with ${initialStepsForTracking} steps.`);
       } catch (error) {
         console.error("Failed to update challenge progress to active:", error);
         toast({ title: "Error", description: "Could not start challenge tracking.", variant: "destructive" });
-        setIsTracking(false);
+        setIsTracking(false); // Prevent tracking from starting if DB update fails
         setSelectedActivityMode(null);
         setActivityStartOptions(null);
+        setActiveChallenge(null);
         return;
       }
     }
     
-    const goalSteps = currentChallenge?.stepsGoal || 10000; // Default goal if no challenge
-    setLiveProgress({ currentSteps: initialSteps, goalSteps, elapsedTime: 0 });
+    const goalSteps = currentChallenge?.stepsGoal || 10000; 
+    setLiveProgress({ currentSteps: initialStepsForTracking, goalSteps, elapsedTime: 0 });
     
+    setIsTracking(true); // Set isTracking to true only after successful setup
     setActivityStartOptions(null); 
   };
 
@@ -142,10 +139,10 @@ const ActivitiesPage: React.FC = () => {
     setIsTracking(false); 
     setSelectedActivityMode(null); 
     setLastActivitySummary(activitySummary);
-    setLiveProgress(null);
+    setLiveProgress(null); // Clear live progress when tracking stops
 
-    const currentSteps = activitySummary.steps;
-    const kilometersCovered = parseFloat((currentSteps * 0.000762).toFixed(2));
+    const totalStepsForChallenge = activitySummary.steps; // This now correctly reflects total accumulated steps
+    const kilometersCovered = parseFloat((totalStepsForChallenge * 0.000762).toFixed(2));
 
     if (activeChallenge) {
       try {
@@ -154,11 +151,8 @@ const ActivitiesPage: React.FC = () => {
           await upsertProgress({
             challenge_id: activeChallenge.id,
             status: 'completed',
-            current_steps: currentSteps,
-            // completed_location_name: "To be implemented", // Placeholder
-            // completed_location_lat: null, // Placeholder
-            // completed_location_lng: null, // Placeholder
-            kilometers_covered_at_pause: kilometersCovered, // Or final kilometers
+            current_steps: totalStepsForChallenge,
+            kilometers_covered_at_pause: kilometersCovered, 
           });
           setCompletedChallengeDetails(activeChallenge); 
           const newGiftCardId = await addEarnings(activeChallenge.rewardCoins, `Challenge: ${activeChallenge.title}`, activeChallenge);
@@ -168,15 +162,13 @@ const ActivitiesPage: React.FC = () => {
             title: "Challenge Complete!",
             description: `Awesome! You conquered ${activeChallenge.title} and earned ${activeChallenge.rewardCoins} EcoCoins!`,
           });
-        } else { // Challenge paused
+        } else { 
           await upsertProgress({
             challenge_id: activeChallenge.id,
             status: 'paused',
-            current_steps: currentSteps,
+            current_steps: totalStepsForChallenge,
             kilometers_covered_at_pause: kilometersCovered,
-            paused_location_name: "Paused Activity", // Placeholder
-            // paused_location_lat: null, // Placeholder
-            // paused_location_lng: null, // Placeholder
+            paused_location_name: "Paused Activity", 
           });
           toast({
             title: "Challenge Paused",
@@ -190,27 +182,22 @@ const ActivitiesPage: React.FC = () => {
       }
     }
 
-    // Handle step-based coins
     if (activitySummary.coinsEarned > 0 && !challengeCompleted) { 
       setPendingStepCoins(activitySummary.coinsEarned);
       setShowStepCoinClaimModal(true);
     } else if (activitySummary.coinsEarned > 0 && challengeCompleted && activeChallenge) {
-      // Step coins are earned, but challenge modal takes precedence.
-      // Consider adding these coins silently or add to challenge reward if not already done by ActivityTracker.
-      // For now, if challenge is completed, let challenge reward logic handle coins.
+      // Handled by challenge reward
     }
 
-
-    // Generic activity ended toasts (if no challenge was active or if challenge handling didn't show a toast already)
     if (!activeChallenge || (activeChallenge && !challengeCompleted && !showStepCoinClaimModal && activitySummary.coinsEarned === 0)) {
-        if (activitySummary.steps > 0 && !activeChallenge) { // Only for generic activities without step coins from tracker
+        if (activitySummary.steps > 0 && !activeChallenge) { 
           toast({
             title: "Activity Ended",
             description: "Great effort! Keep going to earn EcoCoins.",
             variant: "default"
           });
         } else if (activitySummary.steps === 0 && !activitySummary.elapsedTime && !activeChallenge) {
-          // No toast for immediate stop of generic activity
+          // No toast
         } else if (activitySummary.steps === 0 && activitySummary.elapsedTime > 0 && !activeChallenge) {
            toast({
             title: "Tracking Stopped",
@@ -219,11 +206,10 @@ const ActivitiesPage: React.FC = () => {
           });
         }
     }
-    // setActiveChallenge(null); // Clear active challenge after processing, only if not won or paused.
-    // If won, modal handles clearing. If paused, we want to keep it for context until user navigates.
+    // Do not clear activeChallenge here if paused, allow dashboard to show its status.
+    // If completed, modal closure handles clearing activeChallenge.
   };
   
-  // ... keep existing code (handleLiveProgressUpdate, handleCloseChallengeWonModal, handleClaimStepCoins, handleCloseStepCoinClaimModal, formatTime)
   const handleLiveProgressUpdate = useCallback((progress: LiveProgressData) => {
     setLiveProgress(progress);
   }, []);
@@ -304,12 +290,7 @@ const ActivitiesPage: React.FC = () => {
   }
 
   if (isTracking && selectedActivityMode) {
-    // const initialStepsForTracker = (activeChallenge && liveProgress) 
-    //   ? liveProgress.currentSteps 
-    //   : 0;
-    // The `initialSteps` prop is removed from ActivityTracker below to fix a build error.
-    // This means the tracker UI itself might not show the resumed step count correctly.
-    // The ActivityTracker.tsx component would need to be updated to accept and use such a prop.
+    const initialStepsForTracker = liveProgress?.currentSteps || 0;
 
     return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
@@ -324,20 +305,24 @@ const ActivitiesPage: React.FC = () => {
             className="text-eco-gray hover:text-eco-accent" 
             onClick={async () => { 
                 const challengeGoal = activeChallenge?.stepsGoal;
-                const currentSteps = liveProgress?.currentSteps || 0;
-                const potentiallyCompleted = activeChallenge && challengeGoal && currentSteps >= challengeGoal;
-                const coinsFromTracker = liveProgress && (liveProgress as any).coinsEarned !== undefined ? (liveProgress as any).coinsEarned : 0;
+                // Use liveProgress.currentSteps as it reflects the total accumulated steps
+                const currentTotalSteps = liveProgress?.currentSteps || 0; 
+                const potentiallyCompleted = activeChallenge && challengeGoal && currentTotalSteps >= challengeGoal;
                 
-                // Before calling handleStopTracking, if it's a pause, explicitly save current state
+                // For coins earned, this would be from activitySummary which isn't available yet.
+                // This part might need re-evaluation if coins from tracker are crucial on 'X' click.
+                // For now, passing 0 as placeholder.
+                const coinsFromTracker = 0; 
+                
                 if (activeChallenge && !potentiallyCompleted) {
                     try {
-                        const kilometers = parseFloat((currentSteps * 0.000762).toFixed(2));
+                        const kilometers = parseFloat((currentTotalSteps * 0.000762).toFixed(2));
                         await upsertProgress({
                             challenge_id: activeChallenge.id,
-                            status: 'paused', // Mark as paused when clicking X if not completed
-                            current_steps: currentSteps,
+                            status: 'paused', 
+                            current_steps: currentTotalSteps,
                             kilometers_covered_at_pause: kilometers,
-                            paused_location_name: "Paused via X button", // Generic name
+                            paused_location_name: "Paused via X button", 
                         });
                         console.log("Challenge progress saved as paused via X button click.");
                     } catch (error) {
@@ -345,9 +330,9 @@ const ActivitiesPage: React.FC = () => {
                         toast({ title: "Error", description: "Could not save pause state.", variant: "destructive" });
                     }
                 }
-
+                // Call handleStopTracking with the total steps from liveProgress
                 handleStopTracking(
-                    {steps:currentSteps, elapsedTime:liveProgress?.elapsedTime || 0, calories:0, co2Saved:0, coinsEarned:coinsFromTracker }, 
+                    {steps:currentTotalSteps, elapsedTime:liveProgress?.elapsedTime || 0, calories:0, co2Saved:0, coinsEarned:coinsFromTracker }, 
                     potentiallyCompleted || false
                 );
             }}
@@ -361,12 +346,12 @@ const ActivitiesPage: React.FC = () => {
             challengeGoalSteps={activeChallenge?.stepsGoal}
             onLiveProgressUpdate={handleLiveProgressUpdate}
             activityMode={selectedActivityMode}
-            // initialSteps={initialStepsForTracker} // Removed to fix build error as ActivityTrackerProps doesn't define it
+            initialSteps={initialStepsForTracker} // Pass the correctly determined initial steps
           />
         </main>
         {activeChallenge && liveProgress && (
           <MiniChallengeStatus
-            currentSteps={liveProgress.currentSteps}
+            currentSteps={liveProgress.currentSteps} // This will now be the total accumulated steps
             goalSteps={liveProgress.goalSteps}
           />
         )}
@@ -377,7 +362,6 @@ const ActivitiesPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
-      {/* ... keep existing code for header ... */}
       <header className="p-4 flex justify-between items-center sticky top-0 bg-eco-dark z-40 shadow-sm">
         <EcoRunLogo size="small" />
         <h1 className="text-xl font-semibold text-eco-light">Activity</h1>
@@ -386,7 +370,6 @@ const ActivitiesPage: React.FC = () => {
         </Button>
       </header>
       <main className="flex-grow p-4 space-y-6 overflow-y-auto pb-24">
-        {/* ... keep existing code for Start New Activity button ... */}
         <section className="animate-fade-in-up text-center mb-6">
           <Button 
             size="lg" 
@@ -396,13 +379,11 @@ const ActivitiesPage: React.FC = () => {
             <Play size={20} className="mr-2"/> Start New Activity
           </Button>
         </section>
-        {/* ... keep existing code for LastActivityGraph ... */}
         {lastActivitySummary && (lastActivitySummary.steps > 0 || lastActivitySummary.elapsedTime > 0 || lastActivitySummary.calories > 0) && (
           <section className="animate-fade-in-up mb-6">
             <LastActivityGraph summary={lastActivitySummary} />
           </section>
         )}
-        {/* ... keep existing code for Tabs section ... */}
         <section className="animate-fade-in-up">
           <Tabs defaultValue="weekly" className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-eco-dark-secondary mb-4">
@@ -429,11 +410,9 @@ const ActivitiesPage: React.FC = () => {
             </TabsContent>
           </Tabs>
         </section>
-        {/* ... keep existing code for text section ... */}
         <section className="text-center animate-fade-in-up mt-6">
           <p className="text-eco-gray mb-4">Track your runs, walks, and cycling sessions to see your progress across different timeframes.</p>
         </section>
-        {/* ... keep existing code for Activity Tip section ... */}
          <section className="bg-eco-dark-secondary p-4 rounded-xl shadow animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <h3 className="text-lg font-semibold text-eco-light mb-2">Activity Tip</h3>
           <p className="text-sm text-eco-gray">Try to vary your activities to keep things interesting and work different muscle groups!</p>
@@ -441,7 +420,6 @@ const ActivitiesPage: React.FC = () => {
       </main>
       <BottomNav />
 
-      {/* ... keep existing code for modals ... */}
       {pendingStepCoins !== null && pendingStepCoins > 0 && showStepCoinClaimModal && (
         <StepCoinClaimModal
           isOpen={showStepCoinClaimModal}

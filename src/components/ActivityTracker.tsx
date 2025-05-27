@@ -12,22 +12,22 @@ export interface ActivitySummary {
   calories: number;
   co2Saved: number;
   coinsEarned: number;
-  distanceKm?: number; // Added for run mode summary
-  avgPaceMinPerKm?: string; // Added for run mode summary
+  distanceKm?: number; 
+  avgPaceMinPerKm?: string; 
 }
 
 export interface LiveProgressData {
   currentSteps: number;
   goalSteps: number;
   elapsedTime: number;
-  // Potentially add run-specific live data if needed by MiniChallengeStatus for running
 }
 
 interface ActivityTrackerProps {
   onStopTracking: (activitySummary: ActivitySummary, challengeCompleted?: boolean) => void;
   challengeGoalSteps?: number;
   onLiveProgressUpdate?: (progress: LiveProgressData) => void;
-  activityMode: 'walk' | 'run'; // New prop
+  activityMode: 'walk' | 'run';
+  initialSteps?: number; // Added prop
 }
 const DEFAULT_GOAL_STEPS = 10000;
 const CO2_MILESTONES = [20, 50, 100, 200, 300, 400, 500, 700, 800, 900, 1000];
@@ -39,22 +39,22 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
   challengeGoalSteps,
   onLiveProgressUpdate,
   activityMode,
+  initialSteps = 0, // Use prop with default 0
 }) => {
   const { toast } = useToast(); // Keep toast if it's used by this component, or remove if fully handled by ActivitiesPage
   const [isTracking, setIsTracking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0); // in seconds
-  const [steps, setSteps] = useState(0);
-  const [calories, setCalories] = useState(0);
-  const [co2Saved, setCo2Saved] = useState(0);
-  const [coinsEarned, setCoinsEarned] = useState(0);
+  const [steps, setSteps] = useState(initialSteps); // Initialize with initialSteps
+  const [calories, setCalories] = useState(0); // Calories should also potentially consider initialSteps or be calculated based on session delta
+  const [co2Saved, setCo2Saved] = useState(0); // Same for CO2
+  const [coinsEarned, setCoinsEarned] = useState(0); // Same for coins
 
   // Run mode specific state
   const [distanceDisplay, setDistanceDisplay] = useState("0.00"); // km
   const [avgPaceDisplay, setAvgPaceDisplay] = useState("00:00"); // min/km
   const [currentDistanceKm, setCurrentDistanceKm] = useState(0);
-
 
   const [activityCompleted, setActivityCompleted] = useState(false);
 
@@ -62,6 +62,17 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
   const [currentCo2Milestone, setCurrentCo2Milestone] = useState<number | null>(null);
   const achievedCo2MilestonesRef = useRef<Set<number>>(new Set());
   const currentGoalSteps = challengeGoalSteps || DEFAULT_GOAL_STEPS;
+
+  // Effect to recalculate derived stats if initialSteps changes (e.g. component re-used for new activity)
+  useEffect(() => {
+    setSteps(initialSteps);
+    // Recalculate CO2, calories, coins if they depend on total steps from the very beginning
+    // For now, we assume these are for the current session, but if they should accumulate from initialSteps,
+    // this logic would need to be more complex, perhaps by tracking session-only steps vs total steps.
+    // Let's assume for now that calories, co2, coins are based on steps achieved in the current tracking instance (delta from initialSteps or from 0 if initialSteps is 0)
+    // This might need further refinement based on exact requirements for these metrics.
+    // For simplicity, we'll let the stepInterval recalculate them based on total 'newSteps'.
+  }, [initialSteps]);
 
   const resetTrackerStates = useCallback((keepActivitySettings = false) => {
     if (!keepActivitySettings) {
@@ -71,10 +82,10 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     setIsPaused(false);
     setStartTime(null);
     setElapsedTime(0);
-    setSteps(0);
-    setCalories(0);
-    setCo2Saved(0);
-    setCoinsEarned(0);
+    setSteps(initialSteps); // Reset steps to current initialSteps
+    setCalories(0); // Reset session-based stats
+    setCo2Saved(0); // Reset session-based stats
+    setCoinsEarned(0); // Reset session-based stats
     setDistanceDisplay("0.00");
     setAvgPaceDisplay("00:00");
     setCurrentDistanceKm(0);
@@ -82,9 +93,9 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     setShowCo2Popup(false);
     setCurrentCo2Milestone(null);
     if (onLiveProgressUpdate) {
-      onLiveProgressUpdate({ currentSteps: 0, goalSteps: currentGoalSteps, elapsedTime: 0 });
+      onLiveProgressUpdate({ currentSteps: initialSteps, goalSteps: currentGoalSteps, elapsedTime: 0 });
     }
-  }, [onLiveProgressUpdate, currentGoalSteps]);
+  }, [onLiveProgressUpdate, currentGoalSteps, initialSteps]); // Added initialSteps
 
   // Auto-start tracking when component mounts if mode is set (e.g. via challenge)
    useEffect(() => {
@@ -108,7 +119,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
        handleStart(); // Start internal tracking
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount to initiate tracking if conditions are met
+  }, [initialSteps]); // Add initialSteps here if handleStart relies on it being stable for the first run.
 
   useEffect(() => {
     let timerInterval: NodeJS.Timeout | undefined;
@@ -121,9 +132,6 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
       timerInterval = setInterval(() => {
         setElapsedTime(prevTime => {
           const newTime = prevTime + 1;
-          if (onLiveProgressUpdate) {
-            onLiveProgressUpdate({ currentSteps: steps, goalSteps: currentGoalSteps, elapsedTime: newTime });
-          }
           // Update avgPaceDisplay for run mode as time changes
           if (activityMode === 'run' && currentDistanceKm > 0 && newTime > 0) {
             const paceDecimal = (newTime / 60) / currentDistanceKm;
@@ -131,26 +139,35 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
             const paceSeconds = Math.round((paceDecimal - paceMinutes) * 60);
             setAvgPaceDisplay(`${String(paceMinutes).padStart(2, '0')}:${String(paceSeconds).padStart(2, '0')}`);
           }
+          // live progress update was here, moving it after step update to have consistent currentSteps with time
           return newTime;
         });
       }, 1000);
 
       stepInterval = setInterval(() => {
-        setSteps(prevSteps => {
+        setSteps(prevSteps => { // prevSteps is the total accumulated steps
           if (activityCompleted) { 
             clearInterval(stepInterval);
             return prevSteps;
           }
 
-          const stepsToAdd = Math.random() < 0.6 ? (activityMode === 'run' ? 2 : 1) : (activityMode === 'run' ? 3 : 2); // Slightly more steps for running
-          const newSteps = prevSteps + stepsToAdd;
+          const stepsToAdd = Math.random() < 0.6 ? (activityMode === 'run' ? 2 : 1) : (activityMode === 'run' ? 3 : 2);
+          const newSteps = prevSteps + stepsToAdd; // newSteps is the new total accumulated steps
           
+          // Calculate metrics based on total accumulated steps or session steps?
+          // For Co2, Calories, Coins: If these are rewards for the *session*, we need stepsThisSession.
+          // Let's assume they are based on total steps for now as per original logic.
+          // This implies if you resume, these continue accumulating based on total.
           const metersPerStep = activityMode === 'run' ? METERS_PER_RUNNING_STEP : METERS_PER_WALKING_STEP;
+          // Distance should likely be calculated from steps *taken in this session* if initialSteps > 0
+          // Or, if distance is total, it should be (newSteps * metersPerStep / 1000)
+          // For now, let's assume newDistanceKm is total distance based on total steps
           const newDistanceKm = parseFloat((newSteps * metersPerStep / 1000).toFixed(2));
           setCurrentDistanceKm(newDistanceKm);
 
           if (activityMode === 'run') {
             setDistanceDisplay(newDistanceKm.toFixed(2));
+            // ... keep existing code (avgPaceDisplay update in run mode)
             if (newDistanceKm > 0 && elapsedTime > 0) { // elapsedTime from state
               const paceDecimal = (elapsedTime / 60) / newDistanceKm;
               const paceMinutes = Math.floor(paceDecimal);
@@ -161,15 +178,19 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
             }
           }
           
-          const newCo2Saved = parseFloat((newSteps * 0.0008).toFixed(2)); // CO2 calc can be refined per mode
-          setCalories(Math.floor(newSteps * (activityMode === 'run' ? 0.05 : 0.04))); // Slightly more calories for running
-          setCo2Saved(newCo2Saved);
-          setCoinsEarned(Math.floor(newSteps / (activityMode === 'run' ? 80 : 100))); // Earn coins faster for running
+          const newCo2Saved = parseFloat((newSteps * 0.0008).toFixed(2)); 
+          setCalories(Math.floor(newSteps * (activityMode === 'run' ? 0.05 : 0.04))); 
+          setCoinsEarned(Math.floor(newSteps / (activityMode === 'run' ? 80 : 100))); 
 
           if (onLiveProgressUpdate) {
-            onLiveProgressUpdate({ currentSteps: newSteps, goalSteps: currentGoalSteps, elapsedTime: elapsedTime });
+            // Ensure elapsedTime is current when this is called
+            setElapsedTime(prevElapsedTime => {
+              onLiveProgressUpdate({ currentSteps: newSteps, goalSteps: currentGoalSteps, elapsedTime: prevElapsedTime });
+              return prevElapsedTime;
+            });
           }
 
+          // ... keep existing code (CO2 milestones)
           for (const milestone of CO2_MILESTONES) {
             if (newCo2Saved >= milestone && !achievedCo2MilestonesRef.current.has(milestone)) {
               setCurrentCo2Milestone(milestone);
@@ -180,22 +201,24 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
           }
           return newSteps;
         });
-      }, activityMode === 'run' ? 300 : 400); // Faster step interval for running
+      }, activityMode === 'run' ? 300 : 400); 
     }
     return () => {
       if (timerInterval) clearInterval(timerInterval);
       if (stepInterval) clearInterval(stepInterval);
     };
-  }, [isTracking, isPaused, startTime, onLiveProgressUpdate, currentGoalSteps, steps, elapsedTime, activityCompleted, activityMode, currentDistanceKm]);
+  }, [isTracking, isPaused, startTime, onLiveProgressUpdate, currentGoalSteps, activityCompleted, activityMode, currentDistanceKm, elapsedTime, initialSteps, currentGoalSteps]); // Added initialSteps and currentGoalSteps for consistency
 
   const handleStart = useCallback(() => {
+    // When restarting, we reset to the initialSteps this tracker instance was configured with.
+    // If a "true reset to 0" is needed for a challenge, ActivitiesPage should re-mount ActivityTracker with initialSteps=0.
     resetTrackerStates(); // Reset all states
     setIsTracking(true);   // Set internal tracking to true
     setActivityCompleted(false); // Ensure activity not marked as completed
     if (onLiveProgressUpdate) {
-      onLiveProgressUpdate({ currentSteps: 0, goalSteps: currentGoalSteps, elapsedTime: 0 });
+      onLiveProgressUpdate({ currentSteps: initialSteps, goalSteps: currentGoalSteps, elapsedTime: 0 });
     }
-  }, [resetTrackerStates, onLiveProgressUpdate, currentGoalSteps]);
+  }, [resetTrackerStates, onLiveProgressUpdate, currentGoalSteps, initialSteps]); // Added initialSteps
 
   const handlePauseResume = () => {
     setIsPaused(!isPaused);
@@ -213,7 +236,7 @@ const ActivityTracker: React.FC<ActivityTrackerProps> = ({
     setActivityCompleted(true);
 
     const summary: ActivitySummary = {
-      steps,
+      steps, // This 'steps' is the total accumulated steps
       elapsedTime,
       calories,
       co2Saved,
