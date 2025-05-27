@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Challenge } from '@/data/challenges'; // Assuming Challenge type is here
+// Assuming Challenge type is here - not directly used in this hook but good for context
+// import { Challenge } from '@/data/challenges'; 
 import { LatLngTuple } from 'leaflet';
 
 export interface UserChallengeProgress {
@@ -32,26 +33,36 @@ const fetchChallengeProgress = async (): Promise<UserChallengeProgress[]> => {
     .eq('user_id', user.id);
 
   if (error) throw error;
-  return data || [];
+  // Cast status to the specific union type
+  return (data || []).map(item => ({
+    ...item,
+    status: item.status as UserChallengeProgress['status'],
+  })) as UserChallengeProgress[];
 };
 
 const upsertChallengeProgress = async (progress: Partial<UserChallengeProgress>): Promise<UserChallengeProgress | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not authenticated for upsert");
 
-  if (!progress.challenge_id) throw new Error("Challenge ID is required for upsert");
+  if (!progress.challenge_id) {
+    console.error("Challenge ID is required for upsert");
+    throw new Error("Challenge ID is required for upsert");
+  }
 
   const progressDataToSave = {
-    ...progress,
+    ...progress, // Spread partial properties
     user_id: user.id,
+    challenge_id: progress.challenge_id, // Ensure challenge_id is non-optional string here
     updated_at: new Date().toISOString(),
   };
 
-  // Remove id if it's an insert, or if it's a specific known ID for an existing record.
-  // Supabase upsert handles this based on UNIQUE constraint (user_id, challenge_id)
-  // If 'id' is present and matches an existing record, it updates. Otherwise, it inserts.
-  // Forcing an insert by omitting id can be problematic if record exists.
-  // It's better to rely on the UNIQUE constraint for upsert.
+  // If 'id' is explicitly undefined in progress, remove it so Supabase auto-generates or handles conflict correctly.
+  if (progressDataToSave.id === undefined) {
+    delete progressDataToSave.id;
+  }
+  
+  // Ensure status is one of the allowed types if provided, otherwise DB default or existing value applies.
+  // The type Partial<UserChallengeProgress> already enforces this for 'status' if present.
 
   const { data, error } = await supabase
     .from('user_challenge_progress')
@@ -63,7 +74,13 @@ const upsertChallengeProgress = async (progress: Partial<UserChallengeProgress>)
     console.error("Error upserting challenge progress:", error);
     throw error;
   }
-  return data;
+  if (!data) return null;
+
+  // Cast status for the returned object
+  return {
+    ...data,
+    status: data.status as UserChallengeProgress['status'],
+  } as UserChallengeProgress;
 };
 
 
@@ -83,13 +100,18 @@ export const useChallengeProgress = () => {
       if (updatedProgress) {
           queryClient.setQueryData(['challengeProgress'], (oldData: UserChallengeProgress[] | undefined) => {
             if (!oldData) return [updatedProgress];
-            const index = oldData.findIndex(p => p.challenge_id === updatedProgress.challenge_id && p.user_id === updatedProgress.user_id);
+            // Ensure the updatedProgress being put into cache also has correctly typed status
+            const correctlyTypedUpdate = {
+                ...updatedProgress,
+                status: updatedProgress.status as UserChallengeProgress['status'],
+            };
+            const index = oldData.findIndex(p => p.challenge_id === correctlyTypedUpdate.challenge_id && p.user_id === correctlyTypedUpdate.user_id);
             if (index !== -1) {
               const newData = [...oldData];
-              newData[index] = updatedProgress;
+              newData[index] = correctlyTypedUpdate;
               return newData;
             }
-            return [...oldData, updatedProgress];
+            return [...oldData, correctlyTypedUpdate];
           });
       }
     },
