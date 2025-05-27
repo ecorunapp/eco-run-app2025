@@ -25,18 +25,21 @@ export const useUserProfile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [error, setError] = useState<Error | null>(null); // Added error state
 
   const fetchUserProfile = useCallback(async (currentUser: User | null) => {
     if (!currentUser) {
       setUser(null);
       setProfile(null);
       setRoles([]);
+      setError(null);
       setIsLoading(false);
       return;
     }
 
     setUser(currentUser);
     setIsLoading(true);
+    setError(null); // Reset error on new fetch
 
     try {
       // Fetch profile
@@ -71,6 +74,7 @@ export const useUserProfile = () => {
 
     } catch (error: any) {
       toast.error(`Failed to fetch user data: ${error.message}`);
+      setError(error); // Set error state
       setProfile(null);
       setRoles([]);
     } finally {
@@ -99,15 +103,16 @@ export const useUserProfile = () => {
 
   const updateProfile = async (userId: string, updates: Partial<UserProfile>) => {
     setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
+      const { data, error: updateError } = await supabase
         .from('profiles')
         .update(updates)
         .eq('id', userId)
         .select()
         .single();
 
-      if (error) throw error;
+      if (updateError) throw updateError;
       
       // Optimistically update local profile state or refetch
       setProfile(prevProfile => prevProfile ? { ...prevProfile, ...data } : data as UserProfile);
@@ -115,11 +120,13 @@ export const useUserProfile = () => {
       return data;
     } catch (error: any) {
       toast.error(`Failed to update profile: ${error.message}`);
+      setError(error); // Set error state on update failure
       return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { user, profile, roles, isLoading, updateProfile, fetchUserProfile };
+  return { user, profile, roles, isLoading, error, updateProfile, fetchUserProfile }; // Added error to return
 };
+

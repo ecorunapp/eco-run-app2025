@@ -1,7 +1,7 @@
 import React from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
-import { Settings, Heart, Clock, Flame, Zap } from '@/components/icons';
+import { Settings, Heart, Clock, Flame, Zap, AlertTriangle } from '@/components/icons';
 import ActivityStat from '@/components/ActivityStat';
 import WeeklyActivityChart from '@/components/WeeklyActivityChart';
 import StepCounter from '@/components/StepCounter';
@@ -11,7 +11,7 @@ import { challenges, Challenge } from '@/data/challenges';
 import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { LatLngTuple } from 'leaflet';
-import { useChallengeProgress, UserChallengeProgress } from '@/hooks/useChallengeProgress'; // Import the hook and type
+import { useChallengeProgress, UserChallengeProgress } from '@/hooks/useChallengeProgress';
 
 // Define an extended type for challenges that might have operational state
 interface OperationalChallenge extends Challenge {
@@ -25,12 +25,12 @@ interface OperationalChallenge extends Challenge {
 }
 
 const DashboardPage: React.FC = () => {
-  const { balance: userEcoPoints, isLoading: ecoCoinsLoading } = useEcoCoins();
-  const { profile: userProfile, isLoading: profileLoading } = useUserProfile();
+  const { balance: userEcoPoints, isLoading: ecoCoinsLoading, error: ecoCoinsError } = useEcoCoins();
+  const { profile: userProfile, isLoading: profileLoading, error: profileError } = useUserProfile();
   const { 
     challengeProgressList, 
     isLoading: progressLoading, 
-    error: progressError 
+    error: challengeProgressError 
   } = useChallengeProgress();
 
   const currentSteps = userProfile?.total_steps || 0;
@@ -73,7 +73,10 @@ const DashboardPage: React.FC = () => {
     };
   });
 
-  if (ecoCoinsLoading || profileLoading || progressLoading) {
+  const overallLoading = ecoCoinsLoading || profileLoading || progressLoading;
+  const anyError = ecoCoinsError || profileError || challengeProgressError;
+
+  if (overallLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center">
         <Zap size={48} className="animate-ping text-eco-accent" />
@@ -82,11 +85,20 @@ const DashboardPage: React.FC = () => {
     );
   }
 
-  if (progressError) {
+  if (anyError) {
+    let errorMessage = "An error occurred while loading dashboard data. Please try again later.";
+    if (profileError) errorMessage = `Error loading profile: ${profileError.message}`;
+    else if (challengeProgressError) errorMessage = `Error loading challenge progress: ${challengeProgressError.message}`;
+    else if (ecoCoinsError) errorMessage = `Error loading EcoPoints: ${(ecoCoinsError as Error).message}`;
+
      return (
-      <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center">
-        <Zap size={48} className="text-red-500" />
-        <p className="mt-4 text-red-400">Error loading challenge progress: {progressError.message}</p>
+      <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center p-4 text-center">
+        <AlertTriangle size={48} className="text-red-500 mb-4" />
+        <h2 className="text-xl font-semibold text-red-400 mb-2">Oops! Something went wrong.</h2>
+        <p className="text-eco-gray">{errorMessage}</p>
+        <Button onClick={() => window.location.reload()} className="mt-6 bg-eco-accent text-eco-dark hover:bg-eco-accent/80">
+          Try Again
+        </Button>
       </div>
     );
   }
