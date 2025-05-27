@@ -254,6 +254,57 @@ export type Database = {
           },
         ]
       }
+      user_challenge_progress: {
+        Row: {
+          challenge_id: string
+          completed_location_lat: number | null
+          completed_location_lng: number | null
+          completed_location_name: string | null
+          created_at: string | null
+          current_steps: number | null
+          id: string
+          kilometers_covered_at_pause: number | null
+          paused_location_lat: number | null
+          paused_location_lng: number | null
+          paused_location_name: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_location_lat?: number | null
+          completed_location_lng?: number | null
+          completed_location_name?: string | null
+          created_at?: string | null
+          current_steps?: number | null
+          id?: string
+          kilometers_covered_at_pause?: number | null
+          paused_location_lat?: number | null
+          paused_location_lng?: number | null
+          paused_location_name?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_location_lat?: number | null
+          completed_location_lng?: number | null
+          completed_location_name?: string | null
+          created_at?: string | null
+          current_steps?: number | null
+          id?: string
+          kilometers_covered_at_pause?: number | null
+          paused_location_lat?: number | null
+          paused_location_lng?: number | null
+          paused_location_name?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_eco_balances: {
         Row: {
           balance: number

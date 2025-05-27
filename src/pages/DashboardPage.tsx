@@ -11,21 +11,27 @@ import { challenges, Challenge } from '@/data/challenges';
 import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { LatLngTuple } from 'leaflet';
+import { useChallengeProgress, UserChallengeProgress } from '@/hooks/useChallengeProgress'; // Import the hook and type
 
 // Define an extended type for challenges that might have operational state
 interface OperationalChallenge extends Challenge {
-  activityStatus?: 'active' | 'paused' | 'not_started' | 'completed';
-  currentSteps?: number;
-  pausedLocationName?: string;
-  pausedLocationCoords?: LatLngTuple; // Added for the map if not already present
-  kilometersCoveredAtPause?: number;
-  completedLocationName?: string;
-  completedLocationCoords?: LatLngTuple;
+  activityStatus?: 'not_started' | 'active' | 'paused' | 'completed';
+  currentSteps?: number | null; // Allow null from DB
+  pausedLocationName?: string | null; // Allow null
+  pausedLocationCoords?: LatLngTuple | null; // Allow null
+  kilometersCoveredAtPause?: number | null; // Allow null
+  completedLocationName?: string | null; // Allow null
+  completedLocationCoords?: LatLngTuple | null; // Allow null
 }
 
 const DashboardPage: React.FC = () => {
   const { balance: userEcoPoints, isLoading: ecoCoinsLoading } = useEcoCoins();
   const { profile: userProfile, isLoading: profileLoading } = useUserProfile();
+  const { 
+    challengeProgressList, 
+    isLoading: progressLoading, 
+    error: progressError 
+  } = useChallengeProgress();
 
   const currentSteps = userProfile?.total_steps || 0;
   const goalSteps = 10000;
@@ -36,27 +42,51 @@ const DashboardPage: React.FC = () => {
   // Specific progress (currentSteps, completedLocation etc.) will be undefined
   // and ChallengeCard will use its defaults (0 steps, 'not_started').
   const displayedChallenges: OperationalChallenge[] = challenges.slice(0, 3).map((baseChallenge): OperationalChallenge => {
-    // Temporarily hardcode "Noon 10 AED Sprint" (challenge_2k_steps) to be paused for demonstration
-    if (baseChallenge.id === 'challenge_2k_steps') {
+    const progress = challengeProgressList.find(p => p.challenge_id === baseChallenge.id);
+
+    if (progress) {
+      let pausedCoords: LatLngTuple | null = null;
+      if (progress.paused_location_lat != null && progress.paused_location_lng != null) {
+        pausedCoords = [progress.paused_location_lat, progress.paused_location_lng];
+      }
+      let completedCoords: LatLngTuple | null = null;
+      if (progress.completed_location_lat != null && progress.completed_location_lng != null) {
+        completedCoords = [progress.completed_location_lat, progress.completed_location_lng];
+      }
+
       return {
         ...baseChallenge,
-        activityStatus: 'paused',
-        currentSteps: 800, // Example current steps
-        pausedLocationName: 'Near Central Park', // Example location name
-        pausedLocationCoords: [40.7829, -73.9654], // Example coordinates (Central Park, NY)
-        kilometersCoveredAtPause: 0.6, // Example km covered
+        activityStatus: progress.status,
+        currentSteps: progress.current_steps,
+        pausedLocationName: progress.paused_location_name,
+        pausedLocationCoords: pausedCoords,
+        kilometersCoveredAtPause: progress.kilometers_covered_at_pause,
+        completedLocationName: progress.completed_location_name,
+        completedLocationCoords: completedCoords,
       };
     }
+    // If no progress in DB, return base challenge (will default to 'not_started' in ChallengeCard)
     return { 
-        ...baseChallenge 
+        ...baseChallenge,
+        activityStatus: 'not_started', // Explicitly set for clarity, though ChallengeCard might default
+        currentSteps: 0,
     };
   });
 
-  if (ecoCoinsLoading || profileLoading) {
+  if (ecoCoinsLoading || profileLoading || progressLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center">
         <Zap size={48} className="animate-ping text-eco-accent" />
         <p className="mt-4">Loading Dashboard...</p>
+      </div>
+    );
+  }
+
+  if (progressError) {
+     return (
+      <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center">
+        <Zap size={48} className="text-red-500" />
+        <p className="mt-4 text-red-400">Error loading challenge progress: {progressError.message}</p>
       </div>
     );
   }
@@ -85,15 +115,14 @@ const DashboardPage: React.FC = () => {
             {displayedChallenges.map((challengeData) => (
               <ChallengeCard 
                 key={challengeData.id} 
-                challenge={challengeData} // challengeData is OperationalChallenge
-                // Pass specific props to ChallengeCard. It has defaults for undefined values.
+                challenge={challengeData} 
                 activityStatus={challengeData.activityStatus}
-                currentSteps={challengeData.currentSteps}
-                pausedLocationName={challengeData.pausedLocationName}
-                pausedLocationCoords={challengeData.pausedLocationCoords} // Pass this prop
-                kilometersCoveredAtPause={challengeData.kilometersCoveredAtPause}
-                completedLocationName={challengeData.completedLocationName}
-                completedLocationCoords={challengeData.completedLocationCoords}
+                currentSteps={challengeData.currentSteps || 0} // Ensure currentSteps is number
+                pausedLocationName={challengeData.pausedLocationName || undefined}
+                pausedLocationCoords={challengeData.pausedLocationCoords || undefined}
+                kilometersCoveredAtPause={challengeData.kilometersCoveredAtPause || undefined}
+                completedLocationName={challengeData.completedLocationName || undefined}
+                completedLocationCoords={challengeData.completedLocationCoords || undefined}
               />
             ))}
           </div>
