@@ -1,13 +1,14 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Zap, Gift, User, Users } from 'lucide-react'; // Added Users icon
+import { Home, Zap, Gift, User } from 'lucide-react'; // Removed Users icon
 
 const BottomNav = () => {
   const location = useLocation();
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
     { path: '/activities', label: 'Activities', icon: Zap },
-    { path: '/meet-and-run', label: 'Meet & Run', icon: Users }, // Added this line
+    // { path: '/meet-and-run', label: 'Meet & Run', icon: Users }, // Removed this line
     { path: '/rewards', label: 'Rewards', icon: Gift },
     { path: '/profile', label: 'Profile', icon: User },
   ];
