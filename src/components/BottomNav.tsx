@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Zap, Gift, User, Users } from 'lucide-react'; // Added Users icon
@@ -13,7 +14,7 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-top-md z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-top-md z-50">
       <div className="max-w-md mx-auto flex justify-around items-center h-16">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path === '/' && location.pathname.startsWith('/dashboard'));
@@ -22,7 +23,7 @@ const BottomNav = () => {
               key={item.label}
               to={item.path}
               className={`flex flex-col items-center justify-center text-sm transition-colors duration-200 ease-in-out p-2 rounded-md
-                ${isActive ? 'text-purple-600 scale-110' : 'text-gray-500 hover:text-purple-500 hover:bg-purple-50'}`}
+                ${isActive ? 'text-purple-600 scale-110' : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent/20'}`}
               style={{ minWidth: '60px' }} // Ensure items have enough space
             >
               <item.icon className={`h-6 w-6 mb-0.5 transition-transform duration-200 ease-in-out ${isActive ? 'transform scale-110' : ''}`} />

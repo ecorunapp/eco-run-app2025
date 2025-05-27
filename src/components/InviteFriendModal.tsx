@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -145,7 +144,7 @@ const InviteFriendModal: React.FC<InviteFriendModalProps> = ({ isOpen, onClose, 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
-      <DialogContent className="sm:max-w-[425px] bg-white">
+      <DialogContent className="sm:max-w-[425px] bg-card">
         <DialogHeader>
           <DialogTitle className="text-purple-700">Invite a Friend to Run</DialogTitle>
           <DialogDescription>
@@ -203,4 +202,3 @@ const InviteFriendModal: React.FC<InviteFriendModalProps> = ({ isOpen, onClose, 
 };
 
 export default InviteFriendModal;
-

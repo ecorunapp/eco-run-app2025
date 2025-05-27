@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,9 +35,12 @@ const MeetAndRunPage: React.FC = () => {
   //   enabled: !!currentUserId,
   // });
 
+  // const isLoadingSessions = true; // Example for testing loading state
+  // const sessions: any[] = []; // Example for testing empty state
+
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-      <header className="p-4 border-b bg-white shadow-sm">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+      <header className="p-4 border-b border-border bg-card shadow-sm">
         <h1 className="text-2xl font-bold text-center text-purple-700">Meet & Run</h1>
       </header>
 
@@ -61,7 +63,7 @@ const MeetAndRunPage: React.FC = () => {
             >
               <Users className="mr-2 h-5 w-5" /> Invite a Friend
             </Button>
-            <Button variant="outline" className="w-full border-purple-600 text-purple-600 hover:bg-purple-50">
+            <Button variant="outline" className="w-full border-purple-600 text-purple-600 hover:bg-purple-50 hover:text-purple-700">
               <MapPin className="mr-2 h-5 w-5" /> Discover Nearby Runners (Coming Soon)
             </Button>
           </CardContent>
@@ -74,7 +76,7 @@ const MeetAndRunPage: React.FC = () => {
               Upcoming Meet & Runs
             </CardTitle>
             {/* Future: Replace with dynamic list of sessions */}
-            {/* {isLoadingSessions && <p className="text-sm text-gray-500">Loading sessions...</p>}
+            {/* {isLoadingSessions && <p className="text-sm text-muted-foreground">Loading sessions...</p>}
             {!isLoadingSessions && sessions?.length === 0 && ( */}
               <CardDescription>
                 You have no upcoming meet & runs scheduled.
@@ -84,7 +86,7 @@ const MeetAndRunPage: React.FC = () => {
           <CardContent>
             {/* Placeholder for list of upcoming meets */}
             {/* Render sessions here */}
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-sm text-muted-foreground text-center">
               Start a new Meet & Run or accept an invite to see it here.
             </p>
           </CardContent>
@@ -102,7 +104,7 @@ const MeetAndRunPage: React.FC = () => {
           </CardHeader>
            <CardContent>
             {/* Placeholder for active meet */}
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-sm text-muted-foreground text-center">
               Accept an invite or start a challenge!
             </p>
           </CardContent>
@@ -123,4 +125,3 @@ const MeetAndRunPage: React.FC = () => {
 };
 
 export default MeetAndRunPage;
-
