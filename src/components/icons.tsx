@@ -1,3 +1,4 @@
+
 import {
   Award,
   AlertCircle,
@@ -82,12 +83,14 @@ import {
   UserCog, // Added
   Users,
   X,
+  XCircle, // Added XCircle
   Zap,
   Weight,
   TrendingUp,
   UploadCloud,
   Activity, // Added Activity
   Route, // Added Route
+  Trash2, // Added Trash2
   type LucideProps,
   type LucideIcon
 } from "lucide-react";
@@ -206,13 +209,16 @@ export {
   UserCog, // Added
   Users,
   X,
+  XCircle, // Added XCircle to exports
   Zap,
   Weight,
   TrendingUp,
   UploadCloud,
   Activity, // Added Activity to exports
   Route, // Added Route to exports
+  Trash2, // Added Trash2 to exports
   type LucideIcon,
   type LucideProps
   // Confetti is exported at definition
 };
+

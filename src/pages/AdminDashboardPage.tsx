@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile, UserProfile } from '@/hooks/useUserProfile';
@@ -53,9 +52,10 @@ const AdminDashboardPage: React.FC = () => {
       // Fetch all users if authorized as admin
       setIsLoadingUsers(true);
       try {
+        // Fetch profiles including the email field if it exists and RLS permits
         const { data: usersData, error: usersError } = await supabase
           .from('profiles')
-          .select('*');
+          .select('*'); // Assuming 'email' is a column in 'profiles' table
 
         if (usersError) {
           throw usersError;
@@ -124,8 +124,7 @@ const AdminDashboardPage: React.FC = () => {
         );
         toast.error(`Error ${action}ning user: ${error.message}`);
     }
-};
-
+  };
 
   if (profileLoading || isAuthorized === null) {
     return (
@@ -197,7 +196,7 @@ const AdminDashboardPage: React.FC = () => {
                       <TableCell className="text-eco-gray text-xs">{u.id}</TableCell>
                       <TableCell className="text-eco-light">{u.username || 'N/A'}</TableCell>
                       <TableCell className="text-eco-light">{u.full_name || 'N/A'}</TableCell>
-                      <TableCell className="text-eco-light">{supabase.auth.getUser().then(res => res.data.user?.id === u.id ? res.data.user.email : 'N/A (Other User)')}</TableCell> {/* Note: This is a placeholder way to get email, will need adjustment based on how you store/fetch email */}
+                      <TableCell className="text-eco-light">{u.email || 'N/A'}</TableCell>
                       <TableCell className="text-eco-light">{u.total_steps ?? 0}</TableCell>
                       <TableCell>
                         {u.is_banned ? (
@@ -265,4 +264,3 @@ const AdminDashboardPage: React.FC = () => {
 };
 
 export default AdminDashboardPage;
-
