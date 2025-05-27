@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Challenge } from '@/data/challenges';
@@ -27,7 +26,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   const navigate = useNavigate();
   const [showEcotabModal, setShowEcotabModal] = useState(false);
 
-  const isLocked = challenge.isLockedInitially && activityStatus !== 'paused' && activityStatus !== 'active'; // Paused/Active challenges aren't "locked" in the same way
+  // isLocked definition already considers that active/paused challenges are not "locked" in the traditional sense
+  const isLocked = challenge.isLockedInitially && activityStatus !== 'paused' && activityStatus !== 'active';
   const isUltimateEcotabChallenge = challenge.id === ECOTAB_CHALLENGE_ID;
 
   let cardBgClass = '';
@@ -51,10 +51,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
       titleIconClass = 'text-yellow-400';
     }
   } else if (activityStatus === 'paused') {
-    // Specific styling for paused cards - can be same as unlocked or different
-    cardBgClass = challenge.primaryColor; // Use normal unlocked color
+    cardBgClass = challenge.primaryColor; 
     cardTextColorClass = challenge.textColor;
-    buttonClass = `bg-eco-accent text-eco-dark hover:bg-eco-accent/80`; // Resume button style
+    buttonClass = `bg-eco-accent text-eco-dark hover:bg-eco-accent/80`;
   } else {
     cardBgClass = challenge.primaryColor;
     cardTextColorClass = challenge.textColor;
@@ -65,14 +64,12 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
     if (isUltimateEcotabChallenge && activityStatus !== 'paused') {
       setShowEcotabModal(true);
     } else if (activityStatus === 'paused') {
-      // Navigate to activities page with resume state
-      navigate('/activities', { 
-        state: { 
-          challengeId: challenge.id, 
-          resume: true, 
+      navigate('/activities', {
+        state: {
+          challengeId: challenge.id,
+          resume: true,
           initialSteps: currentSteps,
-          // Potentially pass pausedLocationName and kilometersCoveredAtPause if ActivityTracker can use them
-        } 
+        }
       });
     } else if (!isLocked) {
       navigate('/activities', { state: { challengeId: challenge.id } });
@@ -82,12 +79,11 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   const progressPercentage = challenge.stepsGoal > 0 && currentSteps > 0 && (activityStatus === 'paused' || activityStatus === 'active')
     ? Math.min(100, (currentSteps / challenge.stepsGoal) * 100)
     : 0;
-  
-  const remainingSteps = (activityStatus === 'paused' && challenge.stepsGoal > currentSteps) 
-    ? challenge.stepsGoal - currentSteps 
+
+  const remainingSteps = (activityStatus === 'paused' && challenge.stepsGoal > currentSteps)
+    ? challenge.stepsGoal - currentSteps
     : 0;
 
-  // Simple km conversion: 1 step = 0.000762 km (approx)
   const kilometersToGoal = remainingSteps > 0 ? parseFloat((remainingSteps * 0.000762).toFixed(2)) : 0;
 
 
@@ -134,7 +130,6 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
             </div>
           )}
 
-          {/* Show reward coins only if not locked and not paused (paused state shows progress instead) */}
           {!isLocked && activityStatus !== 'paused' && (
             <div className="flex items-center text-sm font-semibold mb-4">
               <Coins size={18} className="mr-2 opacity-90" />
@@ -144,7 +139,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         </div>
         <Button
           onClick={handleChallengeAction}
-          disabled={isLocked && !isUltimateEcotabChallenge && activityStatus !== 'paused'}
+          disabled={isLocked && !isUltimateEcotabChallenge}
           className={`${buttonClass} w-full font-semibold`}
         >
           {activityStatus === 'paused' ? (

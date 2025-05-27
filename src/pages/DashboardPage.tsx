@@ -7,34 +7,43 @@ import WeeklyActivityChart from '@/components/WeeklyActivityChart';
 import StepCounter from '@/components/StepCounter';
 import { Button } from '@/components/ui/button';
 import ChallengeCard from '@/components/ChallengeCard';
-import { challenges, Challenge } from '@/data/challenges'; // Import Challenge type
+import { challenges, Challenge } from '@/data/challenges'; // Challenge type
 import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
+// Define an extended type for challenges that might have operational state
+interface OperationalChallenge extends Challenge {
+  activityStatus?: 'active' | 'paused' | 'not_started' | 'completed';
+  currentSteps?: number;
+  pausedLocationName?: string;
+  kilometersCoveredAtPause?: number;
+}
 
 const DashboardPage: React.FC = () => {
-  // Use EcoCoinsContext to get the balance
   const { balance: userEcoPoints, isLoading: ecoCoinsLoading } = useEcoCoins();
-  const { profile: userProfile, isLoading: profileLoading } = useUserProfile(); // Get profile for step data if needed
+  const { profile: userProfile, isLoading: profileLoading } = useUserProfile();
 
-  // Example data for currentSteps and goalSteps - you might want to fetch this from userProfile or other state
-  const currentSteps = userProfile?.total_steps || 0; // Example: Use total_steps from profile
-  const goalSteps = 10000; // Example goal steps, could be dynamic
+  const currentSteps = userProfile?.total_steps || 0;
+  const goalSteps = 10000;
 
-  // Display only the first 3 challenges and add example paused state to one
-  const displayedChallenges = challenges.slice(0, 3).map((challenge, index) => {
-    // Let's make the first non-locked challenge appear as "paused" for demonstration
-    // Assuming the first challenge 'Quick 5 AED Dash' (id: 'challenge_100_steps_5aed') is suitable
-    if (challenge.id === 'challenge_100_steps_5aed' && !challenge.isLockedInitially) {
+  // Map challenges to OperationalChallenge type
+  const displayedChallenges: OperationalChallenge[] = challenges.slice(0, 3).map((baseChallenge): OperationalChallenge => {
+    if (baseChallenge.id === 'challenge_100_steps_5aed' && !baseChallenge.isLockedInitially) {
       return {
-        ...challenge,
-        activityStatus: 'paused' as 'paused', // Type assertion
-        currentSteps: 50, // Example current steps
-        pausedLocationName: 'Downtown Park', // Example location
-        kilometersCoveredAtPause: parseFloat((50 * 0.000762).toFixed(2)), // Example KMs
+        ...baseChallenge,
+        activityStatus: 'paused' as 'paused', // Explicitly 'paused'
+        currentSteps: 50,
+        pausedLocationName: 'Downtown Park',
+        kilometersCoveredAtPause: parseFloat((50 * 0.000762).toFixed(2)),
       };
     }
-    return challenge;
+    // For other challenges, operational properties will be undefined.
+    // ChallengeCard will use its defaults for activityStatus and currentSteps.
+    return { 
+        ...baseChallenge 
+        // activityStatus, currentSteps, pausedLocationName, kilometersCoveredAtPause will be undefined
+        // which is acceptable for OperationalChallenge and ChallengeCardProps
+    };
   });
 
   if (ecoCoinsLoading || profileLoading) {
@@ -70,14 +79,14 @@ const DashboardPage: React.FC = () => {
         <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Daily Challenges</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayedChallenges.map((challengeData) => (
+            {displayedChallenges.map((challengeData) => ( // challengeData is now OperationalChallenge
               <ChallengeCard 
                 key={challengeData.id} 
-                challenge={challengeData}
-                activityStatus={challengeData.activityStatus as any} // Pass down the status
-                currentSteps={challengeData.currentSteps}
-                pausedLocationName={challengeData.pausedLocationName}
-                kilometersCoveredAtPause={challengeData.kilometersCoveredAtPause}
+                challenge={challengeData} // challengeData is OperationalChallenge, compatible with Challenge prop
+                activityStatus={challengeData.activityStatus} // Now correctly typed, can be undefined
+                currentSteps={challengeData.currentSteps}     // Now correctly typed, can be undefined
+                pausedLocationName={challengeData.pausedLocationName} // Now correctly typed, can be undefined
+                kilometersCoveredAtPause={challengeData.kilometersCoveredAtPause} // Now correctly typed, can be undefined
               />
             ))}
           </div>
