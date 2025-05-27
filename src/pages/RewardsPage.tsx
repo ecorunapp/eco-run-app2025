@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
@@ -24,7 +23,7 @@ import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { TransactionHistoryModal } from '@/components/TransactionHistoryModal';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
-import { subHours, addHours } from 'date-fns'; // Added this line
+import { subHours, addHours } from 'date-fns';
 
 // Default image URLs for gift cards
 const DEFAULT_FRONT_IMAGE_URL = '/lovable-uploads/f973e69a-5e3d-4a51-9760-b8fa3f2bf314.png';
@@ -39,7 +38,6 @@ interface UserEarnedGiftCard {
   assignedAt: string; // ISO string
   title: string;
   status: string; // 'assigned', 'used', 'expired'
-  // Add any other properties from user_gift_cards if needed by GiftCardDisplay or logic
 }
 
 // Sample data for featured offers
@@ -200,11 +198,12 @@ const RewardsPage: React.FC = () => {
     history: transactionHistory, 
     redeemPoints, 
     isLoading: ecoCoinsLoading,
-    claimGiftCardPrize // Destructure claimGiftCardPrize
+    claimGiftCardPrize 
   } = useEcoCoins();
   const { profile: userProfile, isLoading: profileLoading } = useUserProfile();
 
   const [userEarnedCards, setUserEarnedCards] = useState<UserEarnedGiftCard[]>([]);
+  const [cardToDisplay, setCardToDisplay] = useState<UserEarnedGiftCard | null>(null); // New state for single card
   const [isLoadingUserCards, setIsLoadingUserCards] = useState(true);
 
   const [ecotabCards, setEcotabCards] = useState<EcotabCardData[]>(initialEcotabCardsData);
@@ -218,20 +217,19 @@ const RewardsPage: React.FC = () => {
     if (userProfile?.id) {
       fetchEarnedCards();
     } else if (!profileLoading) { 
-      // If not loading profile and no profile ID, means user is likely not logged in.
-      // For sample data display purposes or if you want to show locked state by default:
-      // setUserEarnedCards(sampleUserGiftCards); // Uncomment to show sample data if not logged in
-      setIsLoadingUserCards(false); // Stop loading as there's no user to fetch for
+      setIsLoadingUserCards(false);
       setEcotabCards(initialEcotabCardsData.map(card => ({
         ...card,
         cardHolder: 'Eco User',
       })));
+      // setUserEarnedCards(sampleUserGiftCards); // Keep sample data loading for non-logged in if needed for testing
+      // For a non-logged-in user, cardToDisplay should remain null or be explicitly set based on sample data if desired.
     }
   }, [userProfile?.id, profileLoading]);
 
   const fetchEarnedCards = async () => {
     if (!userProfile?.id) {
-      setIsLoadingUserCards(false); // Not logged in or profile not loaded
+      setIsLoadingUserCards(false);
       return;
     }
     setIsLoadingUserCards(true);
@@ -240,7 +238,7 @@ const RewardsPage: React.FC = () => {
         .from('user_gift_cards')
         .select('id, prize_image_url, prize_promo_code, assigned_at, prize_title, status')
         .eq('user_id', userProfile.id)
-        .order('assigned_at', { ascending: false });
+        .order('assigned_at', { ascending: false }); // Fetching newest first, will sort client-side for display logic
 
       if (error) {
         console.error('Error fetching user earned gift cards:', error);
@@ -250,9 +248,9 @@ const RewardsPage: React.FC = () => {
         const mappedCards: UserEarnedGiftCard[] = data.map(card => ({
           id: card.id,
           frontImageUrl: card.prize_image_url || DEFAULT_FRONT_IMAGE_URL,
-          backImageUrl: DEFAULT_BACK_IMAGE_URL, // Using a default back image
-          promoCode: card.prize_promo_code || 'CODE-UNAVAILABLE', // Provide a fallback if null
-          assignedAt: card.assigned_at || new Date().toISOString(), // Fallback, though assigned_at should always exist
+          backImageUrl: DEFAULT_BACK_IMAGE_URL,
+          promoCode: card.prize_promo_code || 'CODE-UNAVAILABLE',
+          assignedAt: card.assigned_at || new Date().toISOString(),
           title: card.prize_title || 'Untitled Reward',
           status: card.status || 'assigned',
         }));
@@ -266,6 +264,36 @@ const RewardsPage: React.FC = () => {
       setIsLoadingUserCards(false);
     }
   };
+  
+  // useEffect to select the card to display from userEarnedCards
+  useEffect(() => {
+    if (userEarnedCards.length > 0) {
+      const now = new Date();
+      
+      const activeCards = userEarnedCards
+        .filter(card => card.status === 'assigned')
+        .sort((a, b) => new Date(a.assignedAt).getTime() - new Date(b.assignedAt).getTime()); // Sort oldest first
+
+      if (activeCards.length === 0) {
+        setCardToDisplay(null); // No 'assigned' cards
+        return;
+      }
+
+      let displayCard = activeCards.find(card => {
+        const unlockDate = addHours(new Date(card.assignedAt), 24);
+        return now >= unlockDate; // Find first unlocked card
+      });
+
+      if (!displayCard) { // If no unlocked card, take the oldest (first in sorted list) 'assigned' card
+        displayCard = activeCards[0];
+      }
+      
+      setCardToDisplay(displayCard || null);
+
+    } else {
+      setCardToDisplay(null); // No cards at all
+    }
+  }, [userEarnedCards]);
 
   useEffect(() => {
     if (userProfile?.full_name) {
@@ -289,14 +317,13 @@ const RewardsPage: React.FC = () => {
 
   const primaryCard = ecotabCards.find(card => card.isPrimary) || ecotabCards[0];
 
-  const handleEcotabRedemption = async () => { // Made async
+  const handleEcotabRedemption = async () => {
     const amount = parseInt(redeemAmount, 10);
     if (isNaN(amount) || amount <= 0) {
       toast.error("Please enter a valid amount of points to redeem.");
       return;
     }
     if (dialogCard) {
-      // redeemPoints now returns a promise, so we should await it.
       const success = await redeemPoints(amount, `Redeemed to Ecotab Card ${dialogCard.cardNumberSuffix}`);
       if (success) {
         toast.success(`${amount} EcoPoints successfully redeemed to Ecotab Card ${dialogCard.cardNumberSuffix}!`);
@@ -314,15 +341,15 @@ const RewardsPage: React.FC = () => {
   };
 
   const displayedTransactions = transactionHistory.slice(0, 4).map(tx => ({
-    id: tx.id || tx.date + tx.label + tx.value + tx.type, // Use tx.id if available
+    id: tx.id || tx.date + tx.label + tx.value + tx.type,
     icon: getIconForTransactionType(tx.type),
     title: tx.label,
     descriptionType: tx.type,
-    amount: (tx.type === 'income' || tx.type === 'ecotab') ? tx.value : -tx.value, // Ecotab might be earnings
+    amount: (tx.type === 'income' || tx.type === 'ecotab') ? tx.value : -tx.value,
     date: tx.date,
   }));
 
-  if (profileLoading || ecoCoinsLoading) {
+  if (profileLoading || ecoCoinsLoading || isLoadingUserCards && !userProfile?.id) {
     return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center">
         <Loader2 className="h-12 w-12 animate-spin text-eco-accent" />
@@ -342,7 +369,6 @@ const RewardsPage: React.FC = () => {
       </header>
 
       <main className="flex-grow p-4 space-y-8 overflow-y-auto pb-24">
-        {/* Ecotab Card Section */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-eco-light">My Ecotab Cards</h2>
@@ -384,7 +410,6 @@ const RewardsPage: React.FC = () => {
           )}
         </section>
         
-        {/* Balance Section */}
         <Card className="bg-eco-dark-secondary border-transparent shadow-xl animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <CardHeader>
             <CardTitle className="text-eco-light flex items-center text-xl">
@@ -398,7 +423,6 @@ const RewardsPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* My Gift Cards Section - UPDATED */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           <h2 className="text-2xl font-semibold text-eco-light mb-4">My Earned Gift Cards</h2>
           {isLoadingUserCards ? (
@@ -406,46 +430,45 @@ const RewardsPage: React.FC = () => {
               <Loader2 className="h-8 w-8 animate-spin text-eco-accent" />
               <p className="ml-3 text-eco-gray">Loading your gift cards...</p>
             </div>
-          ) : userEarnedCards.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {userEarnedCards.map(card => (
-                <div key={card.id} className="flex flex-col items-center">
-                  <GiftCardDisplay
-                    frontImageUrl={card.frontImageUrl}
-                    backImageUrl={card.backImageUrl}
-                    promoCode={card.promoCode}
-                    assignedAt={card.assignedAt}
-                    onCodeCopied={async (copiedCode) => {
-                      if (card.status === 'used') {
-                        toast.info(`Gift card "${card.title}" has already been claimed.`);
-                        return;
-                      }
-                      const claimedSuccessfully = await claimGiftCardPrize(card.id);
-                      if (claimedSuccessfully) {
-                        toast.success(`Prize "${card.title}" Claimed!`, { 
-                          description: "The promo code has been copied and your prize claim initiated." 
-                        });
-                        setUserEarnedCards(prevCards => 
-                          prevCards.map(c => c.id === card.id ? { ...c, status: 'used' } : c)
-                        );
-                      } else {
-                        toast.error("Claim Error", { description: "Could not finalize prize claim for this card. Please try again." });
-                      }
-                    }}
-                  />
-                   <p className="text-center text-eco-light mt-2 text-md font-semibold">{card.title}</p>
-                   {card.status === 'used' && (
-                     <p className="text-xs text-green-400">(Claimed)</p>
-                   )}
-                </div>
-              ))}
+          ) : cardToDisplay ? (
+            <div className="flex flex-col items-center max-w-xs mx-auto"> {/* Centering the single card display */}
+              <GiftCardDisplay
+                frontImageUrl={cardToDisplay.frontImageUrl}
+                backImageUrl={cardToDisplay.backImageUrl}
+                promoCode={cardToDisplay.promoCode}
+                assignedAt={cardToDisplay.assignedAt}
+                onCodeCopied={async (copiedCode) => {
+                  if (cardToDisplay.status === 'used') {
+                    toast.info(`Gift card "${cardToDisplay.title}" has already been claimed.`);
+                    return;
+                  }
+                  const claimedSuccessfully = await claimGiftCardPrize(cardToDisplay.id);
+                  if (claimedSuccessfully) {
+                    toast.success(`Prize "${cardToDisplay.title}" Claimed!`, { 
+                      description: "The promo code has been copied and your prize claim initiated." 
+                    });
+                    // Optimistically update the local state or re-fetch
+                    setUserEarnedCards(prevCards => 
+                      prevCards.map(c => c.id === cardToDisplay.id ? { ...c, status: 'used' } : c)
+                    );
+                    // The useEffect watching userEarnedCards will then select the next card.
+                  } else {
+                    toast.error("Claim Error", { description: "Could not finalize prize claim for this card. Please try again." });
+                  }
+                }}
+              />
+               <p className="text-center text-eco-light mt-2 text-md font-semibold">{cardToDisplay.title}</p>
+               {cardToDisplay.status === 'used' && ( // Should ideally not be shown if logic picks 'assigned'
+                 <p className="text-xs text-green-400">(Claimed)</p>
+               )}
             </div>
-          ) : (
+          ) : userEarnedCards.length > 0 && !cardToDisplay ? ( // All cards are used/expired or otherwise not 'assigned'
+             <p className="text-eco-gray text-center py-4">All your earned gift cards have been processed. Earn more!</p>
+          ) : ( // No cards earned at all
             <p className="text-eco-gray text-center py-4">You haven't earned any gift cards yet. Complete challenges to win!</p>
           )}
         </section>
         
-        {/* Transaction History Section */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-eco-light">Recent Activity</h2>
@@ -471,7 +494,7 @@ const RewardsPage: React.FC = () => {
           </div>
         </section>
         
-        {/* Featured Offers Section - Placeholder for where RewardOfferCard might go */}
+        {/* Featured Offers Section Placeholder */}
         {/* <section className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Featured Offers</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -480,7 +503,6 @@ const RewardsPage: React.FC = () => {
             ))}
           </div>
         </section> */}
-
       </main>
       <BottomNav />
 
@@ -496,7 +518,6 @@ const RewardsPage: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="my-4 px-2">
-                 {/* Pass updated cardHolder to GradientDebitCard in Dialog */}
                 <GradientDebitCard {...dialogCard} cardHolder={userProfile?.full_name || dialogCard.cardHolder} />
               </div>
 
