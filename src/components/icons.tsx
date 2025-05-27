@@ -87,6 +87,8 @@ import {
   Weight,
   TrendingUp,
   UploadCloud,
+  Activity, // Added Activity
+  Route, // Added Route
   type LucideProps,
   type LucideIcon
 } from "lucide-react";
@@ -209,6 +211,8 @@ export {
   Weight,
   TrendingUp,
   UploadCloud,
+  Activity, // Added Activity to exports
+  Route, // Added Route to exports
   type LucideIcon,
   type LucideProps
   // Confetti is exported at definition
