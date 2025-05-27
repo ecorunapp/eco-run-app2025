@@ -25,7 +25,7 @@ interface OperationalChallenge extends Challenge {
 }
 
 const DashboardPage: React.FC = () => {
-  const { balance: userEcoPoints, isLoading: ecoCoinsLoading, error: ecoCoinsError } = useEcoCoins();
+  const { balance: userEcoPoints, isLoading: ecoCoinsLoading } = useEcoCoins(); // Removed ecoCoinsError
   const { profile: userProfile, isLoading: profileLoading, error: profileError } = useUserProfile();
   const { 
     challengeProgressList, 
@@ -74,7 +74,8 @@ const DashboardPage: React.FC = () => {
   });
 
   const overallLoading = ecoCoinsLoading || profileLoading || progressLoading;
-  const anyError = ecoCoinsError || profileError || challengeProgressError;
+  // Removed ecoCoinsError from anyError condition
+  const anyError = profileError || challengeProgressError; 
 
   if (overallLoading) {
     return (
@@ -87,9 +88,14 @@ const DashboardPage: React.FC = () => {
 
   if (anyError) {
     let errorMessage = "An error occurred while loading dashboard data. Please try again later.";
-    if (profileError) errorMessage = `Error loading profile: ${profileError.message}`;
-    else if (challengeProgressError) errorMessage = `Error loading challenge progress: ${challengeProgressError.message}`;
-    else if (ecoCoinsError) errorMessage = `Error loading EcoPoints: ${(ecoCoinsError as Error).message}`;
+    // Adjusted errorMessage logic
+    if (profileError) {
+      errorMessage = `Error loading profile: ${profileError.message}`;
+    } else if (challengeProgressError) {
+      errorMessage = `Error loading challenge progress: ${challengeProgressError.message}`;
+    }
+    // The specific 'Error loading EcoPoints' message is removed as ecoCoinsError is no longer available here.
+    // EcoCoinsContext handles its errors via toasts.
 
      return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center p-4 text-center">
