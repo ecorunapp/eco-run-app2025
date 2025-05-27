@@ -7,13 +7,33 @@ import ActivityStat from '@/components/ActivityStat';
 import WeeklyActivityChart from '@/components/WeeklyActivityChart';
 import StepCounter from '@/components/StepCounter';
 import { Button } from '@/components/ui/button';
-import ChallengeCard from '@/components/ChallengeCard'; // New import
-import { challenges } from '@/data/challenges'; // New import
+import ChallengeCard from '@/components/ChallengeCard';
+import { challenges } from '@/data/challenges';
+import { useEcoCoins } from '@/context/EcoCoinsContext'; // Import useEcoCoins
+import { useUserProfile } from '@/hooks/useUserProfile'; // Import useUserProfile
+
 
 const DashboardPage: React.FC = () => {
-  const userEcoPoints = 12580; // Example data
-  const currentSteps = 6789; // Example current steps
-  const goalSteps = 10000; // Example goal steps
+  // Use EcoCoinsContext to get the balance
+  const { balance: userEcoPoints, isLoading: ecoCoinsLoading } = useEcoCoins();
+  const { profile: userProfile, isLoading: profileLoading } = useUserProfile(); // Get profile for step data if needed
+
+  // Example data for currentSteps and goalSteps - you might want to fetch this from userProfile or other state
+  const currentSteps = userProfile?.total_steps || 0; // Example: Use total_steps from profile
+  const goalSteps = 10000; // Example goal steps, could be dynamic
+
+  // Display only the first 3 challenges
+  const displayedChallenges = challenges.slice(0, 3);
+
+  if (ecoCoinsLoading || profileLoading) {
+    // You can add a more sophisticated loading skeleton here
+    return (
+      <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center">
+        <Zap size={48} className="animate-ping text-eco-accent" />
+        <p className="mt-4">Loading Dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
@@ -34,11 +54,11 @@ const DashboardPage: React.FC = () => {
           />
         </section>
 
-        {/* Challenges Section */}
+        {/* Challenges Section - Now shows only 3 */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <h2 className="text-2xl font-semibold text-eco-light mb-4">Daily Challenges</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {challenges.map((challenge) => (
+            {displayedChallenges.map((challenge) => (
               <ChallengeCard key={challenge.id} challenge={challenge} />
             ))}
           </div>
