@@ -36,7 +36,7 @@ function App() {
     });
 
     return () => {
-      authListener?.unsubscribe();
+      authListener?.subscription?.unsubscribe(); // Corrected unsubscribe call
     };
   }, []);
 
@@ -70,3 +70,4 @@ function App() {
 }
 
 export default App;
+
