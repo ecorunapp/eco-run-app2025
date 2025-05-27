@@ -150,7 +150,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 <Progress value={progressPercentage} className={`h-2.5 ${activityStatus === 'paused' ? '[&>div]:bg-yellow-400 bg-white/30' : '[&>div]:bg-green-400 bg-white/30'}`} />
                 
                 {currentSteps > 0 && (
-                  <div className="flex items-center text-xs opacity-80 mt-1">
+                  <div className="flex items-center text-xs text-white mt-1">
                     <Footprints size={14} className="mr-1" /> 
                     Steps completed: {currentSteps.toLocaleString()}
                   </div>
