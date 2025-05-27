@@ -79,7 +79,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
       return;
     }
     if (isUltimateEcotabChallenge && activityStatus !== 'paused') {
-      setShowEcotabModal(true);
+      navigate('/order-ecotab'); 
     } else if (activityStatus === 'paused') {
       navigate('/activities', {
         state: {
@@ -93,7 +93,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
     }
   };
 
-  const progressPercentage = challenge.stepsGoal > 0 && currentSteps > 0 && (activityStatus === 'paused' || activityStatus === 'active')
+  const progressPercentage = challenge.stepsGoal > 0 && currentSteps > 0 && (activityStatus === 'paused' || activityStatus === 'active' || activityStatus === 'completed')
     ? Math.min(100, (currentSteps / challenge.stepsGoal) * 100)
     : (activityStatus === 'completed' ? 100 : 0);
 
@@ -213,7 +213,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
       </div>
       {isUltimateEcotabChallenge && activityStatus !== 'completed' && (
         <EcotabActivationModal
-          isOpen={showEcotabModal}
+          isOpen={showEcotabModal} // This will now likely always be false from this card's direct action.
           onClose={() => setShowEcotabModal(false)}
           challengeTitle={challenge.title}
         />
