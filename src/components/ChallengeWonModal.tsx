@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Challenge } from '@/data/challenges';
 import GiftCardDisplay from './GiftCardDisplay';
-import { Confetti, Gift } from '@/components/icons'; // Removed RefreshCw
+import { Confetti, Gift } from '@/components/icons';
 import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { toast as sonnerToast } from 'sonner';
 
@@ -52,7 +52,7 @@ const ChallengeWonModal: React.FC<ChallengeWonModalProps> = ({ isOpen, onClose, 
       if (claimedSuccessfully) {
         // Sonner toast for copy success is already in GiftCardDisplay
         // Perhaps a specific toast for "claiming" the prize in EcoRun system
-        sonnerToast.success("Prize Claimed!", { description: `You've successfully initiated the claim for: ${challenge.prizeTitle || 'your reward'}.` });
+        sonnerToast.success("Prize Claimed!", { description: `You've successfully initiated the claim for: ${challenge.title || 'your reward'}.` }); // Changed prizeTitle to title
         onClose(); 
       } else {
          sonnerToast.error("Claim Error", { description: "Could not finalize prize claim. Please try again or contact support." });
