@@ -1,18 +1,48 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, MapPin, CalendarDays, PlayCircle } from 'lucide-react';
+import InviteFriendModal from '@/components/InviteFriendModal'; // Import the new modal
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client
+// import { useQuery } from '@tanstack/react-query'; // Will be used later for fetching sessions
 
 const MeetAndRunPage: React.FC = () => {
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id);
+    };
+    getCurrentUser();
+  }, []);
+
+  // Placeholder for fetching sessions - to be implemented
+  // const { data: sessions, isLoading: isLoadingSessions } = useQuery({
+  //   queryKey: ['meetAndRunSessions', currentUserId],
+  //   queryFn: async () => {
+  //     if (!currentUserId) return [];
+  //     const { data, error } = await supabase
+  //       .from('meet_and_run_sessions')
+  //       .select('*') // Adjust columns as needed
+  //       .or(`inviter_id.eq.${currentUserId},invitee_id.eq.${currentUserId}`)
+  //       .order('created_at', { ascending: false });
+  //     if (error) throw error;
+  //     return data;
+  //   },
+  //   enabled: !!currentUserId,
+  // });
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       <header className="p-4 border-b bg-white shadow-sm">
         <h1 className="text-2xl font-bold text-center text-purple-700">Meet & Run</h1>
       </header>
 
-      <main className="flex-grow p-4 space-y-6">
+      <main className="flex-grow p-4 space-y-6 pb-20"> {/* Added pb-20 for BottomNav clearance */}
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center text-xl text-purple-600">
@@ -24,11 +54,15 @@ const MeetAndRunPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+            <Button 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+              onClick={() => setIsInviteModalOpen(true)}
+              disabled={!currentUserId} // Disable if currentUserId is not yet fetched
+            >
               <Users className="mr-2 h-5 w-5" /> Invite a Friend
             </Button>
             <Button variant="outline" className="w-full border-purple-600 text-purple-600 hover:bg-purple-50">
-              <MapPin className="mr-2 h-5 w-5" /> Discover Nearby Runners
+              <MapPin className="mr-2 h-5 w-5" /> Discover Nearby Runners (Coming Soon)
             </Button>
           </CardContent>
         </Card>
@@ -39,14 +73,19 @@ const MeetAndRunPage: React.FC = () => {
               <CalendarDays className="mr-2 h-6 w-6" />
               Upcoming Meet & Runs
             </CardTitle>
-            <CardDescription>
-              You have no upcoming meet & runs scheduled.
-            </CardDescription>
+            {/* Future: Replace with dynamic list of sessions */}
+            {/* {isLoadingSessions && <p className="text-sm text-gray-500">Loading sessions...</p>}
+            {!isLoadingSessions && sessions?.length === 0 && ( */}
+              <CardDescription>
+                You have no upcoming meet & runs scheduled.
+              </CardDescription>
+            {/* )} */}
           </CardHeader>
           <CardContent>
             {/* Placeholder for list of upcoming meets */}
+            {/* Render sessions here */}
             <p className="text-sm text-gray-500 text-center">
-              Start a new Meet & Run to see it here.
+              Start a new Meet & Run or accept an invite to see it here.
             </p>
           </CardContent>
         </Card>
@@ -71,9 +110,17 @@ const MeetAndRunPage: React.FC = () => {
 
       </main>
 
+      {currentUserId && (
+        <InviteFriendModal 
+          isOpen={isInviteModalOpen} 
+          onClose={() => setIsInviteModalOpen(false)}
+          currentUserId={currentUserId}
+        />
+      )}
       <BottomNav />
     </div>
   );
 };
 
 export default MeetAndRunPage;
+
