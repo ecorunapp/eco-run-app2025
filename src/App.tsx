@@ -1,66 +1,64 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { EcoCoinsProvider } from "./context/EcoCoinsContext";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { ThemeProvider } from "@/components/theme-provider"
+import './App.css';
+import BottomNav from './components/BottomNav';
+import Activities from './pages/Activities';
+import Home from './pages/Home';
+import Profile from './pages/Profile';
+import Rewards from './pages/Rewards';
+import NotFound from './pages/NotFound';
+import { supabase } from './integrations/supabase/client';
+import Auth from './pages/Auth';
+import { EcoCoinsProvider } from './context/EcoCoinsContext';
+import Dashboard from './pages/Dashboard';
+import MeetAndRunPage from './pages/MeetAndRunPage'; // Add this line
 
-import WelcomeScreen from "./pages/Index";
-import DashboardPage from "./pages/DashboardPage";
-import ActivitiesPage from "./pages/ActivitiesPage";
-import RewardsPage from "./pages/RewardsPage";
-import ProfilePage from "./pages/ProfilePage";
-import EcotabDetailsPage from "./pages/EcotabDetailsPage";
-import GoalSelectionPage from "./pages/GoalSelectionPage";
-import SplashScreenPage from "./pages/SplashScreenPage";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import NotFound from "./pages/NotFound";
-import GiftCards from './pages/GiftCards';
-import EditProfilePage from './pages/EditProfilePage';
-import OrderEcotabPage from './pages/OrderEcotabPage';
-import NotificationSettingsPage from './pages/NotificationSettingsPage';
-import AppearanceSettingsPage from './pages/AppearanceSettingsPage';
-import AdminDashboardPage from "./pages/AdminDashboardPage";
+function App() {
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-const queryClient = new QueryClient();
+  useEffect(() => {
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setLoading(false);
+      });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  return (
     <EcoCoinsProvider>
-      <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Navigate replace to="/splash" />} />
-              <Route path="/splash" element={<SplashScreenPage />} />
-              <Route path="/welcome" element={<WelcomeScreen />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/goal-selection" element={<GoalSelectionPage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/adashboard" element={<AdminDashboardPage />} />
-              <Route path="/activities" element={<ActivitiesPage />} />
-              <Route path="/rewards" element={<RewardsPage />} />
-              <Route path="/ecotab-details" element={<EcotabDetailsPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/edit-profile" element={<EditProfilePage />} />
-              <Route path="/order-ecotab" element={<OrderEcotabPage />} />
-              <Route path="/notification-settings" element={<NotificationSettingsPage />} />
-              <Route path="/appearance-settings" element={<AppearanceSettingsPage />} />
-              <Route path="/gift-cards" element={<GiftCards />} />
-              
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </NextThemesProvider>
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <Router>
+          <Routes>
+            <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <Auth />} />
+            <Route path="/" element={session ? <Home /> : <Navigate to="/auth" />} />
+            <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/auth" />} />
+            <Route path="/activities" element={session ? <Activities /> : <Navigate to="/auth" />} />
+            <Route path="/rewards" element={session ? <Rewards /> : <Navigate to="/auth" />} />
+            <Route path="/profile" element={session ? <Profile /> : <Navigate to="/auth" />} />
+            <Route path="/meet-and-run" element={<MeetAndRunPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Router>
+        <Toaster richColors />
+      </ThemeProvider>
     </EcoCoinsProvider>
-  </QueryClientProvider>
-);
+  );
+}
 
 export default App;

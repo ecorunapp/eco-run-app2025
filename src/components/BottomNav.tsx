@@ -1,40 +1,38 @@
-
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Home, BarChart2, Gift, User } from '@/components/icons'; // Using our icons.tsx
+import { Link, useLocation } from 'react-router-dom';
+import { Home, Zap, Gift, User, Users } from 'lucide-react'; // Added Users icon
 
-const navItems = [
-  { path: '/dashboard', label: 'Home', icon: Home },
-  { path: '/activities', label: 'Activity', icon: BarChart2 },
-  { path: '/rewards', label: 'Rewards', icon: Gift },
-  { path: '/profile', label: 'Profile', icon: User },
-];
+const BottomNav = () => {
+  const location = useLocation();
+  const navItems = [
+    { path: '/', label: 'Home', icon: Home },
+    { path: '/activities', label: 'Activities', icon: Zap },
+    { path: '/meet-and-run', label: 'Meet & Run', icon: Users }, // Added this line
+    { path: '/rewards', label: 'Rewards', icon: Gift },
+    { path: '/profile', label: 'Profile', icon: User },
+  ];
 
-const BottomNav: React.FC = () => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-eco-dark-secondary border-t border-eco-dark shadow-lg z-50">
-      <div className="max-w-md mx-auto flex justify-around items-center h-16 px-2">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.label}
-            to={item.path}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center w-1/4 h-full text-xs transition-colors duration-200
-               ${isActive ? 'text-eco-accent' : 'text-eco-gray hover:text-eco-light'}`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-                <span className={`mt-1 font-medium ${isActive ? 'font-semibold' : ''}`}>{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-top-md z-50">
+      <div className="max-w-md mx-auto flex justify-around items-center h-16">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path || (item.path === '/' && location.pathname.startsWith('/dashboard'));
+          return (
+            <Link
+              key={item.label}
+              to={item.path}
+              className={`flex flex-col items-center justify-center text-sm transition-colors duration-200 ease-in-out p-2 rounded-md
+                ${isActive ? 'text-purple-600 scale-110' : 'text-gray-500 hover:text-purple-500 hover:bg-purple-50'}`}
+              style={{ minWidth: '60px' }} // Ensure items have enough space
+            >
+              <item.icon className={`h-6 w-6 mb-0.5 transition-transform duration-200 ease-in-out ${isActive ? 'transform scale-110' : ''}`} />
+              <span className={`text-xs font-medium ${isActive ? 'font-semibold' : ''}`}>{item.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );
 };
 
 export default BottomNav;
-

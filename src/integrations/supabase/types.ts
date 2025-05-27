@@ -57,6 +57,75 @@ export type Database = {
         }
         Relationships: []
       }
+      meet_and_run_sessions: {
+        Row: {
+          challenge_details: Json | null
+          created_at: string | null
+          id: string
+          invitee_completed_challenge: boolean | null
+          invitee_confirmed_meet: boolean | null
+          invitee_id: string
+          inviter_completed_challenge: boolean | null
+          inviter_confirmed_meet: boolean | null
+          inviter_id: string
+          meeting_location_lat: number | null
+          meeting_location_lng: number | null
+          meeting_location_name: string | null
+          meeting_time: string | null
+          status: Database["public"]["Enums"]["meet_and_run_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          challenge_details?: Json | null
+          created_at?: string | null
+          id?: string
+          invitee_completed_challenge?: boolean | null
+          invitee_confirmed_meet?: boolean | null
+          invitee_id: string
+          inviter_completed_challenge?: boolean | null
+          inviter_confirmed_meet?: boolean | null
+          inviter_id: string
+          meeting_location_lat?: number | null
+          meeting_location_lng?: number | null
+          meeting_location_name?: string | null
+          meeting_time?: string | null
+          status?: Database["public"]["Enums"]["meet_and_run_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          challenge_details?: Json | null
+          created_at?: string | null
+          id?: string
+          invitee_completed_challenge?: boolean | null
+          invitee_confirmed_meet?: boolean | null
+          invitee_id?: string
+          inviter_completed_challenge?: boolean | null
+          inviter_confirmed_meet?: boolean | null
+          inviter_id?: string
+          meeting_location_lat?: number | null
+          meeting_location_lng?: number | null
+          meeting_location_name?: string | null
+          meeting_time?: string | null
+          status?: Database["public"]["Enums"]["meet_and_run_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meet_and_run_sessions_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meet_and_run_sessions_inviter_id_fkey"
+            columns: ["inviter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -363,6 +432,21 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      meet_and_run_status:
+        | "PENDING_INVITE"
+        | "INVITE_ACCEPTED"
+        | "INVITE_REJECTED"
+        | "MEETING_TIME_LOCATION_SET"
+        | "AWAITING_ARRIVAL"
+        | "INVITER_ARRIVED"
+        | "INVITEE_ARRIVED"
+        | "BOTH_ARRIVED"
+        | "CHALLENGE_IN_PROGRESS"
+        | "CHALLENGE_COMPLETED"
+        | "CHALLENGE_FAILED"
+        | "CANCELLED_BY_INVITER"
+        | "CANCELLED_BY_INVITEE"
+        | "EXPIRED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -479,6 +563,22 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      meet_and_run_status: [
+        "PENDING_INVITE",
+        "INVITE_ACCEPTED",
+        "INVITE_REJECTED",
+        "MEETING_TIME_LOCATION_SET",
+        "AWAITING_ARRIVAL",
+        "INVITER_ARRIVED",
+        "INVITEE_ARRIVED",
+        "BOTH_ARRIVED",
+        "CHALLENGE_IN_PROGRESS",
+        "CHALLENGE_COMPLETED",
+        "CHALLENGE_FAILED",
+        "CANCELLED_BY_INVITER",
+        "CANCELLED_BY_INVITEE",
+        "EXPIRED",
+      ],
     },
   },
 } as const
