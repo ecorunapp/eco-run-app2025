@@ -30,27 +30,16 @@ const DashboardPage: React.FC = () => {
   const goalSteps = 10000;
 
   // Map challenges to OperationalChallenge type
-  const displayedChallenges: OperationalChallenge[] = challenges.slice(0, 3).map((baseChallenge, index): OperationalChallenge => {
-    if (index === 0 && !baseChallenge.isLockedInitially) {
-      return {
-        ...baseChallenge,
-        activityStatus: 'completed' as 'completed',
-        currentSteps: baseChallenge.stepsGoal,
-        completedLocationName: 'Central Park Finish Line',
-        completedLocationCoords: [40.7829, -73.9654],
-      };
-    }
-    if (index === 1 && !baseChallenge.isLockedInitially && baseChallenge.id === 'challenge_100_steps_5aed') {
-      return {
-        ...baseChallenge,
-        activityStatus: 'paused' as 'paused',
-        currentSteps: 50,
-        pausedLocationName: 'Downtown Park',
-        kilometersCoveredAtPause: parseFloat((50 * 0.000762).toFixed(2)),
-      };
-    }
+  // Removed hardcoded statuses for new user experience.
+  // Challenges will now default to 'not_started' or their initial locked state.
+  // Specific progress (currentSteps, completedLocation etc.) will be undefined
+  // and ChallengeCard will use its defaults (0 steps, 'not_started').
+  const displayedChallenges: OperationalChallenge[] = challenges.slice(0, 3).map((baseChallenge): OperationalChallenge => {
     return { 
         ...baseChallenge 
+        // By returning just baseChallenge spread, optional OperationalChallenge fields
+        // like activityStatus, currentSteps, etc., will be undefined.
+        // ChallengeCard component will use its default prop values for these.
     };
   });
 
@@ -87,7 +76,8 @@ const DashboardPage: React.FC = () => {
             {displayedChallenges.map((challengeData) => (
               <ChallengeCard 
                 key={challengeData.id} 
-                challenge={challengeData}
+                challenge={challengeData} // challengeData is OperationalChallenge
+                // Pass specific props to ChallengeCard. It has defaults for undefined values.
                 activityStatus={challengeData.activityStatus}
                 currentSteps={challengeData.currentSteps}
                 pausedLocationName={challengeData.pausedLocationName}
