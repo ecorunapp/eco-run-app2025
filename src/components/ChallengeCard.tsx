@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Challenge } from '@/data/challenges';
@@ -55,8 +53,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   const isUltimateEcotabChallenge = challenge.id === ECOTAB_CHALLENGE_ID;
   const isCompleted = activityStatus === 'completed';
 
-  // Safely render challenge icon
-  const ChallengeIcon = challenge.icon;
+  // Safely render challenge icon - ensure it's a valid React component
+  const ChallengeIcon = challenge.icon && typeof challenge.icon === 'function' ? challenge.icon : null;
 
   let cardBgClass = '';
   let cardTextColorClass = challenge.textColor;
