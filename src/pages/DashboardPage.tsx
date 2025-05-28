@@ -44,11 +44,13 @@ const DashboardPage: React.FC = () => {
   const { 
     challengeProgressList, 
     isLoading: progressLoading, 
-    error: challengeProgressError 
+    error: challengeProgressError,
+    upsertProgress
   } = useChallengeProgress();
 
   const [dailyMessage, setDailyMessage] = useState<string | null>(null);
   const [showDailyMessage, setShowDailyMessage] = useState(false);
+  const [hiddenChallenges, setHiddenChallenges] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const todayStr = new Date().toISOString().split('T')[0];
@@ -75,6 +77,35 @@ const DashboardPage: React.FC = () => {
     setShowDailyMessage(false);
   };
 
+  const handleRemoveCompletedChallenge = async (challengeId: string) => {
+    try {
+      // Hide the challenge immediately in UI
+      setHiddenChallenges(prev => new Set(prev).add(challengeId));
+      
+      // Update the challenge status to 'not_started' to effectively reset it
+      await upsertProgress({
+        challenge_id: challengeId,
+        status: 'not_started',
+        current_steps: 0,
+        paused_location_name: null,
+        paused_location_lat: null,
+        paused_location_lng: null,
+        kilometers_covered_at_pause: null,
+        completed_location_name: null,
+        completed_location_lat: null,
+        completed_location_lng: null,
+      });
+    } catch (error) {
+      console.error('Error removing completed challenge:', error);
+      // Revert the UI change if the database update fails
+      setHiddenChallenges(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(challengeId);
+        return newSet;
+      });
+    }
+  };
+
   const currentSteps = userProfile?.total_steps || 0;
   const goalSteps = 10000;
 
@@ -91,37 +122,40 @@ const DashboardPage: React.FC = () => {
     return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
   };
 
-  // Map challenges to OperationalChallenge type
-  const displayedChallenges: OperationalChallenge[] = challenges.slice(0, 3).map((baseChallenge): OperationalChallenge => {
-    const progress = challengeProgressList.find(p => p.challenge_id === baseChallenge.id);
+  // Map challenges to OperationalChallenge type and filter out hidden ones
+  const displayedChallenges: OperationalChallenge[] = challenges
+    .slice(0, 3)
+    .filter(challenge => !hiddenChallenges.has(challenge.id))
+    .map((baseChallenge): OperationalChallenge => {
+      const progress = challengeProgressList.find(p => p.challenge_id === baseChallenge.id);
 
-    if (progress) {
-      let pausedCoords: LatLngTuple | null = null;
-      if (progress.paused_location_lat != null && progress.paused_location_lng != null) {
-        pausedCoords = [progress.paused_location_lat, progress.paused_location_lng];
-      }
-      let completedCoords: LatLngTuple | null = null;
-      if (progress.completed_location_lat != null && progress.completed_location_lng != null) {
-        completedCoords = [progress.completed_location_lat, progress.completed_location_lng];
-      }
+      if (progress) {
+        let pausedCoords: LatLngTuple | null = null;
+        if (progress.paused_location_lat != null && progress.paused_location_lng != null) {
+          pausedCoords = [progress.paused_location_lat, progress.paused_location_lng];
+        }
+        let completedCoords: LatLngTuple | null = null;
+        if (progress.completed_location_lat != null && progress.completed_location_lng != null) {
+          completedCoords = [progress.completed_location_lat, progress.completed_location_lng];
+        }
 
-      return {
-        ...baseChallenge,
-        activityStatus: progress.status,
-        currentSteps: progress.current_steps,
-        pausedLocationName: progress.paused_location_name,
-        pausedLocationCoords: pausedCoords,
-        kilometersCoveredAtPause: progress.kilometers_covered_at_pause,
-        completedLocationName: progress.completed_location_name,
-        completedLocationCoords: completedCoords,
+        return {
+          ...baseChallenge,
+          activityStatus: progress.status,
+          currentSteps: progress.current_steps,
+          pausedLocationName: progress.paused_location_name,
+          pausedLocationCoords: pausedCoords,
+          kilometersCoveredAtPause: progress.kilometers_covered_at_pause,
+          completedLocationName: progress.completed_location_name,
+          completedLocationCoords: completedCoords,
+        };
+      }
+      return { 
+          ...baseChallenge,
+          activityStatus: 'not_started',
+          currentSteps: 0,
       };
-    }
-    return { 
-        ...baseChallenge,
-        activityStatus: 'not_started',
-        currentSteps: 0,
-    };
-  });
+    });
 
   // Simplified loading check - only wait for critical data
   const isLoadingCritical = profileLoading;
@@ -208,6 +242,7 @@ const DashboardPage: React.FC = () => {
                 kilometersCoveredAtPause={challengeData.kilometersCoveredAtPause || undefined}
                 completedLocationName={challengeData.completedLocationName || undefined}
                 completedLocationCoords={challengeData.completedLocationCoords || undefined}
+                onRemoveCompleted={challengeData.activityStatus === 'completed' ? () => handleRemoveCompletedChallenge(challengeData.id) : undefined}
               />
             ))}
           </div>
