@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile, UserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import EcoRunLogo from '@/components/EcoRunLogo';
-import { LayoutDashboard, Users, Gift, UserCog, LogOut, ShieldCheck, AlertTriangle, Loader2, Edit3, Trash2, CheckCircle, XCircle } from '@/components/icons';
+import { LayoutDashboard, Users, Gift, UserCog, LogOut, ShieldCheck, AlertTriangle, Loader2, Edit3, CheckCircle, XCircle, PlusCircle } from '@/components/icons';
 import {
   Table,
   TableHeader,
@@ -14,16 +14,60 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import EditUserForm from '@/components/admin/EditUserForm';
+import AssignGiftCardForm, { GiftCard } from '@/components/admin/AssignGiftCardForm'; // Added GiftCard type import
 
 const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile, roles, isLoading: profileLoading, updateProfile } = useUserProfile();
+  const { user, profile, roles, isLoading: profileLoading, updateProfile, fetchUserProfile } = useUserProfile();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+
+  const [availableGiftCards, setAvailableGiftCards] = useState<GiftCard[]>([]);
+  const [isLoadingGiftCards, setIsLoadingGiftCards] = useState(false);
+  const [isAssignGiftCardModalOpen, setIsAssignGiftCardModalOpen] = useState(false);
+
+
+  const fetchAllUsers = useCallback(async () => {
+    setIsLoadingUsers(true);
+    try {
+      const { data: usersData, error: usersError } = await supabase
+        .from('profiles')
+        .select('*'); 
+
+      if (usersError) throw usersError;
+      setAllUsers(usersData as UserProfile[]);
+    } catch (error: any) {
+      toast.error(`Failed to fetch users: ${error.message}`);
+      setAllUsers([]);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  }, []);
+
+  const fetchAvailableGiftCards = useCallback(async () => {
+    setIsLoadingGiftCards(true);
+    try {
+      const { data, error } = await supabase
+        .from('gift_cards')
+        .select('id, title, value_coins, image_url, monetary_value_aed, card_key, is_active')
+        .eq('is_active', true); // Fetch only active gift cards
+      if (error) throw error;
+      setAvailableGiftCards(data as GiftCard[]);
+    } catch (error: any) {
+      toast.error(`Failed to fetch gift cards: ${error.message}`);
+      setAvailableGiftCards([]);
+    } finally {
+      setIsLoadingGiftCards(false);
+    }
+  }, []);
+
 
   useEffect(() => {
-    const checkAuthorizationAndFetchUsers = async () => {
+    const checkAuthorization = async () => {
       if (profileLoading) return;
 
       if (!user) {
@@ -32,6 +76,13 @@ const AdminDashboardPage: React.FC = () => {
         setIsAuthorized(false);
         return;
       }
+
+      // Re-fetch profile to ensure latest roles are considered, especially if roles can change.
+      // This is a simplified approach; for more robust role management, consider how roles are updated and propagated.
+      if (user?.id) { // ensure user.id exists
+        await fetchUserProfile(user); // fetchUserProfile from the hook updates roles
+      }
+
 
       if (!roles.includes('admin')) {
         toast.error("Access denied. You are not an admin.");
@@ -49,28 +100,12 @@ const AdminDashboardPage: React.FC = () => {
       }
       
       setIsAuthorized(true);
-      // Fetch all users if authorized as admin
-      setIsLoadingUsers(true);
-      try {
-        // Fetch profiles including the email field if it exists and RLS permits
-        const { data: usersData, error: usersError } = await supabase
-          .from('profiles')
-          .select('*'); // Assuming 'email' is a column in 'profiles' table
-
-        if (usersError) {
-          throw usersError;
-        }
-        setAllUsers(usersData as UserProfile[]);
-      } catch (error: any) {
-        toast.error(`Failed to fetch users: ${error.message}`);
-        setAllUsers([]);
-      } finally {
-        setIsLoadingUsers(false);
-      }
+      fetchAllUsers();
+      fetchAvailableGiftCards(); // Fetch gift cards when authorized
     };
 
-    checkAuthorizationAndFetchUsers();
-  }, [user, roles, profile, profileLoading, navigate]);
+    checkAuthorization();
+  }, [user, roles, profile, profileLoading, navigate, fetchAllUsers, fetchAvailableGiftCards, fetchUserProfile]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -95,7 +130,7 @@ const AdminDashboardPage: React.FC = () => {
     const newBanStatus = !targetUser.is_banned;
     const action = newBanStatus ? 'ban' : 'unban';
     
-    // Optimistic update
+    const originalUsers = [...allUsers]; // Store original state for optimistic revert
     setAllUsers(prevUsers => 
         prevUsers.map(u => 
             u.id === targetUser.id ? { ...u, is_banned: newBanStatus } : u
@@ -103,28 +138,48 @@ const AdminDashboardPage: React.FC = () => {
     );
 
     try {
-        const updatedProfile = await updateProfile(targetUser.id, { is_banned: newBanStatus });
-        if (updatedProfile) {
+        const updatedProfileResult = await updateProfile(targetUser.id, { is_banned: newBanStatus });
+        if (updatedProfileResult) {
             toast.success(`User ${targetUser.username || targetUser.id} has been ${action}ned.`);
-        } else {
-            // Revert optimistic update on failure
+            // Optimistic update is already applied, no need to setAllUsers again if successful.
+            // However, ensure the updated user from backend reflects in `allUsers` if there are other changes
             setAllUsers(prevUsers => 
                 prevUsers.map(u => 
-                    u.id === targetUser.id ? { ...u, is_banned: targetUser.is_banned } : u
+                    u.id === targetUser.id ? { ...u, ...updatedProfileResult } : u
                 )
             );
-            toast.error(`Failed to ${action} user.`)
+
+        } else {
+            setAllUsers(originalUsers); // Revert optimistic update
+            // Error toast handled by updateProfile, or add a generic one here
+            toast.error(`Failed to ${action} user. updateProfile might have handled specific error.`);
         }
     } catch (error: any) {
-        // Revert optimistic update on error
-        setAllUsers(prevUsers => 
-            prevUsers.map(u => 
-                u.id === targetUser.id ? { ...u, is_banned: targetUser.is_banned } : u
-            )
-        );
+        setAllUsers(originalUsers); // Revert optimistic update
         toast.error(`Error ${action}ning user: ${error.message}`);
     }
   };
+
+  const handleOpenEditUserModal = (userToEdit: UserProfile) => {
+    setUserToEdit(userToEdit);
+    setIsEditUserModalOpen(true);
+  };
+
+  const handleUserUpdate = async (userId: string, data: Partial<UserProfile>) => {
+    const updatedUser = await updateProfile(userId, data);
+    if (updatedUser) {
+      // Refresh the user list to show changes
+      setAllUsers(prevUsers => 
+        prevUsers.map(u => (u.id === userId ? { ...u, ...updatedUser } : u))
+      );
+    }
+    return updatedUser; // Return for EditUserForm to handle specific toast
+  };
+  
+  const handleOpenAssignGiftCardModal = () => {
+    setIsAssignGiftCardModalOpen(true);
+  };
+
 
   if (profileLoading || isAuthorized === null) {
     return (
@@ -136,8 +191,6 @@ const AdminDashboardPage: React.FC = () => {
   }
 
   if (isAuthorized === false) {
-    // Navigation is handled in useEffect, so this primarily handles the brief moment before navigation occurs
-    // or if navigation fails for some reason.
     return (
         <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center p-4 text-center">
             <AlertTriangle size={48} className="text-red-500 mb-4" />
@@ -171,7 +224,10 @@ const AdminDashboardPage: React.FC = () => {
 
       <main className="flex-grow container mx-auto p-6 space-y-6">
         <section>
-          <h2 className="text-2xl font-semibold text-eco-accent mb-4 flex items-center"><Users size={24} className="mr-2"/>User Management</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-eco-accent flex items-center"><Users size={24} className="mr-2"/>User Management</h2>
+            {/* Add button or mechanism to trigger user creation if needed */}
+          </div>
           {isLoadingUsers ? (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="h-8 w-8 animate-spin text-eco-accent mr-2" /> Loading users...
@@ -210,17 +266,19 @@ const AdminDashboardPage: React.FC = () => {
                             <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="text-eco-yellow border-eco-yellow hover:bg-eco-yellow/10"
-                                onClick={() => toast.info("Edit user functionality coming soon!")}
+                                className="text-eco-yellow border-eco-yellow hover:bg-eco-yellow/10 hover:text-eco-yellow"
+                                onClick={() => handleOpenEditUserModal(u)}
                             >
                                 <Edit3 size={14} />
                             </Button>
                             <Button 
                                 variant={u.is_banned ? "outline" : "destructive"}
                                 size="sm"
-                                className={u.is_banned ? "text-green-400 border-green-400 hover:bg-green-400/10" : "text-red-400 border-red-400 hover:bg-red-400/10"}
+                                className={u.is_banned 
+                                    ? "text-green-400 border-green-400 hover:bg-green-400/10 hover:text-green-400" 
+                                    : "text-red-400 border-red-400 hover:bg-red-400/10 hover:text-red-400"}
                                 onClick={() => toggleBanStatus(u)}
-                                disabled={u.id === user?.id} // Prevent admin from banning themselves
+                                disabled={u.id === user?.id} 
                             >
                                 {u.is_banned ? <CheckCircle size={14} /> : <XCircle size={14} />}
                             </Button>
@@ -237,9 +295,28 @@ const AdminDashboardPage: React.FC = () => {
         </section>
         
         <section>
-            <h2 className="text-2xl font-semibold text-eco-accent mb-4 flex items-center"><Gift size={24} className="mr-2"/>Gift Card Management</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold text-eco-accent flex items-center"><Gift size={24} className="mr-2"/>Gift Card Management</h2>
+              <Button 
+                onClick={handleOpenAssignGiftCardModal} 
+                className="bg-eco-accent text-eco-dark hover:bg-eco-accent/80"
+                disabled={isLoadingGiftCards || availableGiftCards.length === 0}
+              >
+                <PlusCircle size={18} className="mr-2" />
+                Assign Gift Card
+              </Button>
+            </div>
             <div className="bg-eco-dark-secondary p-6 rounded-lg shadow-lg">
-                <p className="text-eco-gray text-sm">Add, replace, and assign gift cards. (Coming Soon)</p>
+                {isLoadingGiftCards ? (
+                    <div className="flex items-center justify-center py-6">
+                        <Loader2 className="h-6 w-6 animate-spin text-eco-accent mr-2" /> Loading gift card data...
+                    </div>
+                ) : availableGiftCards.length > 0 ? (
+                    <p className="text-eco-gray text-sm">Admins can assign available gift cards to users. Click "Assign Gift Card" to begin.</p>
+                    // Potentially list assigned gift cards here in the future
+                ) : (
+                    <p className="text-eco-gray text-sm">No active gift cards available to assign. Add gift cards via Supabase Studio or an import mechanism.</p>
+                )}
             </div>
         </section>
 
@@ -259,6 +336,31 @@ const AdminDashboardPage: React.FC = () => {
       <footer className="bg-eco-dark-secondary text-center p-4 text-sm text-eco-gray mt-auto">
         EcoRun Admin Panel &copy; {new Date().getFullYear()}
       </footer>
+
+      {isEditUserModalOpen && userToEdit && (
+        <EditUserForm
+          userToEdit={userToEdit}
+          isOpen={isEditUserModalOpen}
+          onClose={() => {
+            setIsEditUserModalOpen(false);
+            setUserToEdit(null);
+          }}
+          onUserUpdate={handleUserUpdate}
+        />
+      )}
+
+      {isAssignGiftCardModalOpen && (
+        <AssignGiftCardForm
+          users={allUsers}
+          giftCards={availableGiftCards}
+          isOpen={isAssignGiftCardModalOpen}
+          onClose={() => setIsAssignGiftCardModalOpen(false)}
+          onAssignmentSuccess={() => {
+            // Potentially refresh assigned gift cards list if displayed on this page
+            toast.info("Gift card assignment successful. You may need to refresh related views if applicable.");
+          }}
+        />
+      )}
     </div>
   );
 };
