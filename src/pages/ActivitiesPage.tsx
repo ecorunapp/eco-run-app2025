@@ -14,7 +14,21 @@ import ChallengeWonModal from '@/components/ChallengeWonModal';
 import { useEcoCoins } from '@/context/EcoCoinsContext';
 import StepCoinClaimModal from '@/components/StepCoinClaimModal';
 import MiniChallengeStatus from '@/components/MiniChallengeStatus';
-import { useChallengeProgress, UserChallengeProgress } from '@/hooks/useChallengeProgress'; // Import the new hook
+import { useChallengeProgress, UserChallengeProgress } from '@/hooks/useChallengeProgress';
+import MotivationalMessageCard from '@/components/MotivationalMessageCard';
+import { AnimatePresence } from 'framer-motion';
+
+const motivationalMessages = [
+  "Every step you take is a step towards a healthier you. Keep going!",
+  "The only bad workout is the one that didn't happen. Lace up those shoes!",
+  "Push yourself, because no one else is going to do it for you. You've got this!",
+  "Believe in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.",
+  "Today's actions are tomorrow's results. Make today count!",
+  "Don't limit your challenges. Challenge your limits. Let's run!",
+  "The journey of a thousand miles begins with a single step. Take it now!",
+  "Sweat is just fat crying. Make it pour!",
+  "Wake up with determination. Go to bed with satisfaction. Your activity today matters!"
+];
 
 const ActivitiesPage: React.FC = () => {
   console.log('ActivitiesPage: component mounted');
@@ -22,7 +36,7 @@ const ActivitiesPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { addEarnings } = useEcoCoins();
-  const { upsertProgress, getProgressByChallengeId } = useChallengeProgress(); // Use the hook
+  const { upsertProgress, getProgressByChallengeId } = useChallengeProgress();
 
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [isTracking, setIsTracking] = useState(false);
@@ -39,6 +53,36 @@ const ActivitiesPage: React.FC = () => {
 
   const [activityStartOptions, setActivityStartOptions] = useState<{ challenge: Challenge | null, isGeneric: boolean, resume?: boolean, initialSteps?: number } | null>(null);
   const [selectedActivityMode, setSelectedActivityMode] = useState<'walk' | 'run' | null>(null);
+
+  const [dailyMessage, setDailyMessage] = useState<string | null>(null);
+  const [showDailyMessage, setShowDailyMessage] = useState(false);
+
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const lastDismissedDate = localStorage.getItem('motivationDismissedDate');
+
+    if (lastDismissedDate !== todayStr) {
+      const today = new Date();
+      // Simple way to get a "day index" to pick a message.
+      // Using day of year ensures it changes daily.
+      const startOfYear = new Date(today.getFullYear(), 0, 0);
+      const diff = today.getTime() - startOfYear.getTime();
+      const oneDay = 1000 * 60 * 60 * 24;
+      const dayOfYear = Math.floor(diff / oneDay);
+      
+      const messageIndex = dayOfYear % motivationalMessages.length;
+      setDailyMessage(motivationalMessages[messageIndex]);
+      setShowDailyMessage(true);
+    } else {
+      setShowDailyMessage(false);
+    }
+  }, []);
+
+  const handleDismissMotivationalMessage = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    localStorage.setItem('motivationDismissedDate', todayStr);
+    setShowDailyMessage(false);
+  };
 
   useEffect(() => {
     if (location.state && location.state.challengeId && !activityStartOptions && !isTracking) {
@@ -141,7 +185,7 @@ const ActivitiesPage: React.FC = () => {
     setLastActivitySummary(activitySummary);
     setLiveProgress(null); // Clear live progress when tracking stops
 
-    const totalStepsForChallenge = activitySummary.steps; // This now correctly reflects total accumulated steps
+    const totalStepsForChallenge = activitySummary.steps; 
     const kilometersCovered = parseFloat((totalStepsForChallenge * 0.000762).toFixed(2));
 
     if (activeChallenge) {
@@ -206,8 +250,6 @@ const ActivitiesPage: React.FC = () => {
           });
         }
     }
-    // Do not clear activeChallenge here if paused, allow dashboard to show its status.
-    // If completed, modal closure handles clearing activeChallenge.
   };
   
   const handleLiveProgressUpdate = useCallback((progress: LiveProgressData) => {
@@ -305,13 +347,9 @@ const ActivitiesPage: React.FC = () => {
             className="text-eco-gray hover:text-eco-accent" 
             onClick={async () => { 
                 const challengeGoal = activeChallenge?.stepsGoal;
-                // Use liveProgress.currentSteps as it reflects the total accumulated steps
                 const currentTotalSteps = liveProgress?.currentSteps || 0; 
                 const potentiallyCompleted = activeChallenge && challengeGoal && currentTotalSteps >= challengeGoal;
                 
-                // For coins earned, this would be from activitySummary which isn't available yet.
-                // This part might need re-evaluation if coins from tracker are crucial on 'X' click.
-                // For now, passing 0 as placeholder.
                 const coinsFromTracker = 0; 
                 
                 if (activeChallenge && !potentiallyCompleted) {
@@ -330,7 +368,6 @@ const ActivitiesPage: React.FC = () => {
                         toast({ title: "Error", description: "Could not save pause state.", variant: "destructive" });
                     }
                 }
-                // Call handleStopTracking with the total steps from liveProgress
                 handleStopTracking(
                     {steps:currentTotalSteps, elapsedTime:liveProgress?.elapsedTime || 0, calories:0, co2Saved:0, coinsEarned:coinsFromTracker }, 
                     potentiallyCompleted || false
@@ -346,12 +383,12 @@ const ActivitiesPage: React.FC = () => {
             challengeGoalSteps={activeChallenge?.stepsGoal}
             onLiveProgressUpdate={handleLiveProgressUpdate}
             activityMode={selectedActivityMode}
-            initialSteps={initialStepsForTracker} // Pass the correctly determined initial steps
+            initialSteps={initialStepsForTracker} 
           />
         </main>
         {activeChallenge && liveProgress && (
           <MiniChallengeStatus
-            currentSteps={liveProgress.currentSteps} // This will now be the total accumulated steps
+            currentSteps={liveProgress.currentSteps}
             goalSteps={liveProgress.goalSteps}
           />
         )}
@@ -369,6 +406,16 @@ const ActivitiesPage: React.FC = () => {
           <Settings size={24} />
         </Button>
       </header>
+      
+      <AnimatePresence>
+        {showDailyMessage && dailyMessage && (
+          <MotivationalMessageCard 
+            message={dailyMessage} 
+            onDismiss={handleDismissMotivationalMessage} 
+          />
+        )}
+      </AnimatePresence>
+
       <main className="flex-grow p-4 space-y-6 overflow-y-auto pb-24">
         <section className="animate-fade-in-up text-center mb-6">
           <Button 
