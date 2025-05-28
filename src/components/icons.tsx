@@ -63,6 +63,7 @@ import {
   PieChart,
   Play,
   Plus,
+  PlusCircle, // Added PlusCircle
   Pointer,
   RefreshCw,
   Save,
@@ -189,6 +190,7 @@ export {
   PieChart,
   Play,
   Plus,
+  PlusCircle, // Added PlusCircle to exports
   Pointer,
   RefreshCw,
   Save,
