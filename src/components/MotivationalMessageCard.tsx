@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import { Lightbulb } from 'lucide-react'; // Or any other relevant icon
 
@@ -9,9 +9,12 @@ interface MotivationalMessageCardProps {
 }
 
 const MotivationalMessageCard: React.FC<MotivationalMessageCardProps> = ({ message, onDismiss }) => {
+  const [exitX, setExitX] = useState(-200); // Default exit to left
+
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const swipeThreshold = 50; // Minimum pixels to count as a swipe
     if (Math.abs(info.offset.x) > swipeThreshold) {
+      setExitX(info.offset.x > 0 ? 200 : -200); // Set exit direction based on swipe
       onDismiss();
     }
   };
@@ -23,7 +26,7 @@ const MotivationalMessageCard: React.FC<MotivationalMessageCardProps> = ({ messa
       onDragEnd={handleDragEnd}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: info => (info.offset.x > 0 ? 200 : -200), transition: { duration: 0.3 } }}
+      exit={{ opacity: 0, x: exitX, transition: { duration: 0.3 } }}
       className="bg-eco-dark-secondary rounded-xl shadow-lg p-4 m-4 cursor-grab active:cursor-grabbing"
       whileTap={{ scale: 0.98 }}
     >
