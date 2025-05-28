@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
@@ -18,12 +19,12 @@ import { AnimatePresence } from 'framer-motion';
 // Define an extended type for challenges that might have operational state
 interface OperationalChallenge extends Challenge {
   activityStatus?: 'not_started' | 'active' | 'paused' | 'completed';
-  currentSteps?: number | null; // Allow null from DB
-  pausedLocationName?: string | null; // Allow null
-  pausedLocationCoords?: LatLngTuple | null; // Allow null
-  kilometersCoveredAtPause?: number | null; // Allow null
-  completedLocationName?: string | null; // Allow null
-  completedLocationCoords?: LatLngTuple | null; // Allow null
+  currentSteps?: number | null;
+  pausedLocationName?: string | null;
+  pausedLocationCoords?: LatLngTuple | null;
+  kilometersCoveredAtPause?: number | null;
+  completedLocationName?: string | null;
+  completedLocationCoords?: LatLngTuple | null;
 }
 
 const motivationalMessages = [
@@ -39,7 +40,7 @@ const motivationalMessages = [
 ];
 
 const DashboardPage: React.FC = () => {
-  const { balance: userEcoPoints, isLoading: ecoCoinsLoading } = useEcoCoins(); // Removed ecoCoinsError
+  const { balance: userEcoPoints, isLoading: ecoCoinsLoading } = useEcoCoins();
   const { profile: userProfile, isLoading: profileLoading, error: profileError } = useUserProfile();
   const { 
     challengeProgressList, 
@@ -51,7 +52,7 @@ const DashboardPage: React.FC = () => {
   const [showDailyMessage, setShowDailyMessage] = useState(false);
 
   useEffect(() => {
-    const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const todayStr = new Date().toISOString().split('T')[0];
     const lastDismissedDate = localStorage.getItem('motivationDismissedDate');
 
     if (lastDismissedDate !== todayStr) {
@@ -78,11 +79,20 @@ const DashboardPage: React.FC = () => {
   const currentSteps = userProfile?.total_steps || 0;
   const goalSteps = 10000;
 
+  // Calculate dynamic stats based on user data
+  const userHeartRate = userProfile?.total_steps ? Math.min(60 + Math.floor((userProfile.total_steps / 1000) * 2), 180) : 0;
+  const userTimeTracked = userProfile?.total_steps ? Math.floor((userProfile.total_steps / 100) * 60) : 0; // seconds
+  const userCalories = userProfile?.total_steps ? Math.floor(userProfile.total_steps * 0.04) : 0;
+
+  // Format time for display
+  const formatTimeTracked = (seconds: number) => {
+    if (seconds === 0) return "00:00";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  };
+
   // Map challenges to OperationalChallenge type
-  // Removed hardcoded statuses for new user experience.
-  // Challenges will now default to 'not_started' or their initial locked state.
-  // Specific progress (currentSteps, completedLocation etc.) will be undefined
-  // and ChallengeCard will use its defaults (0 steps, 'not_started').
   const displayedChallenges: OperationalChallenge[] = challenges.slice(0, 3).map((baseChallenge): OperationalChallenge => {
     const progress = challengeProgressList.find(p => p.challenge_id === baseChallenge.id);
 
@@ -107,17 +117,15 @@ const DashboardPage: React.FC = () => {
         completedLocationCoords: completedCoords,
       };
     }
-    // If no progress in DB, return base challenge (will default to 'not_started' in ChallengeCard)
     return { 
         ...baseChallenge,
-        activityStatus: 'not_started', // Explicitly set for clarity, though ChallengeCard might default
+        activityStatus: 'not_started',
         currentSteps: 0,
     };
   });
 
   const overallLoading = ecoCoinsLoading || profileLoading || progressLoading;
-  // Removed ecoCoinsError from anyError condition
-  const anyError = profileError || challengeProgressError; 
+  const anyError = profileError || challengeProgressError;
 
   if (overallLoading) {
     return (
@@ -130,14 +138,11 @@ const DashboardPage: React.FC = () => {
 
   if (anyError) {
     let errorMessage = "An error occurred while loading dashboard data. Please try again later.";
-    // Adjusted errorMessage logic
     if (profileError) {
       errorMessage = `Error loading profile: ${profileError.message}`;
     } else if (challengeProgressError) {
       errorMessage = `Error loading challenge progress: ${challengeProgressError.message}`;
     }
-    // The specific 'Error loading EcoPoints' message is removed as ecoCoinsError is no longer available here.
-    // EcoCoinsContext handles its errors via toasts.
 
      return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center p-4 text-center">
@@ -185,7 +190,7 @@ const DashboardPage: React.FC = () => {
                 key={challengeData.id} 
                 challenge={challengeData} 
                 activityStatus={challengeData.activityStatus}
-                currentSteps={challengeData.currentSteps || 0} // Ensure currentSteps is number
+                currentSteps={challengeData.currentSteps || 0}
                 pausedLocationName={challengeData.pausedLocationName || undefined}
                 pausedLocationCoords={challengeData.pausedLocationCoords || undefined}
                 kilometersCoveredAtPause={challengeData.kilometersCoveredAtPause || undefined}
@@ -206,9 +211,24 @@ const DashboardPage: React.FC = () => {
         </section>
 
         <section className="grid grid-cols-2 sm:grid-cols-3 gap-4 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-          <ActivityStat icon={Heart} value="110" label="Heart Rate" iconColor="text-eco-pink" />
-          <ActivityStat icon={Clock} value="22:15" label="Time Track" iconColor="text-eco-purple" />
-          <ActivityStat icon={Flame} value="350" label="Calories" iconColor="text-orange-400" />
+          <ActivityStat 
+            icon={Heart} 
+            value={userHeartRate > 0 ? userHeartRate.toString() : "0"} 
+            label="Heart Rate" 
+            iconColor="text-eco-pink" 
+          />
+          <ActivityStat 
+            icon={Clock} 
+            value={formatTimeTracked(userTimeTracked)} 
+            label="Time Track" 
+            iconColor="text-eco-purple" 
+          />
+          <ActivityStat 
+            icon={Flame} 
+            value={userCalories.toString()} 
+            label="Calories" 
+            iconColor="text-orange-400" 
+          />
         </section>
         
         <section className="animate-fade-in-up" style={{ animationDelay: '0.7s' }}>
