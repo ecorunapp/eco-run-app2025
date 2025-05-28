@@ -15,20 +15,6 @@ import { useEcoCoins } from '@/context/EcoCoinsContext';
 import StepCoinClaimModal from '@/components/StepCoinClaimModal';
 import MiniChallengeStatus from '@/components/MiniChallengeStatus';
 import { useChallengeProgress, UserChallengeProgress } from '@/hooks/useChallengeProgress';
-import MotivationalMessageCard from '@/components/MotivationalMessageCard';
-import { AnimatePresence } from 'framer-motion';
-
-const motivationalMessages = [
-  "Every step you take is a step towards a healthier you. Keep going!",
-  "The only bad workout is the one that didn't happen. Lace up those shoes!",
-  "Push yourself, because no one else is going to do it for you. You've got this!",
-  "Believe in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.",
-  "Today's actions are tomorrow's results. Make today count!",
-  "Don't limit your challenges. Challenge your limits. Let's run!",
-  "The journey of a thousand miles begins with a single step. Take it now!",
-  "Sweat is just fat crying. Make it pour!",
-  "Wake up with determination. Go to bed with satisfaction. Your activity today matters!"
-];
 
 const ActivitiesPage: React.FC = () => {
   console.log('ActivitiesPage: component mounted');
@@ -53,36 +39,6 @@ const ActivitiesPage: React.FC = () => {
 
   const [activityStartOptions, setActivityStartOptions] = useState<{ challenge: Challenge | null, isGeneric: boolean, resume?: boolean, initialSteps?: number } | null>(null);
   const [selectedActivityMode, setSelectedActivityMode] = useState<'walk' | 'run' | null>(null);
-
-  const [dailyMessage, setDailyMessage] = useState<string | null>(null);
-  const [showDailyMessage, setShowDailyMessage] = useState(false);
-
-  useEffect(() => {
-    const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const lastDismissedDate = localStorage.getItem('motivationDismissedDate');
-
-    if (lastDismissedDate !== todayStr) {
-      const today = new Date();
-      // Simple way to get a "day index" to pick a message.
-      // Using day of year ensures it changes daily.
-      const startOfYear = new Date(today.getFullYear(), 0, 0);
-      const diff = today.getTime() - startOfYear.getTime();
-      const oneDay = 1000 * 60 * 60 * 24;
-      const dayOfYear = Math.floor(diff / oneDay);
-      
-      const messageIndex = dayOfYear % motivationalMessages.length;
-      setDailyMessage(motivationalMessages[messageIndex]);
-      setShowDailyMessage(true);
-    } else {
-      setShowDailyMessage(false);
-    }
-  }, []);
-
-  const handleDismissMotivationalMessage = () => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    localStorage.setItem('motivationDismissedDate', todayStr);
-    setShowDailyMessage(false);
-  };
 
   useEffect(() => {
     if (location.state && location.state.challengeId && !activityStartOptions && !isTracking) {
@@ -128,7 +84,7 @@ const ActivitiesPage: React.FC = () => {
     }
   }, [location.state, navigate, toast, activityStartOptions, isTracking, getProgressByChallengeId]);
 
-  const handleStartGenericActivity = () => {
+  const handleStartGenericActivity = useCallback(() => {
     setActiveChallenge(null);
     setActivityStartOptions({ challenge: null, isGeneric: true });
     // Clear other states
@@ -138,9 +94,9 @@ const ActivitiesPage: React.FC = () => {
     setCurrentUserGiftCardId(null);
     setPendingStepCoins(null);
     setShowStepCoinClaimModal(false);
-  };
+  }, []);
 
-  const handleModeSelected = async (mode: 'walk' | 'run') => {
+  const handleModeSelected = useCallback(async (mode: 'walk' | 'run') => {
     setSelectedActivityMode(mode);
     
     let initialStepsForTracking = activityStartOptions?.initialSteps || 0;
@@ -176,9 +132,9 @@ const ActivitiesPage: React.FC = () => {
     
     setIsTracking(true); // Set isTracking to true only after successful setup
     setActivityStartOptions(null); 
-  };
+  }, [activityStartOptions, getProgressByChallengeId, upsertProgress, toast, setActiveChallenge, setIsTracking, setSelectedActivityMode, setActivityStartOptions, setLiveProgress]);
 
-  const handleStopTracking = async (activitySummary: ActivitySummary, challengeCompleted?: boolean) => {
+  const handleStopTracking = useCallback(async (activitySummary: ActivitySummary, challengeCompleted?: boolean) => {
     console.log('ActivitiesPage: handleStopTracking called with summary:', activitySummary, 'Challenge Completed:', challengeCompleted);
     setIsTracking(false); 
     setSelectedActivityMode(null); 
@@ -250,7 +206,7 @@ const ActivitiesPage: React.FC = () => {
           });
         }
     }
-  };
+  }, [isTracking, selectedActivityMode, activeChallenge, upsertProgress, addEarnings, toast, setPendingStepCoins, setShowStepCoinClaimModal, setIsTracking, setSelectedActivityMode, setLastActivitySummary, setLiveProgress, setCompletedChallengeDetails, setCurrentUserGiftCardId, setShowChallengeWonModal]);
   
   const handleLiveProgressUpdate = useCallback((progress: LiveProgressData) => {
     setLiveProgress(progress);
@@ -407,15 +363,6 @@ const ActivitiesPage: React.FC = () => {
         </Button>
       </header>
       
-      <AnimatePresence>
-        {showDailyMessage && dailyMessage && (
-          <MotivationalMessageCard 
-            message={dailyMessage} 
-            onDismiss={handleDismissMotivationalMessage} 
-          />
-        )}
-      </AnimatePresence>
-
       <main className="flex-grow p-4 space-y-6 overflow-y-auto pb-24">
         <section className="animate-fade-in-up text-center mb-6">
           <Button 

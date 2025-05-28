@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
 import { Settings, Heart, Clock, Flame, Zap, AlertTriangle } from '@/components/icons';
@@ -12,6 +12,8 @@ import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { LatLngTuple } from 'leaflet';
 import { useChallengeProgress, UserChallengeProgress } from '@/hooks/useChallengeProgress';
+import MotivationalMessageCard from '@/components/MotivationalMessageCard';
+import { AnimatePresence } from 'framer-motion';
 
 // Define an extended type for challenges that might have operational state
 interface OperationalChallenge extends Challenge {
@@ -24,6 +26,18 @@ interface OperationalChallenge extends Challenge {
   completedLocationCoords?: LatLngTuple | null; // Allow null
 }
 
+const motivationalMessages = [
+  "Every step you take is a step towards a healthier you. Keep going!",
+  "The only bad workout is the one that didn't happen. Lace up those shoes!",
+  "Push yourself, because no one else is going to do it for you. You've got this!",
+  "Believe in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.",
+  "Today's actions are tomorrow's results. Make today count!",
+  "Don't limit your challenges. Challenge your limits. Let's run!",
+  "The journey of a thousand miles begins with a single step. Take it now!",
+  "Sweat is just fat crying. Make it pour!",
+  "Wake up with determination. Go to bed with satisfaction. Your activity today matters!"
+];
+
 const DashboardPage: React.FC = () => {
   const { balance: userEcoPoints, isLoading: ecoCoinsLoading } = useEcoCoins(); // Removed ecoCoinsError
   const { profile: userProfile, isLoading: profileLoading, error: profileError } = useUserProfile();
@@ -32,6 +46,34 @@ const DashboardPage: React.FC = () => {
     isLoading: progressLoading, 
     error: challengeProgressError 
   } = useChallengeProgress();
+
+  const [dailyMessage, setDailyMessage] = useState<string | null>(null);
+  const [showDailyMessage, setShowDailyMessage] = useState(false);
+
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const lastDismissedDate = localStorage.getItem('motivationDismissedDate');
+
+    if (lastDismissedDate !== todayStr) {
+      const today = new Date();
+      const startOfYear = new Date(today.getFullYear(), 0, 0);
+      const diff = today.getTime() - startOfYear.getTime();
+      const oneDay = 1000 * 60 * 60 * 24;
+      const dayOfYear = Math.floor(diff / oneDay);
+      
+      const messageIndex = dayOfYear % motivationalMessages.length;
+      setDailyMessage(motivationalMessages[messageIndex]);
+      setShowDailyMessage(true);
+    } else {
+      setShowDailyMessage(false);
+    }
+  }, []);
+
+  const handleDismissMotivationalMessage = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    localStorage.setItem('motivationDismissedDate', todayStr);
+    setShowDailyMessage(false);
+  };
 
   const currentSteps = userProfile?.total_steps || 0;
   const goalSteps = 10000;
@@ -119,6 +161,14 @@ const DashboardPage: React.FC = () => {
       </header>
 
       <main className="flex-grow p-4 space-y-8 overflow-y-auto pb-24">
+        <AnimatePresence>
+          {showDailyMessage && dailyMessage && (
+            <MotivationalMessageCard 
+              message={dailyMessage} 
+              onDismiss={handleDismissMotivationalMessage} 
+            />
+          )}
+        </AnimatePresence>
         
         <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <StepCounter 
