@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Challenge } from '@/data/challenges';
@@ -53,6 +54,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
                    activityStatus !== 'completed';
   const isUltimateEcotabChallenge = challenge.id === ECOTAB_CHALLENGE_ID;
   const isCompleted = activityStatus === 'completed';
+
+  // Safely render challenge icon
+  const ChallengeIcon = challenge.icon;
 
   let cardBgClass = '';
   let cardTextColorClass = challenge.textColor;
@@ -190,7 +194,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         <div className="flex items-center mb-2">
           {isLocked && <Lock size={28} className={`mr-3 ${titleIconClass}`} />}
           {activityStatus === 'completed' && <CheckCircle size={28} className="mr-3" />}
-          {!isLocked && activityStatus !== 'completed' && challenge.icon && <challenge.icon size={28} className="mr-3" />}
+          {!isLocked && activityStatus !== 'completed' && ChallengeIcon && <ChallengeIcon size={28} className="mr-3" />}
           <h3 className="text-2xl font-bold">{challenge.title}</h3>
         </div>
         <p className="text-sm mb-4 opacity-90">{challenge.description}</p>
