@@ -19,12 +19,12 @@ import { AnimatePresence } from 'framer-motion';
 // Define an extended type for challenges that might have operational state
 interface OperationalChallenge extends Challenge {
   activityStatus?: 'not_started' | 'active' | 'paused' | 'completed';
-  currentSteps?: number | null;
-  pausedLocationName?: string | null;
-  pausedLocationCoords?: LatLngTuple | null;
-  kilometersCoveredAtPause?: number | null;
-  completedLocationName?: string | null;
-  completedLocationCoords?: LatLngTuple | null;
+  currentSteps?: number;
+  pausedLocationName?: string;
+  pausedLocationCoords?: LatLngTuple;
+  kilometersCoveredAtPause?: number;
+  completedLocationName?: string;
+  completedLocationCoords?: LatLngTuple;
   expiresAt?: string;
   isPersonalized?: boolean;
 }
@@ -130,23 +130,25 @@ const DashboardPage: React.FC = () => {
       const progress = challengeProgressList.find(p => p.challenge_id === personalizedChallenge.id);
 
       if (progress) {
-        let pausedCoords: LatLngTuple | null = null;
-        if (progress.paused_location_lat != null && progress.paused_location_lng != null) {
+        // Safely handle coordinate conversion
+        let pausedCoords: LatLngTuple | undefined = undefined;
+        if (typeof progress.paused_location_lat === 'number' && typeof progress.paused_location_lng === 'number') {
           pausedCoords = [progress.paused_location_lat, progress.paused_location_lng];
         }
-        let completedCoords: LatLngTuple | null = null;
-        if (progress.completed_location_lat != null && progress.completed_location_lng != null) {
+        
+        let completedCoords: LatLngTuple | undefined = undefined;
+        if (typeof progress.completed_location_lat === 'number' && typeof progress.completed_location_lng === 'number') {
           completedCoords = [progress.completed_location_lat, progress.completed_location_lng];
         }
 
         return {
           ...personalizedChallenge,
           activityStatus: progress.status,
-          currentSteps: progress.current_steps,
-          pausedLocationName: progress.paused_location_name,
+          currentSteps: progress.current_steps || 0,
+          pausedLocationName: progress.paused_location_name || undefined,
           pausedLocationCoords: pausedCoords,
-          kilometersCoveredAtPause: progress.kilometers_covered_at_pause,
-          completedLocationName: progress.completed_location_name,
+          kilometersCoveredAtPause: progress.kilometers_covered_at_pause || undefined,
+          completedLocationName: progress.completed_location_name || undefined,
           completedLocationCoords: completedCoords,
           expiresAt: personalizedChallenge.expiresAt,
           isPersonalized: true,
@@ -246,11 +248,11 @@ const DashboardPage: React.FC = () => {
                 challenge={challengeData} 
                 activityStatus={challengeData.activityStatus}
                 currentSteps={challengeData.currentSteps || 0}
-                pausedLocationName={challengeData.pausedLocationName || undefined}
-                pausedLocationCoords={challengeData.pausedLocationCoords || undefined}
-                kilometersCoveredAtPause={challengeData.kilometersCoveredAtPause || undefined}
-                completedLocationName={challengeData.completedLocationName || undefined}
-                completedLocationCoords={challengeData.completedLocationCoords || undefined}
+                pausedLocationName={challengeData.pausedLocationName}
+                pausedLocationCoords={challengeData.pausedLocationCoords}
+                kilometersCoveredAtPause={challengeData.kilometersCoveredAtPause}
+                completedLocationName={challengeData.completedLocationName}
+                completedLocationCoords={challengeData.completedLocationCoords}
                 onRemoveCompleted={challengeData.activityStatus === 'completed' ? () => handleRemoveCompletedChallenge(challengeData.id) : undefined}
                 expiresAt={challengeData.expiresAt}
                 isPersonalized={challengeData.isPersonalized}

@@ -152,21 +152,18 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
     ? parseFloat((remainingSteps * 0.000762).toFixed(2))
     : 0;
 
-  if (challenge.id) { 
-    console.log(`ChallengeCard Debug: ID=${challenge.id}, Title=${challenge.title}`);
-    console.log(`  - activityStatus: ${activityStatus}`);
-    console.log(`  - currentSteps: ${currentSteps}, stepsGoal: ${challenge.stepsGoal}`);
-    console.log(`  - progressPercentage: ${progressPercentage}`);
-    console.log(`  - calculated remainingSteps: ${remainingSteps}`);
-    console.log(`  - calculated kilometersToGoal: ${kilometersToGoal}`);
-    console.log(`  - pausedLocationName: ${pausedLocationName}`);
-    console.log(`  - pausedLocationCoords:`, pausedLocationCoords);
-    
-    const showRemainingStepsBlock = remainingSteps > 0 && (activityStatus === 'paused' || activityStatus === 'active');
-    const showMapBlock = activityStatus === 'paused' && pausedLocationCoords;
-    console.log(`  - Show Remaining Steps Block? ${showRemainingStepsBlock}`);
-    console.log(`  - Show Map Block? ${showMapBlock}`);
-  }
+  // Safely check if coordinates are valid arrays
+  const hasValidPausedCoords = pausedLocationCoords && 
+    Array.isArray(pausedLocationCoords) && 
+    pausedLocationCoords.length === 2 && 
+    typeof pausedLocationCoords[0] === 'number' && 
+    typeof pausedLocationCoords[1] === 'number';
+
+  const hasValidCompletedCoords = completedLocationCoords && 
+    Array.isArray(completedLocationCoords) && 
+    completedLocationCoords.length === 2 && 
+    typeof completedLocationCoords[0] === 'number' && 
+    typeof completedLocationCoords[1] === 'number';
 
   const cardContent = (
     <div className={`p-6 rounded-xl shadow-lg ${cardBgClass} ${cardTextColorClass} flex flex-col justify-between animate-fade-in-up relative overflow-hidden`}>
@@ -245,7 +242,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 Distance covered: {kilometersCoveredAtPause.toLocaleString()} km
               </div>
             )}
-            {activityStatus === 'paused' && pausedLocationCoords && (
+            {activityStatus === 'paused' && hasValidPausedCoords && (
               <div className="mt-3 h-32 w-full rounded-lg overflow-hidden border border-white/20">
                 <StaticChallengeMap
                   center={pausedLocationCoords}
@@ -260,7 +257,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         {activityStatus === 'completed' && (
           <div className="mb-4 space-y-2">
             <p className="text-lg font-semibold text-center">Challenge Completed!</p>
-            {completedLocationCoords && (
+            {hasValidCompletedCoords && (
               <div className="h-32 w-full rounded-lg overflow-hidden border border-white/20">
                  <StaticChallengeMap 
                   center={completedLocationCoords} 
@@ -269,7 +266,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 />
               </div>
             )}
-            {completedLocationName && !completedLocationCoords && (
+            {completedLocationName && !hasValidCompletedCoords && (
                <div className="flex items-center text-sm p-2 bg-black/20 rounded-md justify-center">
                 <MapPin size={16} className="mr-2" />
                 Completed at: {completedLocationName}
@@ -340,7 +337,10 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         >
           {cardContent}
         </motion.div>
-        {/* ... keep existing code (EcotabActivationModal) */}
+        <EcotabActivationModal
+          isOpen={showEcotabModal}
+          onClose={() => setShowEcotabModal(false)}
+        />
       </>
     );
   }
@@ -348,7 +348,10 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   return (
     <>
       {cardContent}
-      {/* ... keep existing code (EcotabActivationModal) */}
+      <EcotabActivationModal
+        isOpen={showEcotabModal}
+        onClose={() => setShowEcotabModal(false)}
+      />
     </>
   );
 };
