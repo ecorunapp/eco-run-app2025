@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Challenge } from '@/data/challenges';
@@ -340,6 +341,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         <EcotabActivationModal
           isOpen={showEcotabModal}
           onClose={() => setShowEcotabModal(false)}
+          challengeTitle={challenge.title}
         />
       </>
     );
@@ -351,6 +353,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
       <EcotabActivationModal
         isOpen={showEcotabModal}
         onClose={() => setShowEcotabModal(false)}
+        challengeTitle={challenge.title}
       />
     </>
   );
