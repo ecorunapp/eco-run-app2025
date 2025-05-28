@@ -7,9 +7,10 @@ import WeeklyActivityChart from '@/components/WeeklyActivityChart';
 import StepCounter from '@/components/StepCounter';
 import { Button } from '@/components/ui/button';
 import ChallengeCard from '@/components/ChallengeCard';
-import { challenges, Challenge } from '@/data/challenges';
+import { Challenge } from '@/data/challenges';
 import { useEcoCoins } from '@/context/EcoCoinsContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { usePersonalizedChallenges } from '@/hooks/usePersonalizedChallenges';
 import { LatLngTuple } from 'leaflet';
 import { useChallengeProgress, UserChallengeProgress } from '@/hooks/useChallengeProgress';
 import MotivationalMessageCard from '@/components/MotivationalMessageCard';
@@ -24,6 +25,8 @@ interface OperationalChallenge extends Challenge {
   kilometersCoveredAtPause?: number | null;
   completedLocationName?: string | null;
   completedLocationCoords?: LatLngTuple | null;
+  expiresAt?: string;
+  isPersonalized?: boolean;
 }
 
 const motivationalMessages = [
@@ -41,6 +44,7 @@ const motivationalMessages = [
 const DashboardPage: React.FC = () => {
   const { balance: userEcoPoints, isLoading: ecoCoinsLoading } = useEcoCoins();
   const { profile: userProfile, isLoading: profileLoading, error: profileError } = useUserProfile();
+  const { dailyChallenges, isLoading: challengesLoading } = usePersonalizedChallenges();
   const { 
     challengeProgressList, 
     isLoading: progressLoading, 
@@ -79,10 +83,8 @@ const DashboardPage: React.FC = () => {
 
   const handleRemoveCompletedChallenge = async (challengeId: string) => {
     try {
-      // Hide the challenge immediately in UI
       setHiddenChallenges(prev => new Set(prev).add(challengeId));
       
-      // Update the challenge status to 'not_started' to effectively reset it
       await upsertProgress({
         challenge_id: challengeId,
         status: 'not_started',
@@ -97,7 +99,6 @@ const DashboardPage: React.FC = () => {
       });
     } catch (error) {
       console.error('Error removing completed challenge:', error);
-      // Revert the UI change if the database update fails
       setHiddenChallenges(prev => {
         const newSet = new Set(prev);
         newSet.delete(challengeId);
@@ -122,12 +123,11 @@ const DashboardPage: React.FC = () => {
     return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
   };
 
-  // Map challenges to OperationalChallenge type and filter out hidden ones
-  const displayedChallenges: OperationalChallenge[] = challenges
-    .slice(0, 3)
+  // Map personalized challenges to OperationalChallenge type and filter out hidden ones
+  const displayedChallenges: OperationalChallenge[] = dailyChallenges
     .filter(challenge => !hiddenChallenges.has(challenge.id))
-    .map((baseChallenge): OperationalChallenge => {
-      const progress = challengeProgressList.find(p => p.challenge_id === baseChallenge.id);
+    .map((personalizedChallenge): OperationalChallenge => {
+      const progress = challengeProgressList.find(p => p.challenge_id === personalizedChallenge.id);
 
       if (progress) {
         let pausedCoords: LatLngTuple | null = null;
@@ -140,7 +140,7 @@ const DashboardPage: React.FC = () => {
         }
 
         return {
-          ...baseChallenge,
+          ...personalizedChallenge,
           activityStatus: progress.status,
           currentSteps: progress.current_steps,
           pausedLocationName: progress.paused_location_name,
@@ -148,17 +148,21 @@ const DashboardPage: React.FC = () => {
           kilometersCoveredAtPause: progress.kilometers_covered_at_pause,
           completedLocationName: progress.completed_location_name,
           completedLocationCoords: completedCoords,
+          expiresAt: personalizedChallenge.expiresAt,
+          isPersonalized: true,
         };
       }
       return { 
-          ...baseChallenge,
+          ...personalizedChallenge,
           activityStatus: 'not_started',
           currentSteps: 0,
+          expiresAt: personalizedChallenge.expiresAt,
+          isPersonalized: true,
       };
     });
 
-  // Simplified loading check - only wait for critical data
-  const isLoadingCritical = profileLoading;
+  // Simplified loading check - wait for personalized challenges
+  const isLoadingCritical = profileLoading || challengesLoading;
   const anyError = profileError || challengeProgressError;
 
   // Show minimal loading for critical data only
@@ -229,7 +233,12 @@ const DashboardPage: React.FC = () => {
         </section>
 
         <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-          <h2 className="text-2xl font-semibold text-eco-light mb-4">Daily Challenges</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold text-eco-light">Today's Challenges</h2>
+            <div className="text-xs text-eco-gray bg-eco-dark-secondary px-3 py-1 rounded-full">
+              Refreshes daily at midnight
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayedChallenges.map((challengeData) => (
               <ChallengeCard 
@@ -243,6 +252,8 @@ const DashboardPage: React.FC = () => {
                 completedLocationName={challengeData.completedLocationName || undefined}
                 completedLocationCoords={challengeData.completedLocationCoords || undefined}
                 onRemoveCompleted={challengeData.activityStatus === 'completed' ? () => handleRemoveCompletedChallenge(challengeData.id) : undefined}
+                expiresAt={challengeData.expiresAt}
+                isPersonalized={challengeData.isPersonalized}
               />
             ))}
           </div>

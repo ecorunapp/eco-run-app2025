@@ -7,6 +7,7 @@ import { ArrowRight, Coins, Lock, MapPin, Play, CheckCircle, Footprints, X } fro
 import EcotabActivationModal from './EcotabActivationModal';
 import StaticChallengeMap from './StaticChallengeMap';
 import AnimatedProgressIcon from './AnimatedProgressIcon';
+import ChallengeTimer from './ChallengeTimer';
 import { LatLngTuple } from 'leaflet';
 import { motion, PanInfo } from 'framer-motion';
 
@@ -20,6 +21,8 @@ interface ChallengeCardProps {
   completedLocationName?: string;
   completedLocationCoords?: LatLngTuple;
   onRemoveCompleted?: () => void;
+  expiresAt?: string;
+  isPersonalized?: boolean;
 }
 
 const ECOTAB_CHALLENGE_ID = 'challenge_20k_ecotab_300aed';
@@ -34,11 +37,14 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   completedLocationName,
   completedLocationCoords,
   onRemoveCompleted,
+  expiresAt,
+  isPersonalized = false,
 }) => {
   const navigate = useNavigate();
   const [showEcotabModal, setShowEcotabModal] = useState(false);
   const [dragX, setDragX] = useState(0);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
 
   const isLocked = challenge.isLockedInitially && 
                    activityStatus !== 'paused' && 
@@ -54,7 +60,12 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   let unlockDescBgClass = 'bg-black/30';
   let unlockDescTextClass = 'text-yellow-300';
 
-  if (isLocked) {
+  if (isExpired && isPersonalized && !isCompleted) {
+    cardBgClass = 'bg-gray-600 opacity-60';
+    cardTextColorClass = 'text-gray-300';
+    buttonClass = 'bg-gray-700 text-gray-400';
+    titleIconClass = 'text-gray-400';
+  } else if (isLocked) {
     if (isUltimateEcotabChallenge) {
       cardBgClass = 'bg-gradient-to-br from-yellow-400 to-amber-600';
       cardTextColorClass = 'text-black';
@@ -83,6 +94,10 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   }
 
   const handleChallengeAction = () => {
+    if (isExpired && isPersonalized && !isCompleted) {
+      console.log("Challenge expired:", challenge.title);
+      return;
+    }
     if (activityStatus === 'completed') {
       console.log("Challenge already completed:", challenge.title);
       return;
@@ -97,7 +112,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
           initialSteps: currentSteps,
         }
       });
-    } else if (!isLocked) {
+    } else if (!isLocked && !isExpired) {
       navigate('/activities', { state: { challengeId: challenge.id } });
     }
   };
@@ -105,12 +120,10 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   const handleDragEnd = (event: any, info: PanInfo) => {
     if (!isCompleted || !onRemoveCompleted) return;
     
-    // If dragged far enough to the right (more than 150px), trigger removal
     if (info.offset.x > 150) {
       setIsRemoving(true);
       onRemoveCompleted();
     } else {
-      // Reset position if not dragged far enough
       setDragX(0);
     }
   };
@@ -118,10 +131,13 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   const handleDrag = (event: any, info: PanInfo) => {
     if (!isCompleted || !onRemoveCompleted) return;
     
-    // Only allow rightward dragging for removal
     if (info.offset.x > 0) {
       setDragX(info.offset.x);
     }
+  };
+
+  const handleExpire = () => {
+    setIsExpired(true);
   };
 
   const progressPercentage = challenge.stepsGoal > 0 && currentSteps > 0 && (activityStatus === 'paused' || activityStatus === 'active' || activityStatus === 'completed')
@@ -154,6 +170,13 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
 
   const cardContent = (
     <div className={`p-6 rounded-xl shadow-lg ${cardBgClass} ${cardTextColorClass} flex flex-col justify-between animate-fade-in-up relative overflow-hidden`}>
+      {/* Timer for personalized challenges */}
+      {isPersonalized && expiresAt && !isCompleted && !isUltimateEcotabChallenge && (
+        <div className="absolute top-4 right-4">
+          <ChallengeTimer expiresAt={expiresAt} onExpire={handleExpire} />
+        </div>
+      )}
+
       {/* Swipe indicator for completed challenges */}
       {isCompleted && onRemoveCompleted && (
         <div 
@@ -180,6 +203,12 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
           </div>
         )}
 
+        {isExpired && isPersonalized && !isCompleted && (
+          <div className="mb-4 p-3 bg-red-900/30 rounded-md">
+            <p className="text-sm font-semibold text-red-300">Challenge Expired - Wait for tomorrow's challenges!</p>
+          </div>
+        )}
+
         {(activityStatus === 'paused' || activityStatus === 'active') && challenge.stepsGoal > 0 && (
           <div className="mb-4 space-y-3">
             <div>
@@ -187,7 +216,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 <span>Progress</span>
                 <span>{currentSteps.toLocaleString()} / {challenge.stepsGoal.toLocaleString()} steps</span>
               </div>
-              <div className="relative w-full"> {/* Added relative container for icon positioning */}
+              <div className="relative w-full">
                 <Progress value={progressPercentage} className={`h-2.5 ${activityStatus === 'paused' ? '[&>div]:bg-yellow-400 bg-white/30' : '[&>div]:bg-green-400 bg-white/30'}`} />
                 { (activityStatus === 'active' || activityStatus === 'paused') && progressPercentage > 0 && progressPercentage < 100 && (
                   <AnimatedProgressIcon progressPercentage={progressPercentage} />
@@ -195,7 +224,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
               </div>
               
               {currentSteps > 0 && (
-                <div className="flex items-center text-xs text-white mt-1"> {/* Changed to text-white */}
+                <div className="flex items-center text-xs text-white mt-1">
                   <Footprints size={14} className="mr-1" /> 
                   Steps completed: {currentSteps.toLocaleString()}
                 </div>
@@ -249,7 +278,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
           </div>
         )}
 
-        {!isLocked && activityStatus !== 'paused' && activityStatus !== 'completed' && (
+        {!isLocked && activityStatus !== 'paused' && activityStatus !== 'completed' && !isExpired && (
           <div className="flex items-center text-sm font-semibold mb-4">
             <Coins size={18} className="mr-2 opacity-90" />
             <span>Reward: {challenge.rewardCoins} EcoCoins</span>
@@ -258,10 +287,14 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
       </div>
       <Button
         onClick={handleChallengeAction}
-        disabled={(isLocked && !isUltimateEcotabChallenge) || activityStatus === 'completed'}
+        disabled={(isLocked && !isUltimateEcotabChallenge) || activityStatus === 'completed' || (isExpired && isPersonalized && !isCompleted)}
         className={`${buttonClass} w-full font-semibold mt-auto`}
       >
-        {activityStatus === 'completed' ? (
+        {isExpired && isPersonalized && !isCompleted ? (
+          <>
+            Challenge Expired
+          </>
+        ) : activityStatus === 'completed' ? (
           <>
             <CheckCircle size={20} className="mr-2" />
             Completed
