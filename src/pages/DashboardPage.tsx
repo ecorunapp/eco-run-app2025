@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import BottomNav from '@/components/BottomNav';
 import EcoRunLogo from '@/components/EcoRunLogo';
@@ -124,14 +123,27 @@ const DashboardPage: React.FC = () => {
     };
   });
 
-  const overallLoading = ecoCoinsLoading || profileLoading || progressLoading;
+  // Simplified loading check - only wait for critical data
+  const isLoadingCritical = profileLoading;
   const anyError = profileError || challengeProgressError;
 
-  if (overallLoading) {
+  // Show minimal loading for critical data only
+  if (isLoadingCritical) {
     return (
-      <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light justify-center items-center">
-        <Zap size={48} className="animate-ping text-eco-accent" />
-        <p className="mt-4">Loading Dashboard...</p>
+      <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light">
+        <header className="p-4 flex justify-between items-center sticky top-0 bg-eco-dark z-40 shadow-sm">
+          <EcoRunLogo size="small" />
+          <Button variant="ghost" size="icon" className="text-eco-gray hover:text-eco-accent">
+            <Settings size={24} />
+          </Button>
+        </header>
+        <main className="flex-grow flex justify-center items-center">
+          <div className="text-center">
+            <Zap size={32} className="animate-pulse text-eco-accent mx-auto mb-2" />
+            <p className="text-eco-gray">Loading...</p>
+          </div>
+        </main>
+        <BottomNav />
       </div>
     );
   }
@@ -205,7 +217,7 @@ const DashboardPage: React.FC = () => {
           <p className="text-sm font-medium text-eco-dark-secondary opacity-90">Your EcoPoints</p>
           <h2 className="text-5xl font-extrabold text-white my-2 flex items-center justify-center">
             <Zap size={36} className="mr-2 text-yellow-300" />
-            {userEcoPoints.toLocaleString()}
+            {ecoCoinsLoading ? "..." : userEcoPoints.toLocaleString()}
           </h2>
           <p className="text-xs text-eco-dark-secondary opacity-80">Keep up the great work!</p>
         </section>

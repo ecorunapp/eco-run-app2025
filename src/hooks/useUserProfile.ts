@@ -2,16 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
-import type { Enums } from '@/integrations/supabase/types'; // Import Enums
+import type { Enums } from '@/integrations/supabase/types';
 
-export type AppRole = Enums<'app_role'>; // 'admin' | 'user'
+export type AppRole = Enums<'app_role'>;
 
 export interface UserProfile {
   id: string;
   username: string | null;
   full_name: string | null;
   avatar_url: string | null;
-  email?: string | null; // Optional: if you fetch email along with profile
+  email?: string | null;
   weight_kg: number | null;
   height_cm: number | null;
   updated_at?: string | null;
@@ -38,57 +38,86 @@ export const useUserProfile = () => {
     }
 
     setUser(currentUser);
-    setIsLoading(true);
-    setError(null); // Reset error on new fetch
+    setError(null);
 
     try {
-      // Fetch profile
-      // For admin, we might need a different query or separate function if they need all users here.
-      // For now, this fetches the logged-in user's profile.
-      const { data: profileData, error: profileError } = await supabase
+      // Fetch profile with a timeout to prevent long waits
+      const profilePromise = supabase
         .from('profiles')
-        .select('*, roles:user_roles(role)') // Fetch roles alongside profile
+        .select('*')
         .eq('id', currentUser.id)
         .single();
-      
-      if (profileError) {
-        if (profileError.code === 'PGRST116') { 
-            toast.warning("Profile not found or multiple entries. Waiting for profile creation...");
-            setProfile(null);
-            setRoles([]); // Ensure roles are cleared if profile is not found
-        } else {
+
+      const rolesPromise = supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.id);
+
+      // Use Promise.allSettled to handle partial failures gracefully
+      const [profileResult, rolesResult] = await Promise.allSettled([profilePromise, rolesPromise]);
+
+      // Handle profile result
+      if (profileResult.status === 'fulfilled') {
+        const { data: profileData, error: profileError } = profileResult.value;
+        if (profileError) {
+          if (profileError.code === 'PGRST116') { 
+            // Create default profile for new users
+            const defaultProfile: UserProfile = {
+              id: currentUser.id,
+              username: currentUser.email,
+              full_name: null,
+              avatar_url: null,
+              email: currentUser.email,
+              weight_kg: null,
+              height_cm: null,
+              total_steps: 0,
+              roles: ['user'],
+            };
+            setProfile(defaultProfile);
+          } else {
             throw profileError;
-        }
-      } else {
-        // Extract roles from the nested structure if fetched this way
-        const fetchedRoles = (profileData as any)?.roles?.map((r: {role: AppRole}) => r.role) || [];
-        const userProfile: UserProfile = {
+          }
+        } else {
+          const userProfile: UserProfile = {
             ...profileData,
-            email: currentUser.email, // Add email from auth user
-            roles: fetchedRoles,
-        };
-        setProfile(userProfile);
-        setRoles(fetchedRoles);
-
-        // If roles were not fetched with profile, fetch them separately
-        if (fetchedRoles.length === 0) {
-            const { data: rolesData, error: rolesError } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', currentUser.id);
-
-            if (rolesError) throw rolesError;
-            const separateRoles = rolesData.map(r => r.role as AppRole) || [];
-            setRoles(separateRoles);
-            setProfile(prev => prev ? {...prev, roles: separateRoles} : null);
+            email: currentUser.email,
+            total_steps: profileData.total_steps || 0,
+          };
+          setProfile(userProfile);
         }
       }
 
+      // Handle roles result
+      if (rolesResult.status === 'fulfilled') {
+        const { data: rolesData, error: rolesError } = rolesResult.value;
+        if (!rolesError && rolesData) {
+          const fetchedRoles = rolesData.map(r => r.role as AppRole) || ['user'];
+          setRoles(fetchedRoles);
+          setProfile(prev => prev ? {...prev, roles: fetchedRoles} : null);
+        } else {
+          setRoles(['user']); // Default role
+        }
+      } else {
+        setRoles(['user']); // Default role if fetch fails
+      }
+
     } catch (error: any) {
-      toast.error(`Failed to fetch user data: ${error.message}`);
+      console.error('Profile fetch error:', error);
       setError(error); 
-      setProfile(null);
-      setRoles([]);
+      // Don't show toast for new users, just set defaults
+      const defaultProfile: UserProfile = {
+        id: currentUser.id,
+        username: currentUser.email,
+        full_name: null,
+        avatar_url: null,
+        email: currentUser.email,
+        weight_kg: null,
+        height_cm: null,
+        total_steps: 0,
+        roles: ['user'],
+      };
+      setProfile(defaultProfile);
+      setRoles(['user']);
     } finally {
       setIsLoading(false);
     }
@@ -96,25 +125,24 @@ export const useUserProfile = () => {
 
   useEffect(() => {
     const getSessionAndProfile = async () => {
-      // Fetch session first
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        toast.error(`Error getting session: ${sessionError.message}`);
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          setIsLoading(false);
+          return;
+        }
+        await fetchUserProfile(session?.user || null);
+      } catch (error) {
+        console.error('Session fetch error:', error);
         setIsLoading(false);
-        return;
       }
-      // Then fetch profile using the user from session
-      await fetchUserProfile(session?.user || null);
     };
 
     getSessionAndProfile();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        // This callback should ideally be lean. Offload heavy lifting.
-        // console.log("Auth state changed, new session:", session);
-        // Directly calling fetchUserProfile here is okay if it's efficient
-        // For more complex scenarios, consider event emitters or a more robust state management
         await fetchUserProfile(session?.user || null);
       }
     );
