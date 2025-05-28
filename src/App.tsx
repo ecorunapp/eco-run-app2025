@@ -10,12 +10,12 @@ import Home from './pages/Index';
 import Profile from './pages/ProfilePage';
 import Rewards from './pages/RewardsPage';
 import NotFound from './pages/NotFound';
+import SplashScreenPage from './pages/SplashScreenPage';
 import { supabase } from './integrations/supabase/client';
 import Auth from './pages/LoginPage';
 import { EcoCoinsProvider } from './context/EcoCoinsContext';
 import Dashboard from './pages/DashboardPage';
-import AdminDashboardPage from './pages/AdminDashboardPage'; // Added
-// MeetAndRunPage import removed
+import AdminDashboardPage from './pages/AdminDashboardPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
@@ -23,8 +23,13 @@ const queryClient = new QueryClient();
 function App() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [hasSeenSplash, setHasSeenSplash] = useState(false);
 
   useEffect(() => {
+    // Check if user has seen splash screen before
+    const splashSeen = localStorage.getItem('hasSeenSplash');
+    setHasSeenSplash(splashSeen === 'true');
+
     setLoading(true); 
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, currentSession) => {
@@ -56,15 +61,35 @@ function App() {
         <ThemeProvider attribute="class" defaultTheme="light" storageKey="vite-ui-theme" enableSystem={false} disableTransitionOnChange>
           <Router>
             <Routes>
-              <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <Auth />} />
-              <Route path="/" element={session ? <Dashboard /> : <Home />} /> 
+              {/* Public routes */}
               <Route path="/welcome" element={<Home />} />
+              <Route path="/splash" element={<SplashScreenPage />} />
+              
+              {/* Auth routes */}
+              <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <Auth />} />
+              
+              {/* Protected routes */}
               <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/auth" />} />
-              <Route path="/adashboard" element={session ? <AdminDashboardPage /> : <Navigate to="/auth" />} /> {/* Added admin route */}
+              <Route path="/adashboard" element={session ? <AdminDashboardPage /> : <Navigate to="/auth" />} />
               <Route path="/activities" element={session ? <Activities /> : <Navigate to="/auth" />} />
               <Route path="/rewards" element={session ? <Rewards /> : <Navigate to="/auth" />} />
               <Route path="/profile" element={session ? <Profile /> : <Navigate to="/auth" />} />
-              {/* Route for /meet-and-run removed */}
+              
+              {/* Root route logic */}
+              <Route 
+                path="/" 
+                element={
+                  session ? (
+                    <Navigate to="/dashboard" />
+                  ) : hasSeenSplash ? (
+                    <Navigate to="/auth" />
+                  ) : (
+                    <Navigate to="/splash" />
+                  )
+                } 
+              />
+              
+              {/* Catch all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Router>
@@ -76,4 +101,3 @@ function App() {
 }
 
 export default App;
-

@@ -43,12 +43,16 @@ const SplashScreenPage: React.FC = () => {
     if (currentSlide < splashSlides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
-      navigate('/welcome');
+      // Mark that user has seen splash screen
+      localStorage.setItem('hasSeenSplash', 'true');
+      navigate('/auth'); // Navigate directly to auth instead of welcome
     }
   };
 
   const handleSkip = () => {
-    navigate('/welcome');
+    // Mark that user has seen splash screen
+    localStorage.setItem('hasSeenSplash', 'true');
+    navigate('/auth'); // Navigate directly to auth instead of welcome
   };
 
   const ActiveIcon = splashSlides[currentSlide].icon;
