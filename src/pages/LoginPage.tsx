@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import EcoRunLogo from '@/components/EcoRunLogo';
 import { ArrowLeft, Mail, Lock, Loader2 } from '@/components/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { UserProfile, AppRole } from '@/hooks/useUserProfile'; // Import UserProfile and AppRole
+import type { UserProfile, AppRole } from '@/hooks/useUserProfile';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     const handleAuthRedirect = async (userId: string) => {
-      setIsLoading(true); // Keep loading true while we check roles etc.
+      setIsLoading(true);
       try {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -27,18 +28,20 @@ const LoginPage: React.FC = () => {
           .single<Pick<UserProfile, 'is_banned' | 'id'>>();
 
         if (profileError) {
-          toast.error(`Error fetching profile: ${profileError.message}`);
-          await supabase.auth.signOut(); 
-          navigate('/auth');
-          // setIsLoading(false); // Moved to finally
-          return;
+          console.error('Profile fetch error:', profileError);
+          if (profileError.code !== 'PGRST116') {
+            toast.error(`Error fetching profile: ${profileError.message}`);
+            await supabase.auth.signOut(); 
+            navigate('/auth');
+            return;
+          }
+          // If PGRST116 (no profile found), continue to role check
         }
 
         if (profileData?.is_banned) {
           toast.error('Your account has been banned.');
           await supabase.auth.signOut();
           navigate('/auth');
-          // setIsLoading(false); // Moved to finally
           return;
         }
 
@@ -48,95 +51,91 @@ const LoginPage: React.FC = () => {
           .eq('user_id', userId);
 
         if (rolesError) {
-          toast.error(`Error fetching roles: ${rolesError.message}`);
-          // Default to dashboard if roles check fails but not banned
-          // This allows non-admin users to proceed if roles table has issues but profile is fine.
+          console.error('Roles fetch error:', rolesError);
+          toast.success('Logged in successfully!');
           navigate('/dashboard'); 
-          // setIsLoading(false); // Moved to finally
           return;
         }
 
         const roles = rolesData?.map(r => r.role as AppRole) || [];
         if (roles.includes('admin')) {
           toast.success('Admin login successful!');
-          navigate('/adashboard'); // Redirect admins
+          navigate('/adashboard');
         } else {
           toast.success('Logged in successfully!');
-          navigate('/dashboard'); // Regular users to dashboard
+          navigate('/dashboard');
         }
       } catch (e: any) {
-        toast.error(`An unexpected error occurred during auth redirect: ${e.message}`);
+        console.error('Auth redirect error:', e);
+        toast.error(`An unexpected error occurred: ${e.message}`);
         await supabase.auth.signOut();
         navigate('/auth');
       } finally {
-        setIsLoading(false); // Set loading false in finally
-        setIsCheckingSession(false); // Also set checking session false
+        setIsLoading(false);
+        setIsCheckingSession(false);
       }
     };
 
     const checkSession = async () => {
       setIsCheckingSession(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await handleAuthRedirect(session.user.id);
-      } else {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Session check error:', error);
+        }
+        if (session) {
+          await handleAuthRedirect(session.user.id);
+        } else {
+          setIsCheckingSession(false);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Session check failed:', error);
         setIsCheckingSession(false);
-        setIsLoading(false); // Ensure loading is false if no session
+        setIsLoading(false);
       }
     };
 
     checkSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN') {
-        if (session?.user?.id) {
-          // handleAuthRedirect will be called, which sets isLoading and isCheckingSession
-        }
+      if (event === 'SIGNED_IN' && session?.user?.id) {
+        await handleAuthRedirect(session.user.id);
       } else if (event === 'SIGNED_OUT') {
         setEmail('');
         setPassword('');
         navigate('/auth'); 
         setIsCheckingSession(false); 
-        setIsLoading(false); // Ensure loading state is cleared on sign out
+        setIsLoading(false);
       }
-      // For SIGNED_IN, handleAuthRedirect is called by checkSession or if user logs in manually
-      // No need to explicitly call it again here unless to re-verify, but that's covered
     });
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate]); // Removed handleAuthRedirect from dependencies as it's defined inside useEffect
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
         toast.error(error.message);
-        setIsLoading(false); // Stop loading on error
-      } else if (data.session?.user?.id) {
-        // onAuthStateChange will trigger handleAuthRedirect
-        // No explicit navigation here needed, it simplifies logic
-        // setIsCheckingSession(true); // Indicate we are now in auth flow
-      } else {
-        // Should not happen if no error and no session, but as a fallback:
-        toast.error("Login failed. Please try again.");
         setIsLoading(false);
       }
+      // Success handling is done in onAuthStateChange
     } catch (catchError: any) {
       toast.error(catchError.message || 'An unexpected error occurred.');
-      setIsLoading(false); // Stop loading on error
+      setIsLoading(false);
     } 
-    // setIsLoading(false) is handled by onAuthStateChange or error cases
   };
 
-  if (isCheckingSession || isLoading) { // Combined isLoading with isCheckingSession
+  if (isCheckingSession || isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-eco-dark text-eco-light p-6 justify-center items-center">
         <Loader2 className="h-12 w-12 animate-spin text-eco-accent" />
@@ -154,7 +153,7 @@ const LoginPage: React.FC = () => {
           <ArrowLeft size={24} />
         </Button>
         <EcoRunLogo size="small" />
-        <div className="w-10" /> {/* Spacer */}
+        <div className="w-10" />
       </header>
 
       <main className="flex-grow flex flex-col items-center justify-center w-full max-w-sm animate-fade-in-up">
@@ -195,7 +194,7 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
           <div className="text-right">
-            <Button variant="link" onClick={() => { /* TODO: Implement Supabase password reset flow */ toast.info("Forgot password functionality coming soon!") }} className="text-eco-accent p-0 h-auto text-sm hover:underline" disabled={isLoading}>
+            <Button variant="link" onClick={() => { toast.info("Forgot password functionality coming soon!") }} className="text-eco-accent p-0 h-auto text-sm hover:underline" disabled={isLoading}>
               Forgot password?
             </Button>
           </div>
@@ -204,7 +203,6 @@ const LoginPage: React.FC = () => {
           </Button>
         </form>
 
-         {/* Social Logins Placeholder - TODO: Implement with Supabase OAuth */}
         <div className="mt-8 text-center w-full">
           <p className="text-eco-gray text-sm mb-4">Or continue with</p>
           <div className="space-y-3">
@@ -227,7 +225,7 @@ const LoginPage: React.FC = () => {
           </Button>
         </p>
       </main>
-      <footer className="h-10"></footer> {/* Spacer for bottom */}
+      <footer className="h-10"></footer>
     </div>
   );
 };

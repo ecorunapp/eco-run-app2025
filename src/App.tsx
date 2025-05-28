@@ -13,6 +13,7 @@ import NotFound from './pages/NotFound';
 import SplashScreenPage from './pages/SplashScreenPage';
 import { supabase } from './integrations/supabase/client';
 import Auth from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import { EcoCoinsProvider } from './context/EcoCoinsContext';
 import Dashboard from './pages/DashboardPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -38,9 +39,23 @@ function App() {
       setLoading(false); 
     });
 
-    supabase.auth.getSession().catch(error => {
-      console.error("App.tsx: Error during explicit supabase.auth.getSession():", error);
-    });
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("App.tsx: Error during getSession():", error);
+        } else {
+          setSession(initialSession);
+        }
+      } catch (error) {
+        console.error("App.tsx: Error during explicit supabase.auth.getSession():", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getInitialSession();
 
     return () => {
       authListener?.subscription?.unsubscribe();
@@ -67,6 +82,8 @@ function App() {
               
               {/* Auth routes */}
               <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <Auth />} />
+              <Route path="/login" element={session ? <Navigate to="/dashboard" /> : <Auth />} />
+              <Route path="/signup" element={session ? <Navigate to="/dashboard" /> : <SignupPage />} />
               
               {/* Protected routes */}
               <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/auth" />} />
