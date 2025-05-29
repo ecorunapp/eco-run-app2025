@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Challenge } from '@/data/challenges';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowRight, Coins, Lock, MapPin, Play, CheckCircle, Footprints, X } from '@/components/icons';
+import { ArrowRight, Coins, Lock, MapPin, Play, CheckCircle, Footprints, X } from 'lucide-react';
 import EcotabActivationModal from './EcotabActivationModal';
 import StaticChallengeMap from './StaticChallengeMap';
 import AnimatedProgressIcon from './AnimatedProgressIcon';
@@ -53,8 +53,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   const isUltimateEcotabChallenge = challenge.id === ECOTAB_CHALLENGE_ID;
   const isCompleted = activityStatus === 'completed';
 
-  // Safely render challenge icon - ensure it's a valid React component
-  const ChallengeIcon = challenge.icon && typeof challenge.icon === 'function' ? challenge.icon : null;
+  // Safely render challenge icon - use a default icon if challenge.icon is invalid
+  const IconComponent = challenge.icon || Footprints;
 
   let cardBgClass = '';
   let cardTextColorClass = challenge.textColor;
@@ -192,7 +192,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         <div className="flex items-center mb-2">
           {isLocked && <Lock size={28} className={`mr-3 ${titleIconClass}`} />}
           {activityStatus === 'completed' && <CheckCircle size={28} className="mr-3" />}
-          {!isLocked && activityStatus !== 'completed' && ChallengeIcon && <ChallengeIcon size={28} className="mr-3" />}
+          {!isLocked && activityStatus !== 'completed' && <IconComponent size={28} className="mr-3" />}
           <h3 className="text-2xl font-bold">{challenge.title}</h3>
         </div>
         <p className="text-sm mb-4 opacity-90">{challenge.description}</p>
