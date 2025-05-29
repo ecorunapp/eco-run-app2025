@@ -53,8 +53,21 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   const isUltimateEcotabChallenge = challenge.id === ECOTAB_CHALLENGE_ID;
   const isCompleted = activityStatus === 'completed';
 
-  // Safely render challenge icon - use a default icon if challenge.icon is invalid
-  const IconComponent = challenge.icon || Footprints;
+  // Safely render challenge icon - always use Footprints as fallback
+  // This prevents any "Element type is invalid" errors
+  const renderChallengeIcon = () => {
+    try {
+      // If challenge.icon exists and is a valid React component, use it
+      if (challenge.icon && typeof challenge.icon === 'function') {
+        const IconComponent = challenge.icon;
+        return <IconComponent size={28} className="mr-3" />;
+      }
+    } catch (error) {
+      console.log('Challenge icon error, using fallback:', error);
+    }
+    // Always fallback to Footprints icon
+    return <Footprints size={28} className="mr-3" />;
+  };
 
   let cardBgClass = '';
   let cardTextColorClass = challenge.textColor;
@@ -192,7 +205,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         <div className="flex items-center mb-2">
           {isLocked && <Lock size={28} className={`mr-3 ${titleIconClass}`} />}
           {activityStatus === 'completed' && <CheckCircle size={28} className="mr-3" />}
-          {!isLocked && activityStatus !== 'completed' && <IconComponent size={28} className="mr-3" />}
+          {!isLocked && activityStatus !== 'completed' && renderChallengeIcon()}
           <h3 className="text-2xl font-bold">{challenge.title}</h3>
         </div>
         <p className="text-sm mb-4 opacity-90">{challenge.description}</p>
